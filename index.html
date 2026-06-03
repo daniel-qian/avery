@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TeamMaster Dashboard + Nexus Prototype</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231d1b17'/%3E%3Ctext x='32' y='38' font-size='18' text-anchor='middle' fill='%23f7f4ee' font-family='Arial,sans-serif' font-weight='700'%3ETM%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div id="app" class="app-shell" data-scene="dashboard">
+      <aside class="fullscreen-required" aria-label="Fullscreen required">
+        <span class="brand-mark" aria-hidden="true">TM</span>
+        <p class="eyebrow">Desktop presentation prototype</p>
+        <h2>Open this on a fullscreen desktop canvas.</h2>
+        <p>
+          The spatial dashboard is intentionally designed for an investor walkthrough, not a
+          compressed mobile whiteboard.
+        </p>
+      </aside>
+
+      <header class="prototype-topbar" aria-label="Prototype controls">
+        <div class="brand-lockup">
+          <span class="brand-mark" aria-hidden="true">TM</span>
+          <div>
+            <p class="eyebrow">TeamMaster prototype</p>
+            <h1>Ambient command center</h1>
+          </div>
+        </div>
+        <nav class="scene-tabs" aria-label="Scene">
+          <button class="scene-tab is-active" type="button" data-scene-target="dashboard">
+            Dashboard
+          </button>
+          <button class="scene-tab" type="button" data-scene-target="nexus">Nexus</button>
+        </nav>
+      </header>
+
+      <main class="scene-stage">
+        <section
+          id="dashboard-scene"
+          class="scene scene-dashboard is-active"
+          aria-label="Dashboard prototype"
+          aria-hidden="false"
+        >
+          <div class="canvas-grid" aria-hidden="true"></div>
+          <svg id="dashboard-edges" class="edge-layer" aria-hidden="true"></svg>
+
+          <section class="briefing-layer" aria-label="Executive briefing">
+            <p class="eyebrow">Live organization weather</p>
+            <h2>Legal launch is the visible risk. Bandwidth is the hidden one.</h2>
+            <p>
+              TeamMaster turns people, project, and task signals into a calm spatial map before
+              work turns into status theater.
+            </p>
+            <div class="metric-row" aria-label="Key metrics">
+              <span><strong>82%</strong> health</span>
+              <span><strong>5</strong> active projects</span>
+              <span><strong>2</strong> hot spots</span>
+            </div>
+          </section>
+
+          <div id="people-layer" class="people-layer" aria-label="People orbit"></div>
+          <div id="project-layer" class="project-layer" aria-label="Project layer"></div>
+
+          <aside class="alert-pill-layer" aria-label="Alerts">
+            <button class="alert-pill" type="button" data-focus-project="apollo">
+              <span class="status-dot tone-danger"></span>
+              Swiss compliance review needs legal capacity
+            </button>
+            <button class="alert-pill" type="button" data-focus-person="ivy">
+              <span class="status-dot tone-warning"></span>
+              Ivy is trending over capacity
+            </button>
+          </aside>
+
+          <section class="composer-layer" aria-label="Dashboard composer">
+            <p class="eyebrow">Ask anything</p>
+            <div class="composer-card">
+              <input
+                id="dashboard-composer-input"
+                type="text"
+                value="Can we launch Swiss payroll next week without overloading legal?"
+                aria-label="Ask TeamMaster"
+              />
+              <button id="dashboard-send" class="icon-button primary" type="button" title="Send to Nexus">
+                <span aria-hidden="true">Enter</span>
+              </button>
+            </div>
+            <div class="suggestion-row" aria-label="Suggested prompts">
+              <button type="button" data-prompt="Who has bandwidth this week?">
+                Who has bandwidth?
+              </button>
+              <button type="button" data-prompt="Explain the Swiss compliance risk.">
+                Explain risk
+              </button>
+              <button type="button" data-prompt="Draft the launch follow-up tasks.">
+                Draft tasks
+              </button>
+            </div>
+          </section>
+        </section>
+
+        <section
+          id="nexus-scene"
+          class="scene scene-nexus"
+          aria-label="Nexus prototype"
+          aria-hidden="true"
+          inert
+        >
+          <div class="canvas-grid" aria-hidden="true"></div>
+          <svg id="nexus-edges" class="edge-layer" aria-hidden="true"></svg>
+
+          <section class="nexus-brief">
+            <p class="eyebrow">Nexus orchestration</p>
+            <h2 id="nexus-title">The question becomes a coordinated thread.</h2>
+            <p id="nexus-subtitle">
+              Dashboard context, attached evidence, and specialist agents assemble into a readable
+              decision path.
+            </p>
+          </section>
+
+          <div id="nexus-flow-layer" class="nexus-flow-layer" aria-label="Nexus flow"></div>
+
+          <aside class="nexus-inspector" aria-label="Nexus output">
+            <p class="eyebrow">Current output</p>
+            <h3 id="inspector-title">Waiting for handoff</h3>
+            <p id="inspector-copy">
+              Send a dashboard question or press Play to walk through the investor demo.
+            </p>
+            <div id="inspector-artifacts" class="artifact-list"></div>
+          </aside>
+
+          <footer class="demo-controls" aria-label="Demo controls">
+            <button id="reset-flow" type="button">Reset</button>
+            <button id="prev-step" type="button">Back</button>
+            <button id="next-step" type="button">Next</button>
+            <button id="play-flow" class="primary" type="button">Play</button>
+          </footer>
+        </section>
+      </main>
+    </div>
+
+    <script src="./mock-data.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
