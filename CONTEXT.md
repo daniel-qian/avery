@@ -30,6 +30,10 @@ _Avoid_: select、filter（filter 暗示"减项"，focus 是"点亮关联簇"）
 "被相信的状态"与"实时信号"之间被检测出的矛盾（例：owner 报 on-track，但信号显示 PR 卡住、重复 blocker、任务零更新）。系统只**指出矛盾并给低风险下一步**，绝不做人身/人格评价。其中"自报 vs 信号"这一具体子类叫 **report mismatch**。
 _Avoid_: discrepancy、conflict
 
+**Handoff**：
+agent 产出的、落在 Dashboard / 详情页表面上**可直接执行**的单条行动（checklist 形式，可 done / discard，部分可一键飞回 Nexus 深挖）。是"建议"与"已确认派出的 Task"之间的中间态：人确认后才经 dispatchTask 变成 Task。
+_Avoid_: action item、todo（会跟已派出的 Task 混淆）
+
 **Capabilities**：
 TeamMaster 自有的垂直领域专家知识层——跨 HR / Legal / PM / Finance / Ops / Sales 的真实案例、解决方案、SOP / playbook。可信性的"第二条腿"：公司事实回答"发生了什么"，Capabilities 回答"专业上该怎么判断、怎么处理"。是 agent 建议区别于普通 ChatGPT（只有泛化常识）的关键。**TeamMaster 私有资产，订阅制提供，agent 检索时自动优先引用——产品的护城河。**
 _Avoid_: CAPA（撞行业既有术语 Corrective-And-Preventive-Action，会让听众卡顿解码）、capabilities RAG（RAG 是检索机制，不是这个知识层本身）、专家能力库

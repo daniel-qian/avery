@@ -232,6 +232,48 @@ export const MISMATCH = {
   safeFraming: 'Evidence-based. This is a workload-routing issue, not a personnel judgment.',
 }
 
+// ───────────────────────── Nexus inspector（B4 / B6 / B7 轻量步）─────────────
+
+const signalById = Object.fromEntries(SIGNALS.map((signal) => [signal.id, signal])) as Record<string, Signal>
+const capabilityById = Object.fromEntries(
+  CAPABILITIES.map((capability) => [capability.id, capability]),
+) as Record<string, CapabilityEntry>
+
+export const HUMAN_LOOP = {
+  title: 'Bill pulled into the thread',
+  description:
+    'Bill pulled into the thread · agent listening in the background, recording context to refine its recommendation.',
+}
+
+export const NEXUS_INSPECTOR_CONTENT = {
+  'pm-agent': {
+    title: 'PM agent checks delivery evidence',
+    body: 'Connector evidence is pulled from work systems, then matched against Company RAG and Project-Ops Capability guidance.',
+    artifacts: [
+      { label: 'Connector evidence · s_pr', detail: signalById.s_pr.summary },
+      { label: 'Connector evidence · s_blocker', detail: signalById.s_blocker.summary },
+      { label: 'Connector evidence · s_noupdate', detail: signalById.s_noupdate.summary },
+      { label: 'Capability · cap_po_dep', detail: capabilityById.cap_po_dep.gist },
+    ],
+  },
+  'hr-root-cause': {
+    title: 'HR agent checks root cause',
+    body: MISMATCH.rootCause,
+    artifacts: [
+      { label: 'Root cause', detail: 'Interrupt overload, not low output.' },
+      { label: 'Interrupt signal · s_mentions', detail: signalById.s_mentions.summary },
+      { label: 'Interrupt signal · s_commits', detail: signalById.s_commits.summary },
+      { label: 'Capability · cap_hr_interrupt', detail: capabilityById.cap_hr_interrupt.gist },
+      { label: 'Safe framing', detail: MISMATCH.safeFraming },
+    ],
+  },
+  'human-loop': {
+    title: HUMAN_LOOP.title,
+    body: HUMAN_LOOP.description,
+    artifacts: [{ label: 'Background context', detail: HUMAN_LOOP.description }],
+  },
+} as const
+
 // ───────────────────────── Agent 结构化输出（6 段式）────────────────────────
 // ⚠⚠ 最高价值：Venus 会逐字读这一段。请你审。
 
