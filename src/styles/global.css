@@ -904,3 +904,21 @@ h1 {
     animation-iteration-count: 1 !important;
   }
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   P0.5 contract pass — CSS 分区约定（并行安全）
+   ────────────────────────────────────────────────────────────────────────────
+   上方一切（:root tokens · .app-shell · .scene · .edge-* · node 基类 · 响应式 ·
+   reduced-motion）= 共享基座，三个 phase 都读、谁都别 fork。要改基座先同步。
+   各 phase 新样式一律写进下面自己的 banner 区，别往中间插（避免并行 merge 冲突）。
+   动效守则：只动 transform/opacity，别动 width/height，别处处 blur。
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ───────────────────────── P1 · Dashboard ───────────────────────── */
+/* layout/density pass · focus 暗化缩放 · composer · alert pills */
+
+/* ───────────────────────── P2 · Nexus ───────────────────────── */
+/* orchestration flow · inspector · agent 输出渲染 */
+
+/* ───────────────────────── P3 · 详情 4 scene ───────────────────────── */
+/* project / employee / capabilities / onboarding 内部模块（placeholder） */

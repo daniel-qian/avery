@@ -38,6 +38,7 @@ export interface Project {
   dependsOn?: string[] // project ids
   summary?: string
   storyCritical?: boolean
+  hotspot?: boolean // Dashboard「Hot spots」tag 手工标记；语义独立于 status
 }
 
 export interface Task {
@@ -91,6 +92,19 @@ export interface Briefing {
   metrics: { label: string; value: string }[]
 }
 
+// Dashboard 顶部标签（P1）。curated 列表 + 声明式匹配规则；
+// 选 tag → focus.ts 据 match 算"根集合"→ 同单点 relatedness 展开。多选 = 并集。
+export interface DashboardTag {
+  id: string
+  label: string
+  match:
+    | { by: 'due'; within: 'this-week' } // 时间
+    | { by: 'status'; status: ProjectStatus } // 属性
+    | { by: 'project'; projectId: string } // 具体实体
+    | { by: 'team'; team: Person['team'] } // 人群
+    | { by: 'hotspot' } // Project.hotspot 标记
+}
+
 // ───────────────────────── People（~14；You/Wang 真名，其余 SNL）─────────────
 
 export const PEOPLE: Person[] = [
@@ -135,6 +149,7 @@ export const PROJECTS: Project[] = [
     dueDate: 'This Thursday',
     summary: 'Slack + GitHub ingestion. Acme pilot depends on it.',
     storyCritical: true,
+    hotspot: true, // briefing「1 hot spot」= 这里（mismatch / Bill 所在）
   },
   {
     id: 'p_pitch',
@@ -306,6 +321,16 @@ export const ONBOARDING = {
   capabilitiesMatched: ['Project Ops playbooks', 'HR playbooks'], // 自动优先
   caption: 'TeamMaster reads your files, builds the company brain, and auto-loads the right Capabilities.',
 }
+
+// ───────────────────────── Dashboard tags（B1/B2 自由交互，最多 5）─────────────
+
+export const DASHBOARD_TAGS: DashboardTag[] = [
+  { id: 'tag_week', label: 'This week', match: { by: 'due', within: 'this-week' } },
+  { id: 'tag_risk', label: 'At risk', match: { by: 'status', status: 'at-risk' } },
+  { id: 'tag_acme', label: 'Acme Pilot', match: { by: 'project', projectId: 'p_acme' } },
+  { id: 'tag_eng', label: 'Engineering', match: { by: 'team', team: 'Eng' } },
+  { id: 'tag_hot', label: 'Hot spots', match: { by: 'hotspot' } },
+]
 
 // ───────────────────────── Hero 问题（B3 composer）──────────────────────────
 
