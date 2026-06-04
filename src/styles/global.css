@@ -2174,4 +2174,303 @@ h1 {
 }
 
 /* ───────────────────────── P3 · 详情 4 scene ───────────────────────── */
-/* project / employee / capabilities / onboarding 内部模块（placeholder） */
+/* 共享 DetailShell + 员工详情四模块（P3-01）。静态恒显，零 thread 耦合。 */
+/* 只动 transform/opacity；卡片用共享 token，不 fork 基座。 */
+
+.scene-detail .detail-scroll {
+  position: absolute;
+  z-index: 6;
+  inset: 0;
+  overflow-y: auto;
+  padding: 104px clamp(20px, 6vw, 96px) 72px;
+}
+
+.detail-header,
+.detail-sections {
+  width: min(760px, 100%);
+  margin: 0 auto;
+}
+
+.detail-header {
+  margin-bottom: 26px;
+}
+
+.detail-back {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 18px;
+  padding: 0 14px;
+  border-color: var(--rule);
+  background: rgba(255, 253, 248, 0.74);
+}
+
+.detail-back:hover,
+.detail-back:focus-visible {
+  border-color: var(--rule-strong);
+  background: rgba(255, 253, 248, 0.94);
+}
+
+.detail-header h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(30px, 4vw, 46px);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+.detail-subtitle {
+  margin: 8px 0 0;
+  color: var(--ink-soft);
+  font-size: 15px;
+}
+
+.detail-sections {
+  display: grid;
+  gap: 16px;
+}
+
+.detail-section,
+.overview-card {
+  padding: 20px 22px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: rgba(255, 253, 248, 0.82);
+  box-shadow: var(--shadow-soft);
+}
+
+.detail-section-head {
+  margin-bottom: 14px;
+}
+
+.detail-section-head h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+.detail-empty {
+  margin: 0;
+  color: var(--ink-faint);
+  font-size: 14px;
+  font-style: italic;
+}
+
+/* 概览卡：Workload / Status / Progress / HR signal */
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+}
+
+.overview-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.overview-label {
+  margin: 0;
+  color: var(--ink-faint);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.overview-stat strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.overview-stat strong.is-empty {
+  color: var(--ink-faint);
+  font-size: 15px;
+  font-weight: 500;
+  font-style: italic;
+}
+
+.overview-stat .status-dot {
+  width: 9px;
+  height: 9px;
+}
+
+.overview-stat .progress-track {
+  width: 100%;
+  margin: 5px 0 0;
+}
+
+/* Current project tasks */
+.task-card-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.task-card {
+  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--rule-strong);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.task-card.is-stalled {
+  border-left-color: var(--terracotta);
+}
+
+.task-card.is-in-progress {
+  border-left-color: var(--sky);
+}
+
+.task-card.is-done {
+  border-left-color: var(--sage);
+}
+
+.task-card strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.task-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.task-status-pill {
+  padding: 3px 8px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+/* Weekly summary + sentiment */
+.weekly-block p {
+  margin: 12px 0 0;
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.sentiment-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 11px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.sentiment-pill.is-positive {
+  border-color: rgba(105, 128, 109, 0.45);
+  background: rgba(105, 128, 109, 0.14);
+  color: #43614a;
+}
+
+.sentiment-pill.is-steady {
+  border-color: rgba(82, 123, 145, 0.4);
+  background: rgba(82, 123, 145, 0.12);
+  color: #31586c;
+}
+
+.sentiment-pill.is-strained {
+  border-color: rgba(188, 92, 73, 0.42);
+  background: rgba(188, 92, 73, 0.13);
+  color: #9c4633;
+}
+
+/* HR knowledge analysis（capability-backed · no personnel judgment）*/
+.hr-analysis-capability {
+  margin: 0 0 10px;
+  color: var(--ink-faint);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.hr-analysis-reading {
+  margin: 0 0 14px;
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.hr-analysis-recs {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding-left: 20px;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.hr-analysis-evidence {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.hr-analysis-evidence .overview-label {
+  margin-bottom: 2px;
+}
+
+.hr-evidence-row {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.hr-evidence-row span {
+  color: var(--ink-faint);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.hr-evidence-row p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.hr-analysis-framing {
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-faint);
+  font-size: 13px;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+@media (max-width: 860px) {
+  .scene-detail .detail-scroll {
+    padding: 92px 16px 56px;
+  }
+}
