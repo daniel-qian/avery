@@ -1,10 +1,14 @@
 import { useMemo } from 'react'
 import {
+  AGENT_OUTPUT,
   HERO_QUESTION,
   MISMATCH,
   NEXUS_INSPECTOR_CONTENT,
+  PEOPLE,
   SIGNALS,
+  TIMELINE,
   type Signal,
+  type TaskTemplate,
 } from '../../data/fixtures'
 import { NEXUS_EDGES, NEXUS_NODES, NEXUS_POS, type NexusNodeId } from '../../data/nexusLayout'
 import { edgePath } from '../../lib/edges'
@@ -33,6 +37,34 @@ const mismatchEvidence = MISMATCH.evidenceSignalIds
   .map((signalId) => SIGNALS.find((signal) => signal.id === signalId))
   .filter((signal): signal is Signal => Boolean(signal))
 
+const TIMELINE_WHEN_ORDER: Record<string, number> = {
+  Thu: 0,
+  'Thu pm': 1,
+  'Fri am': 2,
+  Fri: 3,
+  'Next week': 4,
+  Tue: 5,
+}
+
+const TIMELINE_STATE_COPY: Record<string, { label: string; detail: string }> = {
+  replanned: { label: 'Replanned', detail: 'Moved into the trimmed Friday path.' },
+  planned: { label: 'Planned', detail: 'Kept in the main Friday path.' },
+  held: { label: 'Held', detail: 'Main plan focus: Friday still ships.' },
+  deferred: { label: 'Deferred', detail: 'Cut from core scope to protect Friday.' },
+  conditional: {
+    label: 'Conditional',
+    detail: 'Contingency only if Slack rate-limit is not cracked by Thursday.',
+  },
+}
+
+function taskTemplateKey(task: TaskTemplate) {
+  return `${task.title}::${task.assigneeId}::${task.due}`
+}
+
+function nameOf(personId: string) {
+  return PEOPLE.find((person) => person.id === personId)?.name ?? personId
+}
+
 function NexusEdgeLayer({
   steps,
   activeStep,
@@ -60,6 +92,50 @@ function NexusEdgeLayer({
         )
       })}
     </svg>
+  )
+}
+
+function TimelineCard() {
+  const milestones = [...TIMELINE.milestones].sort(
+    (a, b) => TIMELINE_WHEN_ORDER[a.when] - TIMELINE_WHEN_ORDER[b.when],
+  )
+
+  return (
+    <section className="timeline-card" aria-label="Tool output: re-baselined timeline">
+      <div className="timeline-card-header">
+        <div>
+          <p className="eyebrow">Tool output</p>
+          <h2>{TIMELINE.title}</h2>
+        </div>
+        <span>Friday protected</span>
+      </div>
+
+      <div className="timeline-track" aria-label="Re-baselined milestones">
+        {milestones.map((milestone) => {
+          const stateCopy = TIMELINE_STATE_COPY[milestone.state]
+          return (
+            <article
+              key={`${milestone.when}-${milestone.label}`}
+              className={classNames([
+                'timeline-milestone',
+                `is-${milestone.state}`,
+                milestone.state === 'held' && 'is-focus',
+              ])}
+            >
+              <span className="timeline-when">{milestone.when}</span>
+              <div className="timeline-marker" aria-hidden="true" />
+              <div className="timeline-body">
+                <div className="timeline-title-row">
+                  <h3>{milestone.label}</h3>
+                  <span>{stateCopy.label}</span>
+                </div>
+                <p>{stateCopy.detail}</p>
+              </div>
+            </article>
+          )
+        })}
+      </div>
+    </section>
   )
 }
 
@@ -103,13 +179,120 @@ function MismatchCard() {
   )
 }
 
+function StructuredOutputCard({
+  dispatchedTaskKeys,
+  onDispatchTask,
+  onReturnDashboard,
+}: {
+  dispatchedTaskKeys: Set<string>
+  onDispatchTask: (template: TaskTemplate) => void
+  onReturnDashboard: () => void
+}) {
+  return (
+    <section className="structured-output-card" aria-label="Structured trusted output report">
+      <header className="structured-output-header">
+        <div>
+          <p className="eyebrow">Trusted output</p>
+          <h2>Decision report</h2>
+        </div>
+        <span>Human review ready</span>
+      </header>
+
+      <section className="report-section report-conclusion" aria-label="Conclusion">
+        <p className="report-section-label">Conclusion</p>
+        <strong>{AGENT_OUTPUT.conclusion}</strong>
+      </section>
+
+      <div className="report-grid">
+        <section className="report-section" aria-label="Evidence">
+          <p className="report-section-label">Evidence</p>
+          <ol className="report-list">
+            {AGENT_OUTPUT.evidence.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ol>
+        </section>
+
+        <section className="report-section" aria-label="Uncertainties">
+          <p className="report-section-label">Uncertainties</p>
+          <ul className="report-list">
+            {AGENT_OUTPUT.uncertainties.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
+      </div>
+
+      <section className="report-section" aria-label="Recommended actions">
+        <p className="report-section-label">Recommended actions</p>
+        <ol className="report-list report-actions">
+          {AGENT_OUTPUT.recommendedActions.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ol>
+      </section>
+
+      <div className="report-grid report-bottom-grid">
+        <section className="report-section" aria-label="Needs confirmation from">
+          <p className="report-section-label">Needs confirmation from</p>
+          <div className="confirmation-list">
+            {AGENT_OUTPUT.needsConfirmationFrom.map((person) => (
+              <span key={person}>{person}</span>
+            ))}
+          </div>
+        </section>
+
+        <section className="report-section" aria-label="Next tasks">
+          <p className="report-section-label">Next tasks</p>
+          <div className="next-task-list">
+            {AGENT_OUTPUT.nextTasks.map((task) => {
+              const dispatched = dispatchedTaskKeys.has(taskTemplateKey(task))
+              return (
+                <article key={taskTemplateKey(task)} className="next-task-row">
+                  <div>
+                    <strong>{task.title}</strong>
+                    <span>
+                      {nameOf(task.assigneeId)} · due {task.due}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className={classNames(['dispatch-task-button', dispatched && 'is-dispatched'])}
+                    disabled={dispatched}
+                    onClick={() => onDispatchTask(task)}
+                  >
+                    {dispatched ? 'Dispatched' : 'Dispatch'}
+                  </button>
+                </article>
+              )
+            })}
+          </div>
+        </section>
+      </div>
+
+      <footer className="report-footer">
+        <button type="button" className="return-dashboard-button" onClick={onReturnDashboard}>
+          Return to dashboard
+        </button>
+      </footer>
+    </section>
+  )
+}
+
 export function NexusScene() {
   const thread = useCanvas((s) => s.thread)
+  const tasks = useCanvas((s) => s.tasks)
   const runAgent = useCanvas((s) => s.runAgent)
+  const dispatchTask = useCanvas((s) => s.dispatchTask)
+  const regenBriefing = useCanvas((s) => s.regenBriefing)
+  const goScene = useCanvas((s) => s.goScene)
   const question = thread.question ?? HERO_QUESTION
   const nodeStates = useMemo(() => deriveNexusNodeStates(thread.steps), [thread.steps])
   const activeStep = thread.steps[thread.steps.length - 1]?.kind
   const showMismatch = activeStep === 'cross-check'
+  const showTimeline = activeStep === 'timeline'
+  const showStructuredOutput = activeStep === 'structured-output'
+  const dispatchedTaskKeys = useMemo(() => new Set(tasks.map(taskTemplateKey)), [tasks])
   const activeNodes = activeStep ? NEXUS_STEP_NODES[activeStep] : ['question']
   const inspectorContent =
     activeStep && activeStep in NEXUS_INSPECTOR_CONTENT
@@ -122,10 +305,19 @@ export function NexusScene() {
       : activeStep === 'structured-output'
         ? 'Hold'
         : 'Advance'
+  const returnToDashboard = () => {
+    regenBriefing()
+    goScene('dashboard')
+  }
 
   return (
     <section
-      className={classNames(['scene scene-nexus is-active', showMismatch && 'has-mismatch'])}
+      className={classNames([
+        'scene scene-nexus is-active',
+        showMismatch && 'has-mismatch',
+        showTimeline && 'has-timeline',
+        showStructuredOutput && 'has-structured-output',
+      ])}
       aria-label="Nexus"
     >
       <div className="canvas-grid" aria-hidden="true" />
@@ -155,6 +347,14 @@ export function NexusScene() {
       </div>
 
       {showMismatch ? <MismatchCard /> : null}
+      {showTimeline ? <TimelineCard /> : null}
+      {showStructuredOutput ? (
+        <StructuredOutputCard
+          dispatchedTaskKeys={dispatchedTaskKeys}
+          onDispatchTask={dispatchTask}
+          onReturnDashboard={returnToDashboard}
+        />
+      ) : null}
 
       <section className="nexus-brief">
         <p className="eyebrow">Nexus orchestration</p>

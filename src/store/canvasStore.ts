@@ -121,7 +121,18 @@ export const useCanvas = create<CanvasState>((set, get) => ({
   },
 
   dispatchTask: (template) =>
-    set((s) => ({ tasks: [...s.tasks, { ...template, id: `dt_${s.tasks.length + 1}` }] })),
+    set((s) => {
+      const alreadyDispatched = s.tasks.some(
+        (task) =>
+          task.title === template.title &&
+          task.assigneeId === template.assigneeId &&
+          task.due === template.due,
+      )
+
+      if (alreadyDispatched) return s
+
+      return { tasks: [...s.tasks, { ...template, id: `dt_${s.tasks.length + 1}` }] }
+    }),
 
   regenBriefing: () => set({ briefing: BRIEFING_V2 }),
 }))
