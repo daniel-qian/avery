@@ -4,7 +4,8 @@
  * 这是 demo 的内容真相源（见 demo-brief.md §6）。
  * - 所有 user-facing 字符串用英文（Venus = 美国听众）；注释中文给 Danny。
  * - 按 ADR-0003：scripted 内容当 data 存，喂 dumb 组件；rail 与 free-click 共用。
- * - app 起来后此文件迁到 src/data/fixtures.ts；types 即 state 数据契约。
+ * - 本文件即 app 的 live fixtures（src/data/fixtures.ts）；导出的 types = state 数据契约。
+ *   设计稿原在 docs/20260603-design/，已于 P0 scaffold 时迁来。
  *
  * 命名：虚构同事用 SNL 2012 黄金期 cast 名（好记）；You / Wang 保留真名（真创始人 = meta 点）。
  *
