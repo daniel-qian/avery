@@ -11,7 +11,17 @@
  *         （见 fixtures.ts 的 cap_hr_interrupt / MISMATCH.safeFraming）。
  */
 
-import { PROJECTS, SIGNALS, type Project, type Signal } from './fixtures'
+import {
+  PEOPLE,
+  PROJECTS,
+  SIGNALS,
+  TASKS,
+  TIMELINE,
+  type Person,
+  type Project,
+  type Signal,
+  type Task,
+} from './fixtures'
 
 // ───────────────────────── 派生 helper（纯函数 · 零新 store state）─────────────
 
@@ -151,4 +161,211 @@ export function weeklySummaryFor(personId: string): WeeklySummary | null {
 
 export function hrAnalysisFor(personId: string): HrAnalysis | null {
   return HR_ANALYSIS[personId] ?? null
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// P3-02 · Project 详情页内容 + 派生 helper（additive）
+// ════════════════════════════════════════════════════════════════════════════
+
+// ───────────────────────── Delivery milestones ────────────────────────────────
+// Acme 直接渲染 fixtures.ts 的 TIMELINE.milestones（6 阶段，已带 state）。
+// Connector 在此草拟（≥5 阶段）；其余项目无数据 → 模块走空态。
+// state 与 TIMELINE 同口径：planned / replanned / held / deferred / conditional。
+
+export interface Milestone {
+  label: string
+  when: string
+  state: string
+}
+
+// ⚠ 待 Danny 审字。Connector 的 re-baseline 计划（保住周五核心 ship）。
+const CONNECTOR_MILESTONES: Milestone[] = [
+  { label: 'GitHub webhook receiver', when: 'Wed', state: 'planned' },
+  { label: 'Slack ingest + rate-limit handling', when: 'Thu', state: 'replanned' },
+  { label: 'Connector ↔ Acme hookup', when: 'Thu pm', state: 'replanned' },
+  { label: 'Core ingest ships (Slack + GitHub)', when: 'Fri', state: 'held' },
+  { label: 'Event dedupe + hashing', when: 'Next week', state: 'deferred' },
+  { label: 'Rate-limit contingency slip', when: 'Tue', state: 'conditional' },
+]
+
+// 渲染用：state → 标签 + 视觉 tone class（held / conditional / deferred 视觉可辨）。
+export const MILESTONE_STATE_COPY: Record<string, { label: string; tone: string }> = {
+  planned: { label: 'Planned', tone: 'is-planned' },
+  replanned: { label: 'Replanned', tone: 'is-replanned' },
+  held: { label: 'Held', tone: 'is-held' },
+  deferred: { label: 'Deferred', tone: 'is-deferred' },
+  conditional: { label: 'Conditional', tone: 'is-conditional' },
+}
+
+// 时间排序键；未知 when 落到末尾（不破坏排序）。
+const MILESTONE_WHEN_ORDER: Record<string, number> = {
+  Wed: 0,
+  Thu: 1,
+  'Thu pm': 2,
+  'Fri am': 3,
+  Fri: 4,
+  'Next week': 5,
+  Tue: 6,
+}
+
+export function milestoneOrder(when: string): number {
+  return MILESTONE_WHEN_ORDER[when] ?? 99
+}
+
+export function projectMilestones(projectId: string): Milestone[] | null {
+  if (projectId === 'p_acme') return [...TIMELINE.milestones]
+  if (projectId === 'p_connector') return CONNECTOR_MILESTONES
+  return null
+}
+
+// ───────────────────────── Team responsibilities ──────────────────────────────
+// owner + task assignees 派生的成员集合（owner 置顶，去重）。
+
+export interface TeamMember {
+  person: Person
+  role: 'Owner' | 'Contributor'
+}
+
+export function projectTeam(projectId: string): TeamMember[] {
+  const project = PROJECTS.find((p) => p.id === projectId)
+  if (!project) return []
+  const assigneeIds = TASKS.filter((task) => task.projectId === projectId).map(
+    (task) => task.assigneeId,
+  )
+  const orderedIds = [project.ownerId, ...assigneeIds]
+  const seen = new Set<string>()
+  const team: TeamMember[] = []
+  for (const id of orderedIds) {
+    if (seen.has(id)) continue
+    seen.add(id)
+    const person = PEOPLE.find((p) => p.id === id)
+    if (!person) continue
+    team.push({ person, role: id === project.ownerId ? 'Owner' : 'Contributor' })
+  }
+  return team
+}
+
+// ───────────────────────── Task board（3 段映射）──────────────────────────────
+// Task.status → 段：stalled → Needs decision · in-progress → In progress ·
+// done + todo → Done or waiting。
+
+export type TaskColumnKey = 'needs-decision' | 'in-progress' | 'done-waiting'
+
+export interface TaskColumn {
+  key: TaskColumnKey
+  title: string
+  statuses: Task['status'][]
+}
+
+export const TASK_BOARD_COLUMNS: TaskColumn[] = [
+  { key: 'needs-decision', title: 'Needs decision', statuses: ['stalled'] },
+  { key: 'in-progress', title: 'In progress', statuses: ['in-progress'] },
+  { key: 'done-waiting', title: 'Done or waiting', statuses: ['done', 'todo'] },
+]
+
+export function tasksForProject(projectId: string): Task[] {
+  return TASKS.filter((task) => task.projectId === projectId)
+}
+
+// ───────────────────────── Handoffs（按 projectId）─────────────────────────────
+// Handoff = agent 产出、可直接执行的单条行动（checklist：done / discard）。
+// flyToNexus 非空 = 可一键飞回 Nexus 深挖（调 askQuestion(flyToNexus)）。
+// ⚠ 待 Danny 审字。故事项目有；texture 项目无 → 模块空态。
+
+export interface Handoff {
+  id: string
+  text: string
+  detail?: string
+  flyToNexus?: string // askQuestion 的问题文本
+}
+
+export const HANDOFFS: Record<string, Handoff[]> = {
+  p_acme: [
+    {
+      id: 'h_acme_scope',
+      text: 'Confirm the trimmed Connector scope with Bill today',
+      detail: 'Ship Slack + GitHub core Friday; defer event-dedupe to next week.',
+    },
+    {
+      id: 'h_acme_stakeholder',
+      text: 'Pre-warn the Acme stakeholder that Tuesday is the held contingency',
+      detail: 'Only triggers if the Slack rate-limit blocker is not cracked by Thursday.',
+    },
+    {
+      id: 'h_acme_legal',
+      text: 'Have Legal clear the trimmed-scope change against the Acme SOW',
+      detail: 'Scope cut may touch the signed statement of work — route to a legal agent.',
+      flyToNexus: 'Does the trimmed Connector scope for Friday stay within the Acme SOW?',
+    },
+  ],
+  p_connector: [
+    {
+      id: 'h_con_offload',
+      text: "Offload Bill's Acme-support interrupts to Jason for 2 days",
+      detail: 'Jason is at 70% load and can absorb the support pulls short-term.',
+    },
+    {
+      id: 'h_con_focus',
+      text: 'Protect two uninterrupted focus blocks for Bill on the Connector',
+    },
+    {
+      id: 'h_con_ratelimit',
+      text: 'Spin up an agent to crack the Slack rate-limit blocker',
+      detail: 'This single point decides Friday core ship vs the Tuesday slip.',
+      flyToNexus: "What's the fastest path to crack the Slack API rate-limit blocker by Thursday?",
+    },
+  ],
+}
+
+export function handoffsForProject(projectId: string): Handoff[] {
+  return HANDOFFS[projectId] ?? []
+}
+
+// ───────────────────────── Weekly team updates（按 projectId）──────────────────
+// 本周成员进展。⚠ 待 Danny 审字。口径中性，描述工作进展非人事评价。
+
+export interface WeeklyUpdate {
+  personId: string
+  update: string
+}
+
+export const WEEKLY_UPDATES: Record<string, WeeklyUpdate[]> = {
+  p_acme: [
+    { personId: 'u_vanessa', update: 'Locked the Friday scope and re-confirmed the Connector dependency end to end.' },
+    { personId: 'u_kristen', update: 'Integration suite is green except the Connector-dependent paths.' },
+    { personId: 'u_aidy', update: 'UAT plan is ready; waiting on the Connector hookup to start the run.' },
+  ],
+  p_connector: [
+    { personId: 'u_bill', update: 'GitHub webhook receiver landed; Slack ingest is still blocked on rate limits.' },
+    { personId: 'u_jason', update: 'Free to take the Acme-support load so the Connector can move again.' },
+  ],
+}
+
+export function weeklyUpdatesForProject(projectId: string): WeeklyUpdate[] {
+  return WEEKLY_UPDATES[projectId] ?? []
+}
+
+// ───────────────────────── 次层级：Risk & evidence（过滤 SIGNALS）──────────────
+// 下沉到主层级下方（护 B9b 之前的 reveal）。项目自身 + 其依赖项目的信号都纳入，
+// 这样 Acme（依赖 Connector）也能看到完整证据链。texture 项目无信号 → 空态。
+
+export function signalsForProject(projectId: string): Signal[] {
+  const project = PROJECTS.find((p) => p.id === projectId)
+  if (!project) return []
+  const projectIds = new Set<string>([projectId, ...(project.dependsOn ?? [])])
+  const taskIds = new Set(
+    TASKS.filter((task) => projectIds.has(task.projectId)).map((task) => task.id),
+  )
+  // owner(s) 的 person-signal 也纳入 → "HR signal" 那半（Connector/Acme 都能追到 Bill 的 interrupt）。
+  const ownerIds = new Set<string>(
+    [...projectIds]
+      .map((id) => PROJECTS.find((p) => p.id === id)?.ownerId)
+      .filter((id): id is string => Boolean(id)),
+  )
+  return SIGNALS.filter(
+    (signal) =>
+      (signal.subjectType === 'project' && projectIds.has(signal.subjectId)) ||
+      (signal.subjectType === 'task' && taskIds.has(signal.subjectId)) ||
+      (signal.subjectType === 'person' && ownerIds.has(signal.subjectId)),
+  )
 }

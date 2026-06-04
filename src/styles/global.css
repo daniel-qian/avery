@@ -2474,3 +2474,512 @@ h1 {
     padding: 92px 16px 56px;
   }
 }
+
+/* ───── P3-02 · Project 详情页（brief / milestones / team / board / handoffs） ───── */
+
+/* Project brief */
+.brief-card {
+  padding: 20px 22px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: rgba(255, 253, 248, 0.82);
+  box-shadow: var(--shadow-soft);
+}
+
+.brief-summary {
+  margin: 0 0 14px;
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.brief-card .progress-track {
+  margin: 0 0 12px;
+}
+
+.brief-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.brief-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 11px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.brief-status {
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.brief-status.tone-warning .status-dot {
+  background: var(--honey);
+}
+
+.brief-status.tone-danger .status-dot {
+  background: var(--terracotta);
+}
+
+.brief-dep {
+  color: var(--ink-faint);
+}
+
+/* Delivery milestones — 颜色/标签区分 state */
+.milestone-track {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.milestone {
+  display: grid;
+  grid-template-columns: 76px 16px 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.milestone-when {
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.milestone-dot {
+  width: 11px;
+  height: 11px;
+  justify-self: center;
+  border-radius: 50%;
+  border: 2px solid var(--rule-strong);
+  background: var(--paper-strong);
+}
+
+.milestone-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.milestone-body strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.milestone-state {
+  min-height: 22px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 9px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}
+
+/* state tones — held（赢点）/ conditional（兜底）/ deferred（砍）视觉可辨 */
+.milestone.is-held .milestone-dot {
+  border-color: var(--sage);
+  background: var(--sage);
+}
+.milestone.is-held .milestone-state {
+  border-color: rgba(105, 128, 109, 0.45);
+  background: rgba(105, 128, 109, 0.16);
+  color: #3f5c46;
+}
+
+.milestone.is-replanned .milestone-dot {
+  border-color: var(--sky);
+  background: var(--sky);
+}
+.milestone.is-replanned .milestone-state {
+  border-color: rgba(82, 123, 145, 0.4);
+  background: rgba(82, 123, 145, 0.13);
+  color: #31586c;
+}
+
+.milestone.is-conditional .milestone-dot {
+  border-style: dashed;
+  border-color: var(--honey);
+  background: transparent;
+}
+.milestone.is-conditional .milestone-state {
+  border-color: rgba(178, 123, 43, 0.45);
+  background: rgba(178, 123, 43, 0.14);
+  color: #8a5e1f;
+}
+
+.milestone.is-deferred {
+  opacity: 0.6;
+}
+.milestone.is-deferred .milestone-dot {
+  background: var(--paper);
+}
+
+/* Team responsibilities */
+.team-avatars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.team-member {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 8px 8px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.team-member .avatar {
+  width: 34px;
+  height: 34px;
+}
+
+.team-member strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.team-member > div span {
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+/* Task board — 3 段 */
+.task-board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.task-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.38);
+}
+
+.task-column-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 2px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.task-column-head span {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(52, 48, 40, 0.08);
+  color: var(--ink-faint);
+  font-size: 11px;
+}
+
+.task-column.is-needs-decision {
+  border-top: 2px solid var(--terracotta);
+}
+.task-column.is-in-progress {
+  border-top: 2px solid var(--sky);
+}
+.task-column.is-done-waiting {
+  border-top: 2px solid var(--sage);
+}
+
+.task-column-list {
+  display: grid;
+  gap: 8px;
+}
+
+.task-column-empty {
+  margin: 0;
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-style: italic;
+}
+
+.board-card {
+  padding: 10px 11px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper-strong);
+}
+
+.board-card strong {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.board-card span {
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+/* Handoffs checklist */
+.handoff-list {
+  display: grid;
+  gap: 10px;
+}
+
+.handoff-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--sage);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.5);
+  transition: opacity var(--fast) ease;
+}
+
+.handoff-card.is-discarded {
+  opacity: 0.5;
+  border-left-color: var(--rule-strong);
+}
+
+.handoff-card.is-done {
+  border-left-color: var(--sage);
+  background: rgba(105, 128, 109, 0.08);
+}
+
+.handoff-body strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.handoff-card.is-done .handoff-body strong {
+  text-decoration: line-through;
+  color: var(--ink-soft);
+}
+
+.handoff-body p {
+  margin: 6px 0 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.handoff-fly {
+  margin-top: 10px;
+  padding: 5px 11px;
+  border: 1px solid rgba(108, 99, 181, 0.4);
+  border-radius: 999px;
+  background: rgba(108, 99, 181, 0.1);
+  color: #4a4197;
+  font-size: 12px;
+  font-weight: 700;
+  transition:
+    background var(--fast) ease,
+    border-color var(--fast) ease;
+}
+
+.handoff-fly:hover,
+.handoff-fly:focus-visible {
+  border-color: rgba(108, 99, 181, 0.7);
+  background: rgba(108, 99, 181, 0.18);
+  outline: none;
+}
+
+.handoff-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.handoff-done,
+.handoff-discard,
+.handoff-undo {
+  min-height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--paper-strong);
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 700;
+  transition:
+    border-color var(--fast) ease,
+    color var(--fast) ease;
+}
+
+.handoff-done:hover,
+.handoff-done:focus-visible {
+  border-color: rgba(105, 128, 109, 0.55);
+  color: #3f5c46;
+  outline: none;
+}
+
+.handoff-discard:hover,
+.handoff-discard:focus-visible {
+  border-color: rgba(188, 92, 73, 0.5);
+  color: #9c4633;
+  outline: none;
+}
+
+.handoff-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.handoff-undo {
+  min-height: 26px;
+  padding: 0 9px;
+  font-weight: 600;
+}
+
+/* Weekly team updates */
+.weekly-update-list {
+  display: grid;
+  gap: 12px;
+}
+
+.weekly-update-row {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.weekly-update-row strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.weekly-update-row p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* 次层级（下沉）：risk & evidence — 视觉退一档，护 reveal */
+.detail-sublayer {
+  display: grid;
+  gap: 16px;
+  margin-top: 8px;
+  padding-top: 20px;
+  border-top: 1px dashed var(--rule);
+}
+
+.detail-sublayer .detail-section {
+  background: rgba(255, 253, 248, 0.55);
+  box-shadow: none;
+}
+
+.risk-list {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding-left: 18px;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.risk-tag {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 8px;
+  padding: 1px 8px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--ink-faint);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.evidence-list {
+  display: grid;
+  gap: 9px;
+}
+
+.evidence-row {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.evidence-row span {
+  color: var(--ink-faint);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.evidence-row p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.evidence-row em {
+  color: var(--ink-faint);
+  font-style: normal;
+}
+
+@media (max-width: 720px) {
+  .task-board {
+    grid-template-columns: 1fr;
+  }
+
+  .handoff-card {
+    flex-direction: column;
+  }
+
+  .weekly-update-row,
+  .milestone {
+    grid-template-columns: 1fr;
+  }
+
+  .milestone-dot {
+    display: none;
+  }
+}
