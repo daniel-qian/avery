@@ -1,4 +1,4 @@
-# TeamMaster Dashboard + Nexus Static Prototype
+# TeamMaster Static Prototype
 
 This is a standalone angel-presentation prototype. It does not import production
 Next.js code, call backend APIs, or persist state.
@@ -17,14 +17,4 @@ Open `prototype/dashboard-nexus/index.html` directly in a browser.
 
 ## Presentation Target
 
-This prototype is fullscreen-first. Narrow screens intentionally show a desktop
-presentation notice instead of trying to compress the whiteboard metaphor. A
-mobile/narrow version should use a different rendering model later.
-
-## Boundaries
-
-- No whiteboard SDK.
-- No drag editing.
-- No backend integration.
-- No production `src/` imports.
-- No app route, auth, middleware, or package script changes.
+This prototype is fullscreen-first. Narrow screens intentionally show a desktop presentation notice instead of trying to compress the whiteboard metaphor. A mobile/narrow version should use a different rendering model later.

@@ -14,3 +14,17 @@
 - Strong in: Rapidly grasping codebases and reasoning about solution architecture. 
 - Gap/Weak in: Limited industry experience and insufficient exposure to large-scale production best practices for core business and infrastructure domains, such as user/account systems, authentication and authorization, network security.
 Adjust the depth of every response to match this. Never over-explain what I already know. Never skip context I need.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and PRDs live as GitHub issues in `daniel-qian/TM2.0`, managed via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Five canonical triage roles, each mapped to a label string equal to its role name (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout: one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
