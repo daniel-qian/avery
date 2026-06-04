@@ -3125,3 +3125,262 @@ h1 {
   font-size: 14px;
   line-height: 1.55;
 }
+
+/* ───── P3-03 · Onboarding 4 步微流程（B0 prologue） ───── */
+
+.scene-onboarding {
+  display: grid;
+  place-items: center;
+  padding: 96px 20px 40px;
+}
+
+.onboarding-card {
+  width: min(620px, 100%);
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+  padding: 28px 30px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: rgba(255, 253, 248, 0.9);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+}
+
+.onboarding-head h2 {
+  margin: 2px 0 8px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.onboarding-head p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.onboarding-progress {
+  display: flex;
+  gap: 6px;
+  margin: 20px 0 18px;
+}
+
+.progress-pip {
+  height: 4px;
+  flex: 1;
+  border-radius: 999px;
+  background: rgba(52, 48, 40, 0.12);
+  transition: background var(--medium) ease;
+}
+
+.progress-pip.is-done {
+  background: var(--sage);
+}
+
+.progress-pip.is-active {
+  background: var(--iris);
+}
+
+.onboarding-stages {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.onboarding-stage {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  gap: 14px;
+  padding: 12px 0;
+  transition: opacity var(--medium) ease;
+}
+
+.onboarding-stage.is-upcoming {
+  opacity: 0.4;
+}
+
+.stage-marker {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--rule-strong);
+  background: var(--paper-strong);
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.onboarding-stage.is-active .stage-marker {
+  border-color: var(--iris);
+  background: var(--iris);
+  color: var(--paper);
+}
+
+.onboarding-stage.is-done .stage-marker {
+  border-color: var(--sage);
+  background: var(--sage);
+  color: var(--paper);
+}
+
+.stage-content h3 {
+  margin: 4px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.stage-done {
+  margin: 6px 0 0;
+  color: var(--ink-faint);
+  font-size: 13px;
+}
+
+.onboarding-status {
+  margin: 12px 0 10px;
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Step 1 · files */
+.onboarding-files {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.file-chip {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper-strong);
+  font-size: 13px;
+}
+
+.file-kind {
+  display: inline-grid;
+  place-items: center;
+  min-width: 38px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 5px;
+  background: rgba(82, 123, 145, 0.14);
+  color: #31586c;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* Step 2 · parsed facets */
+.onboarding-parsed {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.parsed-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+/* Step 3 · capabilities matched（auto-prioritized tease）*/
+.onboarding-capabilities {
+  display: grid;
+  gap: 8px;
+}
+
+.capability-match {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 13px;
+  border: 1px solid rgba(108, 99, 181, 0.32);
+  border-radius: var(--radius);
+  background: rgba(108, 99, 181, 0.1);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.match-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: var(--iris);
+  color: var(--paper);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Step 4 · ready metrics */
+.onboarding-ready-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 12px;
+}
+
+.onboarding-ready-metrics span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.onboarding-ready-metrics strong {
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.onboarding-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 22px;
+}
+
+.onboarding-continue {
+  min-height: 40px;
+  padding: 0 22px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 14px;
+  font-weight: 700;
+  transition: opacity var(--fast) ease;
+}
+
+.onboarding-continue:hover,
+.onboarding-continue:focus-visible {
+  opacity: 0.86;
+  outline: none;
+}
