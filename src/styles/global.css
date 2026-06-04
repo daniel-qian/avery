@@ -2983,3 +2983,145 @@ h1 {
     display: none;
   }
 }
+
+/* ───── P3-04 · Capabilities sell 页（moat banner + grouped playbooks） ───── */
+
+.moat-banner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 16px 18px;
+  border: 1px solid rgba(108, 99, 181, 0.28);
+  border-radius: var(--radius);
+  background: linear-gradient(
+    120deg,
+    rgba(108, 99, 181, 0.1),
+    rgba(82, 123, 145, 0.08)
+  );
+  box-shadow: var(--shadow-soft);
+}
+
+.moat-point {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #3f3a73;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.moat-point::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--iris);
+}
+
+/* Library coverage strip */
+.capability-coverage .eyebrow {
+  margin-bottom: 10px;
+}
+
+.coverage-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.coverage-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+  padding: 0 12px;
+  border: 1px dashed var(--rule-strong);
+  border-radius: 999px;
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.coverage-chip.is-loaded {
+  border-style: solid;
+  border-color: rgba(105, 128, 109, 0.45);
+  background: rgba(105, 128, 109, 0.12);
+  color: #3f5c46;
+}
+
+.coverage-chip em {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+/* Grouped capability cards */
+.capability-group {
+  display: grid;
+  gap: 12px;
+}
+
+.capability-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.capability-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: rgba(255, 253, 248, 0.82);
+  box-shadow: var(--shadow-soft);
+}
+
+.capability-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cap-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 9px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.cap-badge.is-proprietary {
+  border-color: rgba(108, 99, 181, 0.4);
+  background: rgba(108, 99, 181, 0.12);
+  color: #4a4197;
+}
+
+.cap-badge.is-cited {
+  border-color: rgba(82, 123, 145, 0.4);
+  background: rgba(82, 123, 145, 0.12);
+  color: #31586c;
+}
+
+.capability-card strong {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.capability-card p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.55;
+}

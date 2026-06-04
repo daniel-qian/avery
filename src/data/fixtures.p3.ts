@@ -12,11 +12,13 @@
  */
 
 import {
+  CAPABILITIES,
   PEOPLE,
   PROJECTS,
   SIGNALS,
   TASKS,
   TIMELINE,
+  type CapabilityEntry,
   type Person,
   type Project,
   type Signal,
@@ -368,4 +370,70 @@ export function signalsForProject(projectId: string): Signal[] {
       (signal.subjectType === 'task' && taskIds.has(signal.subjectId)) ||
       (signal.subjectType === 'person' && ownerIds.has(signal.subjectId)),
   )
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// P3-04 · Capabilities sell 页（register B · 产品页 + moat banner）
+// 吃既有 CAPABILITIES fixture（按 domain 分组）；此处只加页面框架文案 + 分组 helper。
+// ⚠ 待 Danny 审字。呼应 CONTEXT 的 Capabilities「第二条腿」/ 护城河定义。
+// ════════════════════════════════════════════════════════════════════════════
+
+export const CAPABILITIES_PAGE = {
+  eyebrow: 'Capabilities · the moat',
+  title: 'The vertical playbooks behind every recommendation.',
+  // moat banner 三点（proprietary / subscription / auto-cited）。
+  moatPoints: [
+    'Proprietary vertical playbooks',
+    'Subscription',
+    'Auto-cited in every recommendation',
+  ],
+  // 接回 pitch 命题的一句 framing（公司事实 vs Capabilities 的分工）。
+  framing: 'Company facts say what happened; Capabilities say how to judge it.',
+}
+
+// CAPABILITIES 的 domain → 展示名（CONTEXT：库横跨 HR / Legal / PM / Finance / Ops / Sales）。
+export const CAPABILITY_DOMAIN_LABEL: Record<string, string> = {
+  'project-ops': 'Project Ops',
+  hr: 'HR',
+  legal: 'Legal',
+  finance: 'Finance',
+  sales: 'Sales',
+  ops: 'Ops',
+}
+
+// 库覆盖的垂直域展示顺序（coverage strip 用）。
+export const CAPABILITY_DOMAIN_ORDER: string[] = [
+  'project-ops',
+  'hr',
+  'legal',
+  'finance',
+  'sales',
+  'ops',
+]
+
+// 按 domain 分组（保持 CAPABILITIES 出现顺序）。
+export function capabilitiesByDomain(): {
+  domain: string
+  label: string
+  entries: CapabilityEntry[]
+}[] {
+  const order: string[] = []
+  const groups: Record<string, CapabilityEntry[]> = {}
+  for (const cap of CAPABILITIES) {
+    if (!groups[cap.domain]) {
+      groups[cap.domain] = []
+      order.push(cap.domain)
+    }
+    groups[cap.domain].push(cap)
+  }
+  return order.map((domain) => ({
+    domain,
+    label: CAPABILITY_DOMAIN_LABEL[domain] ?? domain,
+    entries: groups[domain],
+  }))
+}
+
+// demo 已加载 sample playbook 的域（= CAPABILITIES 里出现的 domain）。
+export function loadedCapabilityDomains(): Set<string> {
+  return new Set<string>(CAPABILITIES.map((cap) => cap.domain))
 }
