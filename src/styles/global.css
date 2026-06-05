@@ -3538,29 +3538,8 @@ h1 {
   box-shadow: 0 10px 34px rgba(40, 35, 29, 0.1);
 }
 
-/* P4 fix · Capabilities free-click 入口（Nexus PM agent 卡按钮） */
-.nexus-capabilities-link {
-  align-self: flex-start;
-  margin-top: 14px;
-  padding: 8px 14px;
-  border: 1px solid var(--rule);
-  border-radius: 999px;
-  background: rgba(255, 253, 248, 0.7);
-  color: var(--ink);
-  font-size: 12.5px;
-  font-weight: 650;
-  cursor: pointer;
-  transition:
-    border-color var(--fast) ease,
-    background var(--fast) ease;
-}
-
-.nexus-capabilities-link:hover,
-.nexus-capabilities-link:focus-visible {
-  border-color: var(--rule-strong);
-  background: rgba(255, 253, 248, 0.95);
-  outline: none;
-}
+/* P5-01 (ADR-0007)：Capabilities 移出思考流，inspector 内的 free-click 入口按钮已删。
+   free-click 仍走 Topbar tab；rail 走收尾 13/13 beat。原 .nexus-capabilities-link 样式随按钮移除。 */
 
 .rail-caption {
   display: flex;
@@ -3609,5 +3588,161 @@ h1 {
     flex-wrap: wrap;
     row-gap: 4px;
     white-space: normal;
+  }
+}
+
+/* ───────────────────── P5-02 · #6 in-thread Chat (B7 ChatCard) ─────────────────────
+   B7 human-loop 从 inspector 轻量步毕业为中央卡（ADR-0008），与 timeline/mismatch/output 同级。
+   消息逐条渐显 = opacity/transform stagger（守 ADR-0002）；reduced-motion 瞬显。 */
+
+.scene-nexus.has-chat .canvas-grid {
+  opacity: 0.36;
+}
+
+.scene-nexus.has-chat .nexus-brief,
+.scene-nexus.has-chat .nexus-inspector {
+  opacity: 0.22;
+  transform: translateY(8px);
+}
+
+.scene-nexus.has-chat .flow-node {
+  opacity: 0.16;
+}
+
+.scene-nexus.has-chat .flow-node.is-active {
+  opacity: 0.78;
+}
+
+.scene-nexus.has-chat .nexus-edge-path:not(.is-active) {
+  opacity: 0.1;
+}
+
+.nexus-chat-card {
+  position: absolute;
+  z-index: 22;
+  top: 49%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  width: min(640px, calc(100vw - 56px));
+  max-height: min(72vh, 620px);
+  padding: 22px;
+  border: 1px solid rgba(52, 48, 40, 0.22);
+  border-radius: var(--radius);
+  background: rgba(255, 253, 248, 0.94);
+  box-shadow: 0 30px 110px rgba(50, 45, 36, 0.2);
+  backdrop-filter: blur(18px);
+  transform: translate(-50%, -50%);
+}
+
+.nexus-chat-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+
+.nexus-chat-header h2 {
+  margin: 0;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(22px, 2.4vw, 30px);
+  font-weight: 500;
+  line-height: 1.08;
+}
+
+.nexus-chat-header > span {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  border: 1px solid rgba(105, 128, 109, 0.38);
+  border-radius: 999px;
+  background: rgba(105, 128, 109, 0.12);
+  color: var(--sage);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.nexus-chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.chat-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 86%;
+  padding: 10px 14px;
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  background: rgba(255, 253, 248, 0.7);
+  opacity: 0;
+  transform: translateY(8px);
+  animation: chat-msg-in 0.34s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: calc(var(--chat-i, 0) * 0.09s);
+}
+
+.chat-msg.is-human {
+  align-self: flex-end;
+  border-color: rgba(40, 35, 29, 0.16);
+  background: rgba(40, 35, 29, 0.05);
+}
+
+.chat-msg.is-agent {
+  align-self: flex-start;
+}
+
+.chat-msg.is-pm {
+  border-left: 2px solid var(--sage);
+}
+
+.chat-msg.is-hr {
+  border-left: 2px solid var(--accent);
+}
+
+.chat-speaker {
+  color: var(--ink-soft);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.chat-text {
+  margin: 0;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.chat-ref {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(105, 128, 109, 0.12);
+  color: var(--sage);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+@keyframes chat-msg-in {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-msg {
+    opacity: 1;
+    transform: none;
+    animation: none;
   }
 }

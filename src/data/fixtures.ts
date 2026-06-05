@@ -239,10 +239,68 @@ const capabilityById = Object.fromEntries(
   CAPABILITIES.map((capability) => [capability.id, capability]),
 ) as Record<string, CapabilityEntry>
 
+// P5-02 (ADR-0008)：B7 = in-thread Chat 对象。agent 发起、绑定单个决策、用完即合；
+// agent 在场抛 evidence + Capabilities；产出沉淀进 report。
+export interface HumanLoopMessage {
+  id: string
+  speaker: string
+  role: 'human' | 'agent'
+  agentKind?: 'pm' | 'hr'
+  text: string
+  reference?: string
+}
+
+// ⚠ 待 Danny 审字：B7 Chat transcript（Venus-facing 英文）。
+const HUMAN_LOOP_MESSAGES: HumanLoopMessage[] = [
+  {
+    id: 'hl_pm_q',
+    speaker: 'PM agent',
+    role: 'agent',
+    agentKind: 'pm',
+    text: 'Bill — Connector PR #142 has had no commits for 6 days. Before we re-plan Friday: is the stall the Slack rate-limit work, or something else?',
+    reference: 'Evidence · PR #142 · 6d no commits',
+  },
+  {
+    id: 'hl_bill_reveal',
+    speaker: 'Bill',
+    role: 'human',
+    text: "It's the rate-limit handling — but honestly I've barely touched it. I've been pulled into Acme-support fires all week, ~9 urgent asks in three days.",
+  },
+  {
+    id: 'hl_hr_frame',
+    speaker: 'HR agent',
+    role: 'agent',
+    agentKind: 'hr',
+    text: 'That matches the signals: this reads as interrupt load, not output. Flagging the routing play — no performance read here.',
+    reference: 'Capability · Interrupt-overload playbook',
+  },
+  {
+    id: 'hl_you_decide',
+    speaker: 'You',
+    role: 'human',
+    text: 'So if we take the Acme-support load off Bill, the Connector moves again?',
+  },
+  {
+    id: 'hl_bill_commit',
+    speaker: 'Bill',
+    role: 'human',
+    text: 'Yes. Give me two uninterrupted blocks and route the support pulls elsewhere for two days, and I can land the rate-limit work by Thursday.',
+  },
+  {
+    id: 'hl_pm_plan',
+    speaker: 'PM agent',
+    role: 'agent',
+    agentKind: 'pm',
+    text: "Jason's at 70% with a clean week — routing the interrupts to him protects Friday's core ship. I'll re-baseline the plan now.",
+    reference: 'Next · re-baselined timeline',
+  },
+]
+
 export const HUMAN_LOOP = {
-  title: 'Bill pulled into the thread',
+  title: 'Bill enters the loop',
   description:
-    'Bill pulled into the thread · agent listening in the background, recording context to refine its recommendation.',
+    'The agent opens a chat with the people who can settle the call — agents stay in the room, bringing evidence and Capabilities.',
+  messages: HUMAN_LOOP_MESSAGES,
 }
 
 export const NEXUS_INSPECTOR_CONTENT = {
@@ -267,11 +325,7 @@ export const NEXUS_INSPECTOR_CONTENT = {
       { label: 'Safe framing', detail: MISMATCH.safeFraming },
     ],
   },
-  'human-loop': {
-    title: HUMAN_LOOP.title,
-    body: HUMAN_LOOP.description,
-    artifacts: [{ label: 'Background context', detail: HUMAN_LOOP.description }],
-  },
+  // P5-02：human-loop 已毕业到中央 ChatCard，inspector 不再承载（fallback 到 active-nodes）。
 } as const
 
 // ───────────────────────── Agent 结构化输出（6 段式）────────────────────────

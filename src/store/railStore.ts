@@ -38,16 +38,6 @@ export const SCRIPT: RailStep[] = [
     run: () => useCanvas.getState().runAgent(),
   },
   {
-    beat: 'B4',
-    label: 'Capabilities reference opens',
-    run: () => useCanvas.getState().goScene('capabilities'),
-  },
-  {
-    beat: 'B4',
-    label: 'Return to Nexus',
-    run: () => useCanvas.getState().goScene('nexus'),
-  },
-  {
     beat: 'B5',
     label: 'Reality gap cross-check',
     run: () => useCanvas.getState().runAgent(),
@@ -95,6 +85,12 @@ export const SCRIPT: RailStep[] = [
       canvas.regenBriefing()
       canvas.goScene('dashboard')
     },
+  },
+  {
+    // P5-01 (ADR-0007)：Capabilities 移出思考流，作独立收尾 beat（13/13）= 护城河 + 营收收束。
+    beat: 'B11',
+    label: 'Capabilities — the moat',
+    run: () => useCanvas.getState().goScene('capabilities'),
   },
 ]
 

@@ -1,7 +1,8 @@
-import { useMemo } from 'react'
+import { useMemo, type CSSProperties } from 'react'
 import {
   AGENT_OUTPUT,
   HERO_QUESTION,
+  HUMAN_LOOP,
   MISMATCH,
   NEXUS_INSPECTOR_CONTENT,
   PEOPLE,
@@ -279,6 +280,39 @@ function StructuredOutputCard({
   )
 }
 
+// P5-02 (ADR-0008)：B7 human-loop 的中央 Chat 卡。与 mismatch/timeline/output 同级，
+// 读扩写后的 HUMAN_LOOP fixture，消息逐条渐显（CSS stagger）。不扩 store。
+function ChatCard() {
+  return (
+    <section className="nexus-chat-card" aria-label="Human loop — chat">
+      <header className="nexus-chat-header">
+        <div>
+          <p className="eyebrow">Human loop · Chat</p>
+          <h2>{HUMAN_LOOP.title}</h2>
+        </div>
+        <span>Agents in the room</span>
+      </header>
+      <div className="nexus-chat-log">
+        {HUMAN_LOOP.messages.map((message, index) => (
+          <article
+            key={message.id}
+            className={classNames([
+              'chat-msg',
+              `is-${message.role}`,
+              message.agentKind && `is-${message.agentKind}`,
+            ])}
+            style={{ '--chat-i': index } as CSSProperties}
+          >
+            <span className="chat-speaker">{message.speaker}</span>
+            <p className="chat-text">{message.text}</p>
+            {message.reference ? <span className="chat-ref">{message.reference}</span> : null}
+          </article>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 export function NexusScene() {
   const thread = useCanvas((s) => s.thread)
   const tasks = useCanvas((s) => s.tasks)
@@ -292,6 +326,7 @@ export function NexusScene() {
   const showMismatch = activeStep === 'cross-check'
   const showTimeline = activeStep === 'timeline'
   const showStructuredOutput = activeStep === 'structured-output'
+  const showChat = activeStep === 'human-loop'
   const dispatchedTaskKeys = useMemo(() => new Set(tasks.map(taskTemplateKey)), [tasks])
   const activeNodes = activeStep ? NEXUS_STEP_NODES[activeStep] : ['question']
   const inspectorContent =
@@ -317,6 +352,7 @@ export function NexusScene() {
         showMismatch && 'has-mismatch',
         showTimeline && 'has-timeline',
         showStructuredOutput && 'has-structured-output',
+        showChat && 'has-chat',
       ])}
       aria-label="Nexus"
     >
@@ -356,6 +392,8 @@ export function NexusScene() {
         />
       ) : null}
 
+      {showChat ? <ChatCard /> : null}
+
       <section className="nexus-brief">
         <p className="eyebrow">Nexus orchestration</p>
         <h2>The question becomes a coordinated thread.</h2>
@@ -391,15 +429,6 @@ export function NexusScene() {
             ))}
           </div>
         )}
-        {activeStep === 'pm-agent' ? (
-          <button
-            type="button"
-            className="nexus-capabilities-link"
-            onClick={() => goScene('capabilities')}
-          >
-            Open Capabilities reference →
-          </button>
-        ) : null}
       </aside>
 
       <div className="nexus-advance-bar">
