@@ -4,7 +4,7 @@
  * P3 详情页（员工 / 项目）独有内容 + 派生 helper 的真相源。
  * - additive：只 import 共享 fixtures.ts，绝不修改它（P1/P2 也读共享 fixtures）。
  * - 所有 user-facing 字符串英文（Venus = 美国听众）；注释中文给 Danny。
- * - 派生 helper 是纯函数吃 fixtures，零新 store state（ADR-0005：详情页静态恒显）。
+ * - 派生 helper 是纯函数吃 fixtures，零新 store state（P5-03：详情页 state-aware）。
  *
  * ⚠ 待 Danny 审字：下方所有英文 copy 是 Danny 初稿，P3-05 收口逐字审。
  * ⚠ 守则：HR analysis / weekly sentiment 口径守 *no personnel judgment*
@@ -28,6 +28,9 @@ import {
 // ───────────────────────── 派生 helper（纯函数 · 零新 store state）─────────────
 
 export type WorkloadStatus = 'Overloaded' | 'Steady' | 'Has capacity'
+export type DetailPhase = 'believed' | 'grown'
+
+const isBelieved = (phase: DetailPhase = 'grown') => phase === 'believed'
 
 // Status 三档（issue / ADR-0005 口径）：>110 Overloaded · 85–110 Steady · <75 Has capacity。
 // 75–85 灰区归 Steady（"Has capacity" 只留给确有余量的 <75）。无 capacityPct → null。
@@ -52,7 +55,8 @@ export function ownedProjectProgress(
 
 // 挂在某人身上的工作信号（subjectType === 'person'）。Bill = 两条 interrupt 证据；
 // texture 人 = []（HR analysis 模块据此判断是否渲染 evidence 子段）。
-export function signalsFor(personId: string): Signal[] {
+export function signalsFor(personId: string, phase: DetailPhase = 'grown'): Signal[] {
+  if (isBelieved(phase)) return []
   return SIGNALS.filter(
     (signal) => signal.subjectType === 'person' && signal.subjectId === personId,
   )
@@ -153,15 +157,18 @@ export function isStoryPerson(personId: string): boolean {
 }
 
 // 各模块的空态判定（缺数据模块走干净空态，不渲染占位灰条）。
-export function hrSignalFor(personId: string): string | null {
+export function hrSignalFor(personId: string, phase: DetailPhase = 'grown'): string | null {
+  if (isBelieved(phase)) return null
   return HR_SIGNAL[personId] ?? null
 }
 
-export function weeklySummaryFor(personId: string): WeeklySummary | null {
+export function weeklySummaryFor(personId: string, phase: DetailPhase = 'grown'): WeeklySummary | null {
+  if (isBelieved(phase)) return null
   return WEEKLY_SUMMARY[personId] ?? null
 }
 
-export function hrAnalysisFor(personId: string): HrAnalysis | null {
+export function hrAnalysisFor(personId: string, phase: DetailPhase = 'grown'): HrAnalysis | null {
+  if (isBelieved(phase)) return null
   return HR_ANALYSIS[personId] ?? null
 }
 
@@ -214,7 +221,8 @@ export function milestoneOrder(when: string): number {
   return MILESTONE_WHEN_ORDER[when] ?? 99
 }
 
-export function projectMilestones(projectId: string): Milestone[] | null {
+export function projectMilestones(projectId: string, phase: DetailPhase = 'grown'): Milestone[] | null {
+  if (isBelieved(phase)) return null
   if (projectId === 'p_acme') return [...TIMELINE.milestones]
   if (projectId === 'p_connector') return CONNECTOR_MILESTONES
   return null
@@ -319,7 +327,8 @@ export const HANDOFFS: Record<string, Handoff[]> = {
   ],
 }
 
-export function handoffsForProject(projectId: string): Handoff[] {
+export function handoffsForProject(projectId: string, phase: DetailPhase = 'grown'): Handoff[] {
+  if (isBelieved(phase)) return []
   return HANDOFFS[projectId] ?? []
 }
 
@@ -343,7 +352,8 @@ export const WEEKLY_UPDATES: Record<string, WeeklyUpdate[]> = {
   ],
 }
 
-export function weeklyUpdatesForProject(projectId: string): WeeklyUpdate[] {
+export function weeklyUpdatesForProject(projectId: string, phase: DetailPhase = 'grown'): WeeklyUpdate[] {
+  if (isBelieved(phase)) return []
   return WEEKLY_UPDATES[projectId] ?? []
 }
 
@@ -351,7 +361,8 @@ export function weeklyUpdatesForProject(projectId: string): WeeklyUpdate[] {
 // 下沉到主层级下方（护 B9b 之前的 reveal）。项目自身 + 其依赖项目的信号都纳入，
 // 这样 Acme（依赖 Connector）也能看到完整证据链。texture 项目无信号 → 空态。
 
-export function signalsForProject(projectId: string): Signal[] {
+export function signalsForProject(projectId: string, phase: DetailPhase = 'grown'): Signal[] {
+  if (isBelieved(phase)) return []
   const project = PROJECTS.find((p) => p.id === projectId)
   if (!project) return []
   const projectIds = new Set<string>([projectId, ...(project.dependsOn ?? [])])
