@@ -1026,15 +1026,19 @@ h1 {
 
 .scene-dashboard .person-node {
   width: 156px;
-  min-height: 58px;
+  min-height: 54px;
   align-items: center;
-  grid-template-columns: 38px 1fr;
-  padding: 9px 10px;
+  grid-template-columns: 34px 1fr;
+  padding: 6px 8px;
 }
 
 .scene-dashboard .avatar {
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
+}
+
+.scene-dashboard .person-body {
+  min-width: 0;
 }
 
 .scene-dashboard .person-node h3,
@@ -1054,6 +1058,120 @@ h1 {
 
 .scene-dashboard.has-focus .person-node.is-focused .person-stats {
   display: flex;
+}
+
+.scene-dashboard .person-node.tone-stable {
+  border-color: rgba(52, 48, 40, 0.13);
+}
+
+.scene-dashboard .person-node.tone-warning {
+  border-color: rgba(178, 123, 43, 0.42);
+  background: rgba(255, 253, 248, 0.9);
+  box-shadow: 0 14px 44px rgba(178, 123, 43, 0.1);
+}
+
+.scene-dashboard .person-node.tone-danger {
+  border-color: rgba(188, 92, 73, 0.56);
+  background: rgba(255, 250, 247, 0.94);
+  box-shadow: 0 18px 56px rgba(188, 92, 73, 0.16);
+}
+
+.scene-dashboard .person-hud,
+.scene-dashboard.has-focus .person-node.is-focused .person-hud {
+  display: grid;
+}
+
+.scene-dashboard .person-hud {
+  grid-column: 2;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+  width: 100%;
+  margin-top: 3px;
+}
+
+.scene-dashboard .person-hud span {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.scene-dashboard .hud-meter {
+  display: grid;
+  grid-template-columns: 17px minmax(0, 1fr) 16px;
+  align-items: center;
+  gap: 3px;
+}
+
+.scene-dashboard .hud-label {
+  display: contents;
+}
+
+.scene-dashboard .hud-label strong {
+  grid-column: 1;
+  color: var(--ink-faint);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.scene-dashboard .hud-label em {
+  grid-column: 3;
+  color: var(--ink-soft);
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-align: right;
+}
+
+.scene-dashboard .hud-track {
+  grid-column: 2;
+  grid-row: 1;
+  overflow: hidden;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(52, 48, 40, 0.11);
+}
+
+.scene-dashboard .hud-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: rgba(105, 128, 109, 0.72);
+}
+
+.scene-dashboard .hud-mp .hud-fill {
+  background: rgba(82, 123, 145, 0.62);
+}
+
+.scene-dashboard .person-node.tone-warning .hud-hp .hud-fill {
+  background: var(--honey);
+}
+
+.scene-dashboard .person-node.tone-danger .hud-hp .hud-fill,
+.scene-dashboard .person-node.has-low-mp .hud-mp .hud-fill {
+  background: var(--terracotta);
+}
+
+.scene-dashboard .person-node.tone-danger .hud-hp .hud-label,
+.scene-dashboard .person-node.has-low-mp .hud-mp .hud-label {
+  color: #9c4633;
+}
+
+.scene-dashboard .hud-load {
+  display: none;
+  grid-column: 1 / -1;
+  color: var(--ink-faint);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.scene-dashboard.has-focus .person-node.is-focused .hud-load {
+  display: block;
 }
 
 .scene-dashboard .project-card {
@@ -1207,6 +1325,10 @@ h1 {
   .scene-dashboard .avatar {
     width: 34px;
     height: 34px;
+  }
+
+  .scene-dashboard .person-hud {
+    gap: 5px;
   }
 
   .scene-dashboard .project-card,
