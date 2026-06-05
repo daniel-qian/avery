@@ -562,8 +562,8 @@ h1 {
   position: absolute;
   z-index: 25;
   left: 50%;
-  bottom: 28px;
-  width: min(680px, calc(100vw - 48px));
+  bottom: 24px;
+  width: min(720px, calc(100vw - 48px));
   text-align: center;
   transform: translateX(-50%);
   transition:
@@ -571,24 +571,31 @@ h1 {
     transform var(--medium) ease;
 }
 
-.scene-dashboard.has-project-focus .composer-layer {
-  opacity: 0.22;
-  transform: translateX(-50%) translateY(14px);
-}
-
 .composer-card {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  display: grid;
+  gap: 0;
   padding: 9px;
   border: 1px solid var(--rule);
   border-radius: 999px;
   background: rgba(255, 253, 248, 0.91);
   box-shadow: var(--shadow);
   backdrop-filter: blur(12px);
+  text-align: left;
+  transition: border-radius var(--fast) ease;
 }
 
-.composer-card input {
+.composer-layer.is-expanded .composer-card {
+  border-radius: var(--radius);
+}
+
+.composer-main-row,
+.composer-reference-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.composer-main-row input {
   width: 100%;
   min-width: 0;
   border: 0;
@@ -598,6 +605,181 @@ h1 {
   padding: 0 10px 0 16px;
   font-family: Georgia, "Times New Roman", serif;
   font-size: 17px;
+}
+
+.composer-reference-row {
+  margin-top: 8px;
+  align-items: flex-start;
+}
+
+.composer-add-button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  place-items: center;
+  border: 1px solid var(--rule);
+  border-radius: 50%;
+  background: var(--paper-strong);
+  color: var(--ink);
+  font-size: 22px;
+  line-height: 1;
+  transition:
+    background var(--fast) ease,
+    border-color var(--fast) ease,
+    opacity var(--fast) ease;
+}
+
+.composer-add-button:hover,
+.composer-add-button:focus-visible {
+  border-color: var(--rule-strong);
+  opacity: 0.88;
+  outline: none;
+}
+
+.composer-reference-chips {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.composer-reference-chip {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 30px;
+  align-items: center;
+  gap: 7px;
+  max-width: 100%;
+  padding: 4px 8px 4px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.7);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.composer-reference-chip span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.composer-reference-chip small {
+  color: var(--ink-faint);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.composer-reference-chip button {
+  display: grid;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(29, 27, 23, 0.08);
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.composer-reference-picker {
+  display: grid;
+  gap: 8px;
+  margin-top: 9px;
+  padding: 10px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: rgba(255, 253, 248, 0.96);
+  box-shadow: var(--shadow-soft);
+}
+
+.reference-picker-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.reference-picker-actions button,
+.reference-picker-list button {
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.56);
+  color: var(--ink-soft);
+  transition:
+    background var(--fast) ease,
+    border-color var(--fast) ease,
+    color var(--fast) ease;
+}
+
+.reference-picker-actions button {
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.reference-picker-actions button:hover,
+.reference-picker-actions button:focus-visible,
+.reference-picker-actions button.is-active,
+.reference-picker-list button:hover,
+.reference-picker-list button:focus-visible {
+  border-color: var(--rule-strong);
+  color: var(--ink);
+  outline: none;
+}
+
+.composer-reference-picker > input {
+  width: 100%;
+  min-height: 34px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  outline: 0;
+  background: var(--paper-strong);
+  color: var(--ink);
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.reference-picker-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 6px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.reference-picker-list button {
+  display: grid;
+  gap: 3px;
+  min-height: 48px;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.reference-picker-list button span,
+.reference-picker-list button small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reference-picker-list button span {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.reference-picker-list button small {
+  color: var(--ink-faint);
+  font-size: 11px;
 }
 
 .icon-button,
@@ -1125,7 +1307,7 @@ h1 {
   background: rgba(29, 27, 23, 0.92);
 }
 
-.scene-dashboard .composer-card input {
+.scene-dashboard .composer-main-row input {
   color: var(--paper-strong);
 }
 
@@ -1140,9 +1322,39 @@ h1 {
   outline: none;
 }
 
+.scene-dashboard .composer-add-button {
+  border-color: rgba(255, 253, 248, 0.24);
+  background: rgba(255, 253, 248, 0.12);
+  color: var(--paper-strong);
+}
+
+.scene-dashboard .composer-reference-chip {
+  border-color: rgba(255, 253, 248, 0.18);
+  background: rgba(255, 253, 248, 0.1);
+  color: var(--paper-strong);
+}
+
+.scene-dashboard .composer-reference-chip small {
+  color: rgba(255, 253, 248, 0.62);
+}
+
+.scene-dashboard .composer-reference-chip button {
+  background: rgba(255, 253, 248, 0.13);
+  color: rgba(255, 253, 248, 0.72);
+}
+
+.scene-dashboard .composer-reference-picker {
+  border-color: rgba(255, 253, 248, 0.16);
+  background: rgba(255, 253, 248, 0.94);
+}
+
 @media (max-width: 860px) {
   .app-shell[data-scene='dashboard'] .prototype-topbar {
     align-items: stretch;
+  }
+
+  .scene-dashboard.is-active {
+    transform: none;
   }
 
   .dashboard-control-layer {
@@ -1222,6 +1434,19 @@ h1 {
     left: 50%;
     right: auto;
     width: calc(100vw - 36px);
+  }
+
+  .scene-dashboard .composer-main-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .scene-dashboard .composer-reference-row {
+    align-items: flex-start;
+  }
+
+  .scene-dashboard .reference-picker-list {
+    grid-template-columns: 1fr;
   }
 }
 

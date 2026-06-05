@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState, type FormEvent, type MouseEvent } from 'react'
-import { motion, useReducedMotion, type Transition } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion, type Transition } from 'framer-motion'
 import {
+  CAPABILITIES,
   DASHBOARD_TAGS,
   HERO_QUESTION,
   PEOPLE,
   PROJECTS,
   SIGNALS,
+  type CapabilityEntry,
   type Person,
   type Project,
 } from '../../data/fixtures'
@@ -15,6 +17,23 @@ import { SvgEdgeLayer } from '../SvgEdgeLayer'
 import { useCanvas, type Focus } from '../../store/canvasStore'
 
 const NODE_GUTTER = 18
+
+type ReferenceKind = 'person' | 'project' | 'capability' | 'file'
+type ReferenceFilter = 'all' | Exclude<ReferenceKind, 'file'>
+
+interface ComposerReference {
+  id: string
+  kind: ReferenceKind
+  label: string
+  meta: string
+}
+
+const REFERENCE_FILTERS: Array<{ id: ReferenceFilter; label: string }> = [
+  { id: 'all', label: 'All' },
+  { id: 'person', label: 'People' },
+  { id: 'project', label: 'Projects' },
+  { id: 'capability', label: 'Capabilities' },
+]
 
 function nodeStyle(pos: Pos, widthPx: number) {
   const half = Math.ceil(widthPx / 2) + NODE_GUTTER
@@ -50,6 +69,39 @@ function ownerName(project: Project) {
   return PEOPLE.find((p) => p.id === project.ownerId)?.name ?? 'Unassigned'
 }
 
+function personReference(person: Person): ComposerReference {
+  return { id: `person-${person.id}`, kind: 'person', label: person.name, meta: person.role }
+}
+
+function projectReference(project: Project): ComposerReference {
+  return {
+    id: `project-${project.id}`,
+    kind: 'project',
+    label: project.title,
+    meta: ownerName(project),
+  }
+}
+
+function capabilityReference(capability: CapabilityEntry): ComposerReference {
+  return {
+    id: `capability-${capability.id}`,
+    kind: 'capability',
+    label: capability.title,
+    meta: capability.domain,
+  }
+}
+
+function focusReferenceOf(focus: Focus | null): ComposerReference | null {
+  if (!focus?.primary) return null
+  if (focus.primary.kind === 'person') {
+    const person = PEOPLE.find((p) => p.id === focus.primary?.id)
+    return person ? personReference(person) : null
+  }
+
+  const project = PROJECTS.find((p) => p.id === focus.primary?.id)
+  return project ? projectReference(project) : null
+}
+
 function isPrimary(focus: Focus | null, kind: 'person' | 'project', id: string) {
   return focus?.primary?.kind === kind && focus.primary.id === id
 }
@@ -73,10 +125,14 @@ export function DashboardScene() {
   const prefersReducedMotion = useReducedMotion()
   const [searchQuery, setSearchQuery] = useState('')
   const [question, setQuestion] = useState(HERO_QUESTION)
+  const [composerOpen, setComposerOpen] = useState(false)
+  const [referenceMenuOpen, setReferenceMenuOpen] = useState(false)
+  const [referenceFilter, setReferenceFilter] = useState<ReferenceFilter>('all')
+  const [referenceQuery, setReferenceQuery] = useState('')
+  const [references, setReferences] = useState<ComposerReference[]>([])
 
   const hasFocus = Boolean(focus)
   const selectedTagIds = focus?.source === 'tag' ? focus.selector?.tags ?? [] : []
-  const hasProjectPrimary = focus?.primary?.kind === 'project'
   const transition: Transition = prefersReducedMotion
     ? { duration: 0 }
     : { duration: 0.28, ease: [0.16, 1, 0.3, 1] }
@@ -101,6 +157,33 @@ export function DashboardScene() {
     ]
   }, [])
 
+  const focusReference = useMemo(() => focusReferenceOf(focus), [focus])
+
+  const visibleReferences = useMemo(() => {
+    const refs = focusReference ? [focusReference] : []
+    for (const ref of references) {
+      if (!refs.some((existing) => existing.id === ref.id)) refs.push(ref)
+    }
+    return refs
+  }, [focusReference, references])
+
+  const referenceOptions = useMemo(() => {
+    const query = referenceQuery.trim().toLowerCase()
+    const allOptions = [
+      ...PEOPLE.map(personReference),
+      ...PROJECTS.map(projectReference),
+      ...CAPABILITIES.map(capabilityReference),
+    ]
+
+    return allOptions.filter((option) => {
+      if (referenceFilter !== 'all' && option.kind !== referenceFilter) return false
+      if (!query) return true
+      return `${option.label} ${option.meta}`.toLowerCase().includes(query)
+    })
+  }, [referenceFilter, referenceQuery])
+
+  const isComposerExpanded = hasFocus || composerOpen || referenceMenuOpen || visibleReferences.length > 0
+
   useEffect(() => {
     if (focus?.source === 'search') {
       setSearchQuery(focus.selector?.query ?? '')
@@ -116,6 +199,7 @@ export function DashboardScene() {
   function clearFocus() {
     setFocus(null)
     setSearchQuery('')
+    setReferenceMenuOpen(false)
   }
 
   function handleTagClick(tagId: string) {
@@ -142,7 +226,35 @@ export function DashboardScene() {
     event.preventDefault()
     event.stopPropagation()
     const text = question.trim() || HERO_QUESTION
+    setReferenceMenuOpen(false)
     askQuestion(text)
+  }
+
+  function addReference(reference: ComposerReference) {
+    setReferences((current) =>
+      current.some((existing) => existing.id === reference.id) ? current : [...current, reference],
+    )
+    setReferenceQuery('')
+    setReferenceMenuOpen(false)
+    setComposerOpen(true)
+  }
+
+  function addAttachment() {
+    setReferences((current) => [
+      ...current,
+      {
+        id: `file-${current.filter((ref) => ref.kind === 'file').length + 1}`,
+        kind: 'file',
+        label: 'Acme_Pilot_SOW.docx',
+        meta: 'Attachment',
+      },
+    ])
+    setReferenceMenuOpen(false)
+    setComposerOpen(true)
+  }
+
+  function removeReference(id: string) {
+    setReferences((current) => current.filter((ref) => ref.id !== id))
   }
 
   return (
@@ -150,7 +262,6 @@ export function DashboardScene() {
       className={classNames([
         'scene scene-dashboard is-active',
         hasFocus && 'has-focus',
-        hasProjectPrimary && 'has-project-focus',
       ])}
       aria-label="Dashboard"
       onClick={clearFocus}
@@ -313,21 +424,114 @@ export function DashboardScene() {
       </div>
 
       <motion.div
-        className="composer-layer"
+        className={classNames(['composer-layer', isComposerExpanded && 'is-expanded'])}
         style={{ x: '-50%' }}
-        animate={{ opacity: hasProjectPrimary ? 0.22 : 1, y: hasProjectPrimary ? 14 : 0 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={transition}
         onClick={stopPropagation}
       >
         <form className="composer-card" onSubmit={handleAskQuestion}>
-          <input
-            value={question}
-            onChange={(event) => setQuestion(event.currentTarget.value)}
-            aria-label="Ask Nexus"
-          />
-          <button type="submit" className="icon-button">
-            Ask
-          </button>
+          <div className="composer-main-row">
+            <input
+              value={question}
+              onClick={() => setComposerOpen(true)}
+              onFocus={() => window.setTimeout(() => setComposerOpen(true), 180)}
+              onChange={(event) => setQuestion(event.currentTarget.value)}
+              aria-label="Ask Nexus"
+            />
+            <button type="submit" className="icon-button">
+              Ask
+            </button>
+          </div>
+
+          <AnimatePresence initial={false}>
+            {isComposerExpanded && (
+              <motion.div
+                className="composer-reference-row"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 8 }}
+                transition={transition}
+              >
+                <button
+                  type="button"
+                  className="composer-add-button"
+                  aria-label="Add reference or attachment"
+                  aria-expanded={referenceMenuOpen}
+                  onClick={() => {
+                    setComposerOpen(true)
+                    setReferenceMenuOpen((open) => !open)
+                  }}
+                >
+                  +
+                </button>
+                <div className="composer-reference-chips" aria-label="Composer references">
+                  {visibleReferences.map((reference) => (
+                    <span key={reference.id} className={`composer-reference-chip is-${reference.kind}`}>
+                      <span>{reference.label}</span>
+                      {reference.kind !== 'project' && <small>{reference.meta}</small>}
+                      {reference.id !== focusReference?.id && (
+                        <button
+                          type="button"
+                          aria-label={`Remove ${reference.label}`}
+                          onClick={() => removeReference(reference.id)}
+                        >
+                          x
+                        </button>
+                      )}
+                    </span>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence initial={false}>
+            {referenceMenuOpen && (
+              <motion.div
+                className="composer-reference-picker"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 8 }}
+                transition={transition}
+              >
+                <div className="reference-picker-actions">
+                  <button type="button" onClick={addAttachment}>
+                    Attach file
+                  </button>
+                  {REFERENCE_FILTERS.map((filter) => (
+                    <button
+                      key={filter.id}
+                      type="button"
+                      className={filter.id === referenceFilter ? 'is-active' : ''}
+                      aria-pressed={filter.id === referenceFilter}
+                      onClick={() => setReferenceFilter(filter.id)}
+                    >
+                      {filter.label}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="search"
+                  value={referenceQuery}
+                  placeholder="Reference person, project, or capability"
+                  aria-label="Filter references"
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') event.preventDefault()
+                  }}
+                  onChange={(event) => setReferenceQuery(event.currentTarget.value)}
+                />
+                <div className="reference-picker-list">
+                  {referenceOptions.map((option) => (
+                    <button key={option.id} type="button" onClick={() => addReference(option)}>
+                      <span>{option.label}</span>
+                      <small>{option.meta}</small>
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </form>
       </motion.div>
     </section>
