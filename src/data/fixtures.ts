@@ -24,6 +24,7 @@ export interface Person {
   role: string
   team: 'Founders' | 'Eng' | 'Product' | 'Design' | 'GTM' | 'Ops'
   capacityPct?: number // 100 = 满载；>100 = 超载
+  moodPct: number // 0..100；calm 卡 MP HUD
   storyCritical?: boolean
 }
 
@@ -108,21 +109,21 @@ export interface DashboardTag {
 // ───────────────────────── People（~14；You/Wang 真名，其余 SNL）─────────────
 
 export const PEOPLE: Person[] = [
-  { id: 'u_you', name: 'You', role: 'Founder / CEO', team: 'Founders', capacityPct: 95, storyCritical: true },
-  { id: 'u_wang', name: 'Wang', role: 'Co-founder / Head of Domain', team: 'Founders', capacityPct: 90, storyCritical: true },
-  { id: 'u_vanessa', name: 'Vanessa', role: 'Product Manager', team: 'Product', capacityPct: 88, storyCritical: true },
-  { id: 'u_bill', name: 'Bill', role: 'Backend Engineer', team: 'Eng', capacityPct: 134, storyCritical: true }, // 超载（被打断）
-  { id: 'u_jason', name: 'Jason', role: 'Backend Engineer', team: 'Eng', capacityPct: 70, storyCritical: true }, // 有余量 → 接 Bill 的活
+  { id: 'u_you', name: 'You', role: 'Founder / CEO', team: 'Founders', capacityPct: 95, moodPct: 72, storyCritical: true },
+  { id: 'u_wang', name: 'Wang', role: 'Co-founder / Head of Domain', team: 'Founders', capacityPct: 90, moodPct: 80, storyCritical: true },
+  { id: 'u_vanessa', name: 'Vanessa', role: 'Product Manager', team: 'Product', capacityPct: 88, moodPct: 62, storyCritical: true },
+  { id: 'u_bill', name: 'Bill', role: 'Backend Engineer', team: 'Eng', capacityPct: 134, moodPct: 24, storyCritical: true }, // 超载（被打断）
+  { id: 'u_jason', name: 'Jason', role: 'Backend Engineer', team: 'Eng', capacityPct: 70, moodPct: 76, storyCritical: true }, // 有余量 → 接 Bill 的活
   // ── orbit 纹理（名字可改）──
-  { id: 'u_kristen', name: 'Kristen', role: 'Frontend Engineer', team: 'Eng', capacityPct: 92 },
-  { id: 'u_nasim', name: 'Nasim', role: 'ML Engineer', team: 'Eng', capacityPct: 85 },
-  { id: 'u_andy', name: 'Andy', role: 'Product Designer', team: 'Design', capacityPct: 80 },
-  { id: 'u_kate', name: 'Kate', role: 'Customer Success Lead', team: 'GTM', capacityPct: 108 },
-  { id: 'u_will', name: 'Will', role: 'Account Executive', team: 'GTM', capacityPct: 75 },
-  { id: 'u_cecily', name: 'Cecily', role: 'Growth / Marketing', team: 'GTM', capacityPct: 65 },
-  { id: 'u_kenan', name: 'Kenan', role: 'Operations', team: 'Ops', capacityPct: 60 },
-  { id: 'u_fred', name: 'Fred', role: 'Data Engineer', team: 'Eng', capacityPct: 78 },
-  { id: 'u_aidy', name: 'Aidy', role: 'QA Engineer', team: 'Eng', capacityPct: 82 },
+  { id: 'u_kristen', name: 'Kristen', role: 'Frontend Engineer', team: 'Eng', capacityPct: 92, moodPct: 68 },
+  { id: 'u_nasim', name: 'Nasim', role: 'ML Engineer', team: 'Eng', capacityPct: 85, moodPct: 74 },
+  { id: 'u_andy', name: 'Andy', role: 'Product Designer', team: 'Design', capacityPct: 80, moodPct: 78 },
+  { id: 'u_kate', name: 'Kate', role: 'Customer Success Lead', team: 'GTM', capacityPct: 108, moodPct: 56 },
+  { id: 'u_will', name: 'Will', role: 'Account Executive', team: 'GTM', capacityPct: 75, moodPct: 73 },
+  { id: 'u_cecily', name: 'Cecily', role: 'Growth / Marketing', team: 'GTM', capacityPct: 65, moodPct: 82 },
+  { id: 'u_kenan', name: 'Kenan', role: 'Operations', team: 'Ops', capacityPct: 60, moodPct: 79 },
+  { id: 'u_fred', name: 'Fred', role: 'Data Engineer', team: 'Eng', capacityPct: 78, moodPct: 70 },
+  { id: 'u_aidy', name: 'Aidy', role: 'QA Engineer', team: 'Eng', capacityPct: 82, moodPct: 69 },
 ]
 
 // ───────────────────────── Projects（~7）────────────────────────────────────

@@ -60,8 +60,22 @@ function statusTone(status: string) {
   return ''
 }
 
-function personTone(person: Person) {
-  if ((person.capacityPct ?? 100) >= 120) return 'tone-warning'
+function clampPct(value: number) {
+  return Math.min(100, Math.max(0, Math.round(value)))
+}
+
+function personHud(person: Person) {
+  const loadPct = person.capacityPct ?? 100
+  return {
+    loadPct,
+    hpPct: clampPct(100 - loadPct),
+    mpPct: clampPct(person.moodPct),
+  }
+}
+
+function personTone(hud: ReturnType<typeof personHud>) {
+  if (hud.hpPct <= 0) return 'tone-danger'
+  if (hud.hpPct <= 12) return 'tone-warning'
   return 'tone-stable'
 }
 
@@ -337,6 +351,7 @@ export function DashboardScene() {
         {PEOPLE.map((person) => {
           const pos = PERSON_POS[person.id]
           if (!pos) return null
+          const hud = personHud(person)
           const related = isRelated(focus, 'person', person.id)
           const primary = isPrimary(focus, 'person', person.id)
           const muted = hasFocus && !related
@@ -346,7 +361,8 @@ export function DashboardScene() {
               type="button"
               className={classNames([
                 'person-node',
-                personTone(person),
+                personTone(hud),
+                hud.mpPct < 40 && 'has-low-mp',
                 muted && 'is-muted',
                 related && 'is-related',
                 primary && 'is-focused',
@@ -354,7 +370,7 @@ export function DashboardScene() {
               style={nodeStyle(pos, 156)}
               animate={{ opacity: muted ? 0.24 : 1, scale: primary ? 1.08 : related ? 1.02 : 1 }}
               transition={transition}
-              aria-label={primary ? `Open ${person.name}` : `Focus ${person.name}`}
+              aria-label={`${primary ? 'Open' : 'Focus'} ${person.name}. HP ${hud.hpPct}. MP ${hud.mpPct}. ${hud.loadPct}% load.`}
               aria-pressed={primary}
               onClick={(event) => {
                 event.stopPropagation()
@@ -364,12 +380,30 @@ export function DashboardScene() {
               <span className="avatar" aria-hidden="true">
                 {initials(person.name)}
               </span>
-              <span>
+              <span className="person-body">
                 <h3>{person.name}</h3>
                 <p className="person-role">{person.role}</p>
-              </span>
-              <span className="person-stats">
-                <span>{person.capacityPct ?? 100}% load</span>
+                <span className="person-stats person-hud" aria-hidden="true">
+                  <span className="hud-meter hud-hp">
+                    <span className="hud-label">
+                      <strong>HP</strong>
+                      <em>{hud.hpPct}</em>
+                    </span>
+                    <span className="hud-track">
+                      <span className="hud-fill" style={{ width: `${hud.hpPct}%` }} />
+                    </span>
+                  </span>
+                  <span className="hud-meter hud-mp">
+                    <span className="hud-label">
+                      <strong>MP</strong>
+                      <em>{hud.mpPct}</em>
+                    </span>
+                    <span className="hud-track">
+                      <span className="hud-fill" style={{ width: `${hud.mpPct}%` }} />
+                    </span>
+                  </span>
+                  <span className="hud-load">{hud.loadPct}% load</span>
+                </span>
               </span>
             </motion.button>
           )
