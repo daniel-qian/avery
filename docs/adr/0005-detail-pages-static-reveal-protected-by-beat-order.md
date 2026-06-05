@@ -1,4 +1,10 @@
+---
+status: superseded by ADR-0009
+---
+
 # 详情页静态恒显，killer beat 靠 beat 顺序而非 state-gating 保护
+
+> **本 ADR 已被 [ADR-0009](0009-state-aware-detail-pages-supersedes-0005.md) supersede**：详情页改为 state-aware（智能层随 thread 生长），即本 ADR 当初"考虑过又否决"的 state-gating 方案被反转。剧透保护从"beat 顺序纪律"换成"机制 state-gating"。下文保留作历史依据 / 反转理由。
 
 详情页（project / employee）的全部模块——包括 `handoffs`、`HR knowledge analysis` 等 agent 智能层——**静态恒显**：任何时刻 drill 进去都看到完整内容，不读 `thread.steps`、零条件渲染。
 

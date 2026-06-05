@@ -12,7 +12,11 @@ _Avoid_: home、canvas（canvas 是视觉手法，不是这个概念本身）
 
 **Nexus**：
 **行动面** —— manager 的一个问题在这里变成一条被编排的线程：specialist agents 与人类同事协同，agent 在背景聆听并交叉校对证据，按需调用 tools，最终产出供人 review 的结构化可信输出。
-_Avoid_: chat、conversation、thread（都低估了它的多 agent 编排本质）
+_Avoid_: 把**整个** Nexus 等同于 chat / conversation / 一个聊天 thread（会抹掉多 agent 编排本质）。注意：Nexus 内部确实嵌着一个**窄口径**的子面 **Chat**（见下条），但 Nexus ≠ Chat——Chat 只是编排走到"需要人裁断"那一步时临时开出的决策面。
+
+**Chat**：
+Nexus thread **内部**、在编排需要人判断时由 **agent 发起**开出的多人协同面（相关同事 + 在场 agents 来回）。三条约束让它**不是 Slack / ChatGPT**：① **agent 发起**——只在靠信号 / Capabilities 推不出、必须要人裁断时召集，不是随手能开的频道；② **绑定单个决策、用完即合**——只围绕该 thread 的问题，结论达成即关，非常驻；③ agent 是**在场协同方**（主动抛具体 evidence + Capabilities），且对话产出**结构化沉淀进 report、成为 provenance（可追溯）**。是 pitch "经人确认" 唯一真正发生的地方。
+_Avoid_: Slack 频道 / 群聊（暗示常驻、随手开、什么都聊 = 把护城河稀释成"带 AI 的 Slack"）、聊天机器人（agent 不是被 @ 才动的 bot，是在场协同方）
 
 **Briefing**：
 Dashboard 上呈现的一段**离散、可重新生成**的高管摘要（"组织天气"）。可以不止一条，manager 可以再取一条。

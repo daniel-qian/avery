@@ -1,5 +1,7 @@
 # Nexus = 独立放射编排画布,线性推进 + 预置语义拓扑
 
+> **§5（B7 human-loop）已被 [ADR-0008](0008-in-thread-chat-object-human-loop-as-central-card.md) amend**：B7 不再是 inspector 轻量步，升级为中央 ChatCard（内嵌 Chat 对象）。本 ADR 其余决策仍 accepted。
+
 ## 背景
 
 CONTEXT.md 把 Nexus 定义为行动面——"一个问题变成一条被编排的线程;specialist agents 与人类同事协同;agent 背景聆听、交叉校对证据;调 tools;产出结构化输出",并明确"别低估其多 agent 编排本质"。demo-brief 要求 Nexus"复用 Dashboard 连线语汇"。P0.5 contract pass 已把状态契约冻结(见 `src/store/canvasStore.ts`):`thread.steps[]`(append-only `{kind}`,kind ∈ B4–B9)、无参 `runAgent()` 按写死的 `ORCHESTRATION` 常量线性推进、外加 `.flow-node` 的 `is-future/is-active/is-complete` 三态 CSS。P2 在"契约只读、不扩 store、不动共享基座"前提下,需定 Nexus 的空间形态与呈现。
