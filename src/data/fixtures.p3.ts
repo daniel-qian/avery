@@ -81,7 +81,7 @@ export interface WeeklySummary {
 
 export const WEEKLY_SUMMARY: Record<string, WeeklySummary> = {
   u_bill: {
-    text: "Most of Bill's week went to Acme-support firefighting — nine urgent pulls in three days. Connector work stalled as a result, not from lack of effort.",
+    text: "Most of Bill's week went to Acme-support firefighting — 9 urgent pulls in 3 days. Connector work stalled as a result, not from lack of effort.",
     sentiment: 'strained',
     sentimentNote: 'Under interrupt pressure',
   },
@@ -113,10 +113,10 @@ export const HR_ANALYSIS: Record<string, HrAnalysis> = {
   u_bill: {
     capabilityId: 'cap_hr_interrupt',
     reading:
-      'Reduced Connector output lines up with interrupt load, not performance. Bill absorbed nine Acme-support pulls in three days; the stall is a routing problem, not a capability one.',
+      'Reduced Connector output lines up with interrupt load, not performance. Bill absorbed 9 Acme-support pulls in 3 days; the stall is a routing problem, not a capability one.',
     recommendations: [
-      'Route incoming Acme-support interrupts to someone with capacity for two days so Bill can focus the Connector.',
-      'Protect two uninterrupted focus blocks this week and confirm the trimmed Connector scope with him.',
+      'Route incoming Acme-support interrupts to someone with capacity for 2 days so Bill can focus the Connector.',
+      'Protect 2 uninterrupted focus blocks this week and confirm the trimmed Connector scope with him.',
       'Hold a low-key manager check-in to confirm load — frame it as rebalancing, not review.',
     ],
     framing: 'Evidence-based workload routing. No personnel judgment is implied.',
@@ -126,7 +126,7 @@ export const HR_ANALYSIS: Record<string, HrAnalysis> = {
     reading:
       'Jason is running below full load with a clean signal picture — a natural candidate to absorb short-term overflow without risking burnout.',
     recommendations: [
-      'Offer Jason the Acme-support interrupts for two days to unblock the Connector.',
+      'Offer Jason the Acme-support interrupts for 2 days to unblock the Connector.',
       'Keep the handoff time-boxed so Billing v1 stays on track.',
     ],
     framing: 'Capacity-based routing suggestion. No personnel judgment is implied.',
@@ -308,7 +308,7 @@ export const HANDOFFS: Record<string, Handoff[]> = {
     },
     {
       id: 'h_con_focus',
-      text: 'Protect two uninterrupted focus blocks for Bill on the Connector',
+      text: 'Protect 2 uninterrupted focus blocks for Bill on the Connector',
     },
     {
       id: 'h_con_ratelimit',
