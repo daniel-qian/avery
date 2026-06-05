@@ -1,10 +1,12 @@
 import { useCanvas, type Scene } from '../store/canvasStore'
 
-// P0 导航：3 个主 scene tab。detail / capabilities 走钻入（P1+）。
+// 导航 scene tab。Capabilities 既经 Nexus 钻入（rail B4 / PM agent 卡按钮），
+// 也给个 free-click tab（litmus：每个 beat 自由点击可达）。detail 仍走钻入。
 const TABS: { label: string; scene: Scene }[] = [
   { label: 'Onboarding', scene: 'onboarding' },
   { label: 'Dashboard', scene: 'dashboard' },
   { label: 'Nexus', scene: 'nexus' },
+  { label: 'Capabilities', scene: 'capabilities' },
 ]
 
 export function Topbar() {

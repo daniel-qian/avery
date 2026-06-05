@@ -53,7 +53,7 @@ build 顺序见 demo-brief；简表：
 - **P1 Dashboard**（下一个）：**先 layout + density pass**（修重叠 + 渲染安全边界 + 落地方案 A 的 calm→focus 密度）→ focus 暗化/缩放动画 → composer → alert pills → framer-motion 接入。
 - **P2 Nexus**：spatial orchestration flow + inspector + agent 输出渲染。
 - **P3 详情 4 scene**：project / employee / capabilities / onboarding（内部模块 placeholder）。
-- **P4 rail**：12-beat `SCRIPT` + DemoControls 驱动 action API（ADR-0003，扔得掉）。
+- **P4 rail**（当前；P1/P2/P3 ✅）：16-step / 12-beat `SCRIPT` + DemoControls 驱动 action API（ADR-0003 可拆 + **ADR-0006** replay-to-target）。grill 锁定见 §5.2。
 - **P5 polish**：动效，按 Danny 的 motion 参考迭代。
 
 ## 5. P1 启动须知（已知待办 / 悬而未决）
@@ -71,6 +71,43 @@ build 顺序见 demo-brief；简表：
 
 scope 判定（grill）：tag/search = B1/B2〔自由交互〕的实现机制，**in-scope 但保持精简**（5 tag 锁死、search 纯前端 substring，不上搜索库），**不开新 ADR**。
 - 动效参考工作流（来自上个 session 约定）：Danny **按 beat 增量**给 **URL > 录屏 > 截图**；每个附「精确到哪一下 + 哪个属性 / 映射哪个 beat / 喜欢什么 / 角色」；守 transform+opacity、`prefers-reduced-motion`、别动 width/height、别处处 blur。可建 `docs/20260603-design/motion-refs.md` 收口。
+
+### 5.2 P4 rail 启动须知（grill 锁定 2026-06-05，见 ADR-0006）
+
+**两条无依赖的线，可并行 fan out**（rail 的 B4 只 `goScene('capabilities')`，不关心页内容丰俭）：
+
+**Track A — rail core（P4 唯一交付物）**
+- `src/store/railStore.ts`（独立、可删，**不碰冻结的 canvasStore**）：`index` + `hidden`；`seek(i)` = `useCanvas.setState(INITIAL,true)`（创建时抓一次 pristine）再同步 replay step-actions `0..i`；`next/prev/restart/toggleHidden`。**Next/Prev/jump 统一 replay-to-target**，`index` 是唯一真相，in-scene 漂移自愈。
+- `src/components/DemoControls.tsx`：底部低调进度胶囊（`<beat label> · n/12`，多步 beat 加 `· k/3`；B2/B9 标 `your turn · free-click`）+ 全局 keydown（`→`/`Space` next · `←` prev · `R` restart · `H` hide，Space `preventDefault`）。挂在 `AmbientCanvasShell` 内、scene-stage 外；`useLayoutEffect` 开局 `seek(0)` 进 B0（避免 dashboard 闪一下）。
+- `SCRIPT`（16 step / 12 beat）：
+
+  | beat | step | action |
+  |---|---|---|
+  | B0 | 1/12 | `goScene('onboarding')` → Danny 手点 Continue×4，末步落 dashboard |
+  | B1 | 2/12 | `goScene('dashboard')`（reset 已保证 calm + V1） |
+  | B2 | 3/12 〔free〕| `setFocus(focusEntity('project','p_acme'))` |
+  | B3 | 4/12 | `askQuestion(HERO_QUESTION)` → nexus, thread running |
+  | B4 | 5/12 ①②③ | `runAgent()` · `goScene('capabilities')` · `goScene('nexus')` |
+  | B5 | 6/12 | `runAgent()`（mismatch 卡） |
+  | B6 | 7/12 ①②③ | `runAgent()` · `openDetail('employee','u_bill')` · `goScene('nexus')` |
+  | B7 | 8/12 | `runAgent()`（human-loop；ORCHESTRATION 删不掉，必走） |
+  | B8 | 9/12 | `runAgent()`（timeline） |
+  | B9 | 10/12 〔free〕| `runAgent()`（structured-output）→ Danny 现场点 Dispatch |
+  | B9b | 11/12 | `openDetail('project','p_acme')`（静态 handoffs） |
+  | B10 | 12/12 | `() => { regenBriefing(); goScene('dashboard') }`（V2 文案 = payoff） |
+
+  - `runAgent()` step **不指定 kind**，靠调用次序对齐 store 的 `ORCHESTRATION`。
+  - 钻入返回一律 `goScene('nexus')`，**不用 `back()`**（back 回 dashboard 且清 focus）。
+  - 本地态（onboarding 步、composer/search 文本、订阅、dispatch）**不进 replay**。
+
+**Track B — Capabilities 富化（独立小任务）**
+- 定位锁定：**单一供应商策展目录**，供货方仍是 TeamMaster；**UGC / 多供应商表述已否决**，护城河 / CONTEXT / B4 叙事**不变**（grill 2026-06-05）。
+- `fixtures.p3.ts`：加 6 域包数据（HR/PM 默认 subscribed = agent 实际引用的；Legal/Finance/Ops/Sales 可订，各 title+gist+2–3 条 preview playbook，英文 ⚠待 Danny 审字）。
+- `CapabilitiesScene.tsx`：moat banner 仍作 hero；加 "Your coverage"（已订+Unsubscribe）/ "Expand your coverage"（可订+Subscribe）；**纯本地 `useState`、不跨耦合**（退订不影响 Nexus agent 引用）；把现有 `loaded` 与 `subscribed` 对齐。不进 rail 脚本，free-click 演示。
+
+**已知 gap / 不做**
+- B10 "orbit 反映重排" **不在 P4 实现**：payoff 由 briefing V1→V2 文案承载，地图保持稳定。留 P5 视觉。
+- 不扩 store、零 `if(demoMode)`、不引入 "marketplace" 进 CONTEXT.md。
 
 ## 6. Suggested skills
 

@@ -393,7 +393,7 @@ export const CAPABILITIES_PAGE = {
 
 // CAPABILITIES 的 domain → 展示名（CONTEXT：库横跨 HR / Legal / PM / Finance / Ops / Sales）。
 export const CAPABILITY_DOMAIN_LABEL: Record<string, string> = {
-  'project-ops': 'Project Ops',
+  'project-ops': 'PM',
   hr: 'HR',
   legal: 'Legal',
   finance: 'Finance',
@@ -403,12 +403,98 @@ export const CAPABILITY_DOMAIN_LABEL: Record<string, string> = {
 
 // 库覆盖的垂直域展示顺序（coverage strip 用）。
 export const CAPABILITY_DOMAIN_ORDER: string[] = [
-  'project-ops',
   'hr',
+  'project-ops',
   'legal',
   'finance',
-  'sales',
   'ops',
+  'sales',
+]
+
+export interface CapabilityPackage {
+  domain: CapabilityEntry['domain']
+  title: string
+  gist: string
+  previewPlaybooks: string[]
+}
+
+// ⚠ 待 Danny 审字：P4-03 新增 Venus-facing catalog / subscription copy。
+// 订阅包不带 status 字段；默认 subscribed 由 loadedCapabilityDomains() 派生，保持 loaded ⇔ subscribed。
+export const CAPABILITY_SUBSCRIPTION_COPY = {
+  coverageEyebrow: 'Subscribed domains',
+  coverageTitle: 'Your coverage',
+  expandEyebrow: 'Available domains',
+  expandTitle: 'Expand your coverage',
+  subscribedBadge: 'Subscribed',
+  availableBadge: 'Available',
+  previewLabel: 'Preview playbooks',
+  subscribeAction: 'Subscribe',
+  unsubscribeAction: 'Unsubscribe',
+  emptyCoverage: 'No domains subscribed in this local view.',
+  emptyExpansion: 'All curated domains are subscribed.',
+}
+
+export const CAPABILITY_PACKAGES: CapabilityPackage[] = [
+  {
+    domain: 'hr',
+    title: 'HR',
+    gist: 'Workload, capacity, and manager-loop playbooks for neutral people-routing decisions.',
+    previewPlaybooks: [
+      'Low output vs. interrupt overload',
+      'Capacity-aware overflow routing',
+      'Manager check-in framing',
+    ],
+  },
+  {
+    domain: 'project-ops',
+    title: 'PM',
+    gist: 'Delivery-risk playbooks for dependencies, scope changes, and deadline tradeoffs.',
+    previewPlaybooks: [
+      'Cross-team dependency at risk near a deadline',
+      'Scope trim near customer ship',
+      'Contingency date framing',
+    ],
+  },
+  {
+    domain: 'legal',
+    title: 'Legal',
+    gist: 'Contract, scope, and approval playbooks for deciding when execution changes need legal review.',
+    previewPlaybooks: [
+      'Statement-of-work scope check',
+      'Customer commitment exception',
+      'Approval path for delivery changes',
+    ],
+  },
+  {
+    domain: 'finance',
+    title: 'Finance',
+    gist: 'Margin, billing, and budget playbooks that connect operational decisions to revenue exposure.',
+    previewPlaybooks: [
+      'Revenue-risk prioritization',
+      'Budget owner escalation',
+      'Margin impact of support load',
+    ],
+  },
+  {
+    domain: 'ops',
+    title: 'Ops',
+    gist: 'Operating cadence playbooks for incident handoffs, SLA pressure, and cross-functional queue health.',
+    previewPlaybooks: [
+      'SLA breach triage',
+      'Queue ownership handoff',
+      'Incident-to-project escalation',
+    ],
+  },
+  {
+    domain: 'sales',
+    title: 'Sales',
+    gist: 'Pipeline and account-risk playbooks that help agents weigh customer urgency against delivery focus.',
+    previewPlaybooks: [
+      'Expansion account save',
+      'Renewal-risk signal routing',
+      'Executive sponsor follow-up',
+    ],
+  },
 ]
 
 // 按 domain 分组（保持 CAPABILITIES 出现顺序）。

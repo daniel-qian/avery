@@ -3384,3 +3384,230 @@ h1 {
   opacity: 0.86;
   outline: none;
 }
+
+/* ───────────────────────── P4 · Rail / Capabilities mgmt ───────────────────────── */
+
+.scene-capabilities .detail-sections {
+  width: min(920px, 100%);
+}
+
+.capability-subscription-group {
+  padding: 20px 22px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: rgba(255, 253, 248, 0.66);
+  box-shadow: var(--shadow-soft);
+}
+
+.capability-subscription-group .detail-section-head {
+  margin-bottom: 14px;
+}
+
+.capability-package-grid {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.capability-package-card {
+  min-height: 100%;
+  justify-content: space-between;
+}
+
+.capability-package-card.is-subscribed {
+  border-color: rgba(105, 128, 109, 0.38);
+  background: rgba(255, 253, 248, 0.9);
+}
+
+.capability-package-card.is-available {
+  border-style: dashed;
+}
+
+.capability-package-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.capability-domain-kicker {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--ink-faint);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.capability-package-card h4 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 650;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.cap-badge.is-subscribed {
+  border-color: rgba(105, 128, 109, 0.45);
+  background: rgba(105, 128, 109, 0.14);
+  color: #3f5c46;
+}
+
+.cap-badge.is-available {
+  border-color: rgba(82, 123, 145, 0.38);
+  background: rgba(82, 123, 145, 0.1);
+  color: #31586c;
+}
+
+.capability-preview {
+  display: grid;
+  gap: 7px;
+  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.capability-preview > span {
+  color: var(--ink-faint);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.capability-preview ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 18px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.capability-action {
+  align-self: flex-start;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--paper-strong);
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 700;
+  transition:
+    background var(--fast) ease,
+    border-color var(--fast) ease,
+    color var(--fast) ease,
+    opacity var(--fast) ease;
+}
+
+.capability-action.is-primary {
+  border-color: rgba(29, 27, 23, 0.9);
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.capability-action.is-danger:hover,
+.capability-action.is-danger:focus-visible {
+  border-color: rgba(188, 92, 73, 0.5);
+  color: #9c4633;
+  outline: none;
+}
+
+.capability-action.is-primary:hover,
+.capability-action.is-primary:focus-visible {
+  opacity: 0.86;
+  outline: none;
+}
+
+.rail-controls {
+  z-index: 80;
+  left: auto;
+  right: 24px;
+  bottom: 24px;
+  transform: none;
+  align-items: center;
+  justify-content: center;
+  max-width: min(420px, calc(100vw - 40px));
+  padding: 9px 14px;
+  border-color: rgba(40, 35, 29, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.72);
+  box-shadow: 0 10px 34px rgba(40, 35, 29, 0.1);
+}
+
+/* P4 fix · Capabilities free-click 入口（Nexus PM agent 卡按钮） */
+.nexus-capabilities-link {
+  align-self: flex-start;
+  margin-top: 14px;
+  padding: 8px 14px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.7);
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition:
+    border-color var(--fast) ease,
+    background var(--fast) ease;
+}
+
+.nexus-capabilities-link:hover,
+.nexus-capabilities-link:focus-visible {
+  border-color: var(--rule-strong);
+  background: rgba(255, 253, 248, 0.95);
+  outline: none;
+}
+
+.rail-caption {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 0;
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.rail-caption small {
+  color: var(--ink-faint);
+  font-weight: 650;
+}
+
+.rail-caption strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rail-caption span {
+  color: rgba(40, 35, 29, 0.24);
+}
+
+.rail-caption em {
+  color: var(--accent);
+  font-style: normal;
+  font-weight: 650;
+}
+
+@media (max-width: 860px) {
+  .rail-controls {
+    max-width: calc(100vw - 32px);
+    padding: 9px 12px;
+  }
+
+  .rail-caption {
+    flex-wrap: wrap;
+    row-gap: 4px;
+    white-space: normal;
+  }
+}

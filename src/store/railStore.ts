@@ -1,0 +1,134 @@
+import { create } from 'zustand'
+import { HERO_QUESTION } from '../data/fixtures'
+import { focusEntity } from '../lib/focus'
+import { useCanvas } from './canvasStore'
+
+type RailStep = {
+  beat: string
+  label: string
+  run: () => void
+}
+
+const INITIAL = useCanvas.getState()
+
+export const SCRIPT: RailStep[] = [
+  {
+    beat: 'B0',
+    label: 'Onboarding prologue',
+    run: () => useCanvas.getState().goScene('onboarding'),
+  },
+  {
+    beat: 'B1',
+    label: 'Dashboard calm',
+    run: () => useCanvas.getState().goScene('dashboard'),
+  },
+  {
+    beat: 'B2',
+    label: 'Focus Acme risk cluster',
+    run: () => useCanvas.getState().setFocus(focusEntity('project', 'p_acme')),
+  },
+  {
+    beat: 'B3',
+    label: 'Ask Nexus',
+    run: () => useCanvas.getState().askQuestion(HERO_QUESTION),
+  },
+  {
+    beat: 'B4',
+    label: 'PM agent checks evidence',
+    run: () => useCanvas.getState().runAgent(),
+  },
+  {
+    beat: 'B4',
+    label: 'Capabilities reference opens',
+    run: () => useCanvas.getState().goScene('capabilities'),
+  },
+  {
+    beat: 'B4',
+    label: 'Return to Nexus',
+    run: () => useCanvas.getState().goScene('nexus'),
+  },
+  {
+    beat: 'B5',
+    label: 'Reality gap cross-check',
+    run: () => useCanvas.getState().runAgent(),
+  },
+  {
+    beat: 'B6',
+    label: 'HR root-cause check',
+    run: () => useCanvas.getState().runAgent(),
+  },
+  {
+    beat: 'B6',
+    label: 'Bill detail opens',
+    run: () => useCanvas.getState().openDetail('employee', 'u_bill'),
+  },
+  {
+    beat: 'B6',
+    label: 'Return to Nexus',
+    run: () => useCanvas.getState().goScene('nexus'),
+  },
+  {
+    beat: 'B7',
+    label: 'Human loop',
+    run: () => useCanvas.getState().runAgent(),
+  },
+  {
+    beat: 'B8',
+    label: 'Timeline tool output',
+    run: () => useCanvas.getState().runAgent(),
+  },
+  {
+    beat: 'B9',
+    label: 'Structured output',
+    run: () => useCanvas.getState().runAgent(),
+  },
+  {
+    beat: 'B9b',
+    label: 'Project detail opens',
+    run: () => useCanvas.getState().openDetail('project', 'p_acme'),
+  },
+  {
+    beat: 'B10',
+    label: 'Briefing regenerated',
+    run: () => {
+      const canvas = useCanvas.getState()
+      canvas.regenBriefing()
+      canvas.goScene('dashboard')
+    },
+  },
+]
+
+export const LAST_RAIL_INDEX = SCRIPT.length - 1
+
+interface RailState {
+  index: number
+  hidden: boolean
+  seek: (target: number) => void
+  next: () => void
+  prev: () => void
+  restart: () => void
+  toggleHidden: () => void
+}
+
+function clampIndex(target: number) {
+  return Math.max(0, Math.min(target, LAST_RAIL_INDEX))
+}
+
+export const useRail = create<RailState>((set, get) => ({
+  index: 0,
+  hidden: false,
+
+  seek: (target) => {
+    const index = clampIndex(target)
+    useCanvas.setState(INITIAL, true)
+    for (let i = 0; i <= index; i += 1) {
+      SCRIPT[i].run()
+    }
+    set({ index, hidden: false })
+  },
+
+  next: () => get().seek(get().index + 1),
+  prev: () => get().seek(get().index - 1),
+  restart: () => get().seek(0),
+  toggleHidden: () => set((state) => ({ hidden: !state.hidden })),
+}))

@@ -391,6 +391,15 @@ export function NexusScene() {
             ))}
           </div>
         )}
+        {activeStep === 'pm-agent' ? (
+          <button
+            type="button"
+            className="nexus-capabilities-link"
+            onClick={() => goScene('capabilities')}
+          >
+            Open Capabilities reference →
+          </button>
+        ) : null}
       </aside>
 
       <div className="nexus-advance-bar">
