@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent, type MouseEvent } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties, type FormEvent, type MouseEvent } from 'react'
 import { AnimatePresence, motion, useReducedMotion, type Transition } from 'framer-motion'
 import {
   CAPABILITIES,
@@ -45,15 +45,6 @@ function nodeStyle(pos: Pos, widthPx: number) {
   }
 }
 
-function initials(name: string) {
-  return name
-    .split(' ')
-    .map((p) => p[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
-}
-
 function statusTone(status: string) {
   if (status === 'blocked') return 'tone-danger'
   if (status === 'at-risk') return 'tone-warning'
@@ -77,6 +68,18 @@ function personTone(hud: ReturnType<typeof personHud>) {
   if (hud.hpPct <= 0) return 'tone-danger'
   if (hud.hpPct <= 12) return 'tone-warning'
   return 'tone-stable'
+}
+
+function avatarStyle(person: Person) {
+  const sprite = person.avatarSprite
+  return {
+    '--avatar-image': `url(${sprite.src})`,
+    '--avatar-size': `${sprite.frameSize}px`,
+    '--avatar-sheet-width': `${sprite.sheetWidth}px`,
+    '--avatar-x': `-${sprite.frameX}px`,
+    '--avatar-y': `-${sprite.frameY}px`,
+    '--avatar-idle-end-x': `-${sprite.frameX + sprite.frameSize * 4}px`,
+  } as CSSProperties
 }
 
 function ownerName(project: Project) {
@@ -377,8 +380,8 @@ export function DashboardScene() {
                 handleNodeClick('person', person.id)
               }}
             >
-              <span className="avatar" aria-hidden="true">
-                {initials(person.name)}
+              <span className="avatar pixel-avatar" aria-hidden="true">
+                <span className="pixel-avatar-sprite" style={avatarStyle(person)} />
               </span>
               <span className="person-body">
                 <h3>{person.name}</h3>
