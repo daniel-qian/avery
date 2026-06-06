@@ -8,6 +8,7 @@
 [ADR-0008](../docs/adr/0008-in-thread-chat-object-human-loop-as-central-card.md) in-thread Chat 对象 ·
 [ADR-0009](../docs/adr/0009-state-aware-detail-pages-supersedes-0005.md) state-aware 详情页（supersede 0005）·
 [ADR-0010](../docs/adr/0010-calm-cards-gamified-hp-mp-hud.md) calm 卡游戏化 HP/MP ·
+[ADR-0011](../docs/adr/0011-detail-pages-static-shell-content-grows-amends-0009.md) 详情页 static shell + content grows（amend 0009）·
 [CONTEXT.md](../CONTEXT.md)（新增 **Chat** 词条）·
 [demo-brief](../docs/20260603-design/demo-brief.md) beat sheet ·
 [ADR-0002](../docs/adr/0002-frontend-stack-vite-react-framer-motion.md) 动效护栏 ·
@@ -34,10 +35,17 @@
 | [P5-06](./P5-06-gamified-hp-mp-cards.md) | #2 HP/MP 卡渲染 + mood fixture（HP=headroom，占位 avatar） | AFK | — |
 | [P5-07](./P5-07-nexus-nodes-progressive-reveal.md) | #4 Nexus 节点逐个渐显 | **HITL** | P5-01·P5-02（软） |
 | [P5-08](./P5-08-pixel-avatar-sprites.md) | #2 像素 avatar sprite 资产（替换占位） | **HITL** | P5-06 |
+| [P5-09](./P5-09-detail-static-shell-symptom-payload.md) | 二轮 #1 详情页 static shell + 症状 payload | AFK | — |
+| [P5-10](./P5-10-rail-act3-bill-redrill.md) | 二轮 #1 rail Act3 镜像 re-drill Bill | AFK | P5-09 |
+| [P5-11](./P5-11-nexus-chat-composer-me-vs-room.md) | 二轮 #2 Nexus Chat composer + me-vs-room | AFK | — |
+| [P5-12](./P5-12-detail-anchored-provenance.md) | 二轮 #3 detail anchored provenance | AFK | P5-09 |
 
 ## 并行 / 同文件提醒
 
 - **P5-01 与 P5-04 同改 `railStore.ts`（SCRIPT）**——逻辑独立，建议串行或注意 merge。
+- **P5-04 与 P5-10 同改 `railStore.ts`（SCRIPT）**——P5-10 建议排在 P5-09 后，并留意 rail merge。
 - **P5-05 与 P5-06 同改 `DashboardScene.tsx`**——同上。
-- 三条 track 大体可并行：**Nexus 流**（01 / 02 / 07）· **详情页 + rail**（03 → 04）· **Dashboard 表面**（05 / 06 → 08）。
+- **P5-09 与 P5-12 同改详情页 / `fixtures.p3` / `global.css`**——建议串行：09 先立 phase/content model，12 再贴 provenance。
+- **P5-11 与 P5-02 / P5-07 同改 Nexus Chat / Nexus 表面**——实现阶段留意并发 agent 的 `NexusScene.tsx` / `global.css` 变更。
+- 三条 track 大体可并行：**Nexus 流**（01 / 02 / 07 / 11）· **详情页 + rail**（03 → 04；09 → 10 / 12）· **Dashboard 表面**（05 / 06 → 08）。
 - **HITL**：P5-07（动效 feel 走 motion-ref 循环，需 Danny 参考 + 验收）、P5-08（像素美术方向，需 Danny 提供）。其余 AFK。

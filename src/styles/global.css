@@ -2882,6 +2882,103 @@ h1 {
   line-height: 1.5;
 }
 
+.source-anchor {
+  position: relative;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 7px;
+  vertical-align: baseline;
+}
+
+.source-anchor-button {
+  min-height: 21px;
+  padding: 0 8px;
+  border: 1px solid rgba(52, 48, 40, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.72);
+  color: var(--ink-faint);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  text-transform: uppercase;
+  transition:
+    opacity var(--fast) ease,
+    transform var(--fast) ease,
+    border-color var(--fast) ease,
+    background var(--fast) ease,
+    color var(--fast) ease;
+}
+
+.source-anchor-button:hover,
+.source-anchor-button:focus-visible,
+.source-anchor.is-open .source-anchor-button {
+  border-color: rgba(82, 123, 145, 0.4);
+  background: rgba(82, 123, 145, 0.1);
+  color: #31586c;
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.source-popover {
+  position: absolute;
+  top: calc(100% + 7px);
+  left: 0;
+  display: grid;
+  width: min(330px, calc(100vw - 56px));
+  gap: 8px;
+  padding: 10px 11px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  background: rgba(255, 253, 248, 0.97);
+  box-shadow: var(--shadow-soft);
+  opacity: 0;
+  pointer-events: none;
+  text-align: left;
+  text-transform: none;
+  transform: translateY(-4px);
+  transition:
+    opacity var(--fast) ease,
+    transform var(--fast) ease;
+}
+
+.source-anchor:hover .source-popover,
+.source-anchor:focus-within .source-popover,
+.source-anchor.is-open .source-popover {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.source-popover-row {
+  display: grid;
+  gap: 3px;
+}
+
+.source-anchor .source-popover-row strong {
+  color: var(--ink-faint);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.source-anchor .source-popover-row span {
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.4;
+}
+
+.source-anchor .source-popover-row em {
+  color: var(--ink-faint);
+  font-style: normal;
+}
+
 @media (max-width: 860px) {
   .scene-detail .detail-scroll {
     padding: 92px 16px 56px;
@@ -2916,7 +3013,7 @@ h1 {
   gap: 8px;
 }
 
-.brief-meta span {
+.brief-meta > span {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -2944,6 +3041,48 @@ h1 {
 
 .brief-dep {
   color: var(--ink-faint);
+}
+
+.brief-mismatch {
+  border-color: rgba(188, 92, 73, 0.42);
+  background: rgba(188, 92, 73, 0.1);
+  color: #8f3f31;
+  font-weight: 700;
+}
+
+.anchored-claim-panel {
+  display: grid;
+  gap: 7px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(188, 92, 73, 0.34);
+  border-left: 3px solid var(--terracotta);
+  border-radius: var(--radius);
+  background: rgba(188, 92, 73, 0.08);
+}
+
+.anchored-claim-panel > strong {
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.anchored-claim-panel > span,
+.anchored-claim-panel > em {
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.anchored-claim-panel > em {
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+.anchored-claim-panel.is-grown {
+  border-color: rgba(178, 123, 43, 0.38);
+  border-left-color: var(--honey);
+  background: rgba(178, 123, 43, 0.08);
 }
 
 /* Delivery milestones — 颜色/标签区分 state */
@@ -3024,6 +3163,16 @@ h1 {
   border-color: rgba(82, 123, 145, 0.4);
   background: rgba(82, 123, 145, 0.13);
   color: #31586c;
+}
+
+.milestone.is-stalled .milestone-dot {
+  border-color: var(--terracotta);
+  background: var(--terracotta);
+}
+.milestone.is-stalled .milestone-state {
+  border-color: rgba(188, 92, 73, 0.45);
+  background: rgba(188, 92, 73, 0.14);
+  color: #8f3f31;
 }
 
 .milestone.is-conditional .milestone-dot {
@@ -3328,6 +3477,41 @@ h1 {
   color: var(--ink-soft);
   font-size: 14px;
   line-height: 1.5;
+}
+
+.reality-gap-callout {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(188, 92, 73, 0.34);
+  border-left: 3px solid var(--terracotta);
+  border-radius: var(--radius);
+  background: rgba(188, 92, 73, 0.08);
+}
+
+.reality-gap-callout strong {
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.reality-gap-callout span,
+.reality-gap-callout em {
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.reality-gap-callout em {
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+.reality-gap-callout.is-grown {
+  border-color: rgba(178, 123, 43, 0.38);
+  border-left-color: var(--honey);
+  background: rgba(178, 123, 43, 0.08);
 }
 
 .risk-tag {
@@ -4081,14 +4265,17 @@ h1 {
   color: var(--sage);
   font-size: 12px;
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .nexus-chat-log {
   display: flex;
+  min-height: 0;
+  flex: 1;
   flex-direction: column;
   gap: 12px;
   overflow-y: auto;
-  padding-right: 4px;
+  padding: 2px 4px 2px 0;
 }
 
 .chat-msg {
@@ -4106,14 +4293,19 @@ h1 {
   animation-delay: calc(var(--chat-i, 0) * 0.09s);
 }
 
-.chat-msg.is-human {
+.chat-msg.is-room {
+  align-self: flex-start;
+  border-color: rgba(105, 128, 109, 0.22);
+}
+
+.chat-msg.is-you {
   align-self: flex-end;
   border-color: rgba(40, 35, 29, 0.16);
-  background: rgba(40, 35, 29, 0.05);
+  background: rgba(40, 35, 29, 0.07);
 }
 
 .chat-msg.is-agent {
-  align-self: flex-start;
+  background: rgba(105, 128, 109, 0.08);
 }
 
 .chat-msg.is-pm {
@@ -4121,7 +4313,13 @@ h1 {
 }
 
 .chat-msg.is-hr {
-  border-left: 2px solid var(--accent);
+  border-left: 2px solid var(--terracotta);
+}
+
+.chat-speaker-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
 }
 
 .chat-speaker {
@@ -4129,6 +4327,26 @@ h1 {
   font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.02em;
+}
+
+.chat-agent-badge {
+  display: inline-flex;
+  min-height: 18px;
+  align-items: center;
+  padding: 1px 6px;
+  border: 1px solid rgba(105, 128, 109, 0.24);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.68);
+  color: var(--sage);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.chat-msg.is-hr .chat-agent-badge {
+  border-color: rgba(181, 95, 74, 0.28);
+  color: var(--terracotta);
 }
 
 .chat-text {
@@ -4149,10 +4367,102 @@ h1 {
   font-weight: 650;
 }
 
+.nexus-chat-composer {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule);
+}
+
+.nexus-chat-composer input {
+  min-width: 0;
+  flex: 1;
+  height: 42px;
+  padding: 0 14px;
+  border: 1px solid rgba(52, 48, 40, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.86);
+  color: var(--ink);
+  font-size: 14px;
+  outline: none;
+}
+
+.nexus-chat-composer input::placeholder {
+  color: rgba(70, 63, 52, 0.44);
+}
+
+.nexus-chat-composer input:focus-visible {
+  border-color: rgba(105, 128, 109, 0.52);
+  box-shadow: 0 0 0 3px rgba(105, 128, 109, 0.14);
+}
+
+.nexus-chat-composer button {
+  flex: 0 0 auto;
+  min-width: 76px;
+  height: 42px;
+  padding: 0 16px;
+  border: 1px solid rgba(40, 35, 29, 0.2);
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fffdf8;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.nexus-chat-composer button:hover,
+.nexus-chat-composer button:focus-visible {
+  background: var(--terracotta);
+}
+
 @keyframes chat-msg-in {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@media (max-width: 760px) {
+  .nexus-chat-card {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    bottom: auto;
+    left: 14px;
+    width: auto;
+    height: min(620px, calc(100svh - 238px));
+    max-height: calc(100svh - 238px);
+    padding: 16px;
+    transform: none;
+  }
+
+  .nexus-chat-header {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .nexus-chat-header h2 {
+    font-size: 22px;
+  }
+
+  .chat-msg {
+    max-width: 94%;
+  }
+
+  .nexus-chat-composer {
+    gap: 7px;
+  }
+
+  .nexus-chat-composer input {
+    height: 40px;
+    padding: 0 12px;
+  }
+
+  .nexus-chat-composer button {
+    min-width: 64px;
+    height: 40px;
+    padding: 0 12px;
   }
 }
 

@@ -1,4 +1,4 @@
-import { useMemo, type CSSProperties } from 'react'
+import { useMemo, useState, type CSSProperties, type FormEvent } from 'react'
 import {
   AGENT_OUTPUT,
   HERO_QUESTION,
@@ -283,6 +283,13 @@ function StructuredOutputCard({
 // P5-02 (ADR-0008)：B7 human-loop 的中央 Chat 卡。与 mismatch/timeline/output 同级，
 // 读扩写后的 HUMAN_LOOP fixture，消息逐条渐显（CSS stagger）。不扩 store。
 function ChatCard() {
+  const [draft, setDraft] = useState('')
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setDraft('')
+  }
+
   return (
     <section className="nexus-chat-card" aria-label="Human loop — chat">
       <header className="nexus-chat-header">
@@ -290,7 +297,7 @@ function ChatCard() {
           <p className="eyebrow">Human loop · Chat</p>
           <h2>{HUMAN_LOOP.title}</h2>
         </div>
-        <span>Agents in the room</span>
+        <span>Bill · PM agent · HR agent</span>
       </header>
       <div className="nexus-chat-log">
         {HUMAN_LOOP.messages.map((message, index) => (
@@ -298,17 +305,35 @@ function ChatCard() {
             key={message.id}
             className={classNames([
               'chat-msg',
+              message.speaker === 'You' ? 'is-you' : 'is-room',
               `is-${message.role}`,
               message.agentKind && `is-${message.agentKind}`,
             ])}
             style={{ '--chat-i': index } as CSSProperties}
           >
-            <span className="chat-speaker">{message.speaker}</span>
+            <div className="chat-speaker-row">
+              <span className="chat-speaker">{message.speaker}</span>
+              {message.agentKind ? (
+                <span className="chat-agent-badge">{message.agentKind.toUpperCase()} agent</span>
+              ) : null}
+            </div>
             <p className="chat-text">{message.text}</p>
             {message.reference ? <span className="chat-ref">{message.reference}</span> : null}
           </article>
         ))}
       </div>
+      <form className="nexus-chat-composer" aria-label="Reply in human-loop chat" onSubmit={handleSubmit}>
+        <input
+          type="text"
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          placeholder="Confirm, redirect, or ask for more evidence..."
+          aria-label="Chat reply draft"
+        />
+        <button type="submit" aria-label="Send chat reply">
+          Send
+        </button>
+      </form>
     </section>
   )
 }

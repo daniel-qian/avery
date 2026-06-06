@@ -1,5 +1,5 @@
 ---
-status: accepted（supersedes ADR-0005）
+status: accepted（supersedes ADR-0005；显隐机制 amended by ADR-0011 → 模块恒显、内容随 thread 生长）
 ---
 
 # 详情页改为 state-aware「智能层随 thread 生长」，supersede ADR-0005 的静态恒显模型

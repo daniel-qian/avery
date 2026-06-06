@@ -13,6 +13,7 @@
 
 import {
   CAPABILITIES,
+  MISMATCH,
   PEOPLE,
   PROJECTS,
   SIGNALS,
@@ -55,8 +56,7 @@ export function ownedProjectProgress(
 
 // 挂在某人身上的工作信号（subjectType === 'person'）。Bill = 两条 interrupt 证据；
 // texture 人 = []（HR analysis 模块据此判断是否渲染 evidence 子段）。
-export function signalsFor(personId: string, phase: DetailPhase = 'grown'): Signal[] {
-  if (isBelieved(phase)) return []
+export function signalsFor(personId: string, _phase: DetailPhase = 'grown'): Signal[] {
   return SIGNALS.filter(
     (signal) => signal.subjectType === 'person' && signal.subjectId === personId,
   )
@@ -83,6 +83,25 @@ export interface WeeklySummary {
   sentimentNote: string
 }
 
+// ⚠ 待 Danny 审字。believed 态只放可观察症状，不放 agent 诊断 / 建议。
+export const BELIEVED_WEEKLY_SUMMARY: Record<string, WeeklySummary> = {
+  u_bill: {
+    text: 'Bill is carrying 134% workload. The visible signals are 9 Acme-support pulls in 3 days, mostly Acme hotfix commits, and stalled Connector work.',
+    sentiment: 'strained',
+    sentimentNote: 'High interrupt load',
+  },
+  u_jason: {
+    text: 'Jason is at 70% workload with no risk signals attached in the current company picture.',
+    sentiment: 'positive',
+    sentimentNote: 'Capacity visible',
+  },
+  u_vanessa: {
+    text: 'Vanessa owns the Friday Acme pilot while its Connector dependency is still showing stalled work signals.',
+    sentiment: 'steady',
+    sentimentNote: 'Friday dependency exposed',
+  },
+}
+
 export const WEEKLY_SUMMARY: Record<string, WeeklySummary> = {
   u_bill: {
     text: "Most of Bill's week went to Acme-support firefighting — 9 urgent pulls in 3 days. Connector work stalled as a result, not from lack of effort.",
@@ -107,14 +126,35 @@ export const WEEKLY_SUMMARY: Record<string, WeeklySummary> = {
 // capabilityId 指回 fixtures.ts 的 CAPABILITIES（护城河被 agent 自动优先引用）。
 
 export interface HrAnalysis {
-  capabilityId: string // 引用的 capability（auto-prioritized 护城河）
+  mode: 'symptom' | 'diagnosis'
+  capabilityId?: string // 引用的 capability（auto-prioritized 护城河）
   reading: string // agent 对处境的中性解读
-  recommendations: string[] // 低风险下一步
-  framing: string // 显式的 no-personnel-judgment 护栏
+  recommendations?: string[] // 低风险下一步
+  framing?: string // 显式的 no-personnel-judgment 护栏
+}
+
+// ⚠ 待 Danny 审字。Act1 症状 payload：只并列 raw facts，不解释根因。
+export const BELIEVED_HR_ANALYSIS: Record<string, HrAnalysis> = {
+  u_bill: {
+    mode: 'symptom',
+    reading:
+      'Raw workload symptoms: 134% load, 9 Acme-support mentions in 3 days, Acme hotfix commits, and Connector work still stalled.',
+  },
+  u_jason: {
+    mode: 'symptom',
+    reading:
+      'Raw capacity symptom: 70% workload and no attached risk signals in the current company picture.',
+  },
+  u_vanessa: {
+    mode: 'symptom',
+    reading:
+      'Raw project symptom: Vanessa owns a Friday Acme ship while the Connector dependency is still showing stalled signals.',
+  },
 }
 
 export const HR_ANALYSIS: Record<string, HrAnalysis> = {
   u_bill: {
+    mode: 'diagnosis',
     capabilityId: 'cap_hr_interrupt',
     reading:
       'Reduced Connector output lines up with interrupt load, not performance. Bill absorbed 9 Acme-support pulls in 3 days; the stall is a routing problem, not a capability one.',
@@ -126,6 +166,7 @@ export const HR_ANALYSIS: Record<string, HrAnalysis> = {
     framing: 'Evidence-based workload routing. No personnel judgment is implied.',
   },
   u_jason: {
+    mode: 'diagnosis',
     capabilityId: 'cap_hr_interrupt',
     reading:
       'Jason is running below full load with a clean signal picture — a natural candidate to absorb short-term overflow without risking burnout.',
@@ -136,6 +177,7 @@ export const HR_ANALYSIS: Record<string, HrAnalysis> = {
     framing: 'Capacity-based routing suggestion. No personnel judgment is implied.',
   },
   u_vanessa: {
+    mode: 'diagnosis',
     capabilityId: 'cap_po_dep',
     reading:
       'Vanessa is carrying a cross-team dependency close to a ship date. The exposure is coordination load, not delivery quality.',
@@ -158,17 +200,22 @@ export function isStoryPerson(personId: string): boolean {
 
 // 各模块的空态判定（缺数据模块走干净空态，不渲染占位灰条）。
 export function hrSignalFor(personId: string, phase: DetailPhase = 'grown'): string | null {
-  if (isBelieved(phase)) return null
+  if (isBelieved(phase)) {
+    if (personId === 'u_bill') return 'Raw workload: 134%'
+    if (personId === 'u_jason') return 'Raw capacity: 70%'
+    if (personId === 'u_vanessa') return 'Friday owner: dependency exposed'
+    return null
+  }
   return HR_SIGNAL[personId] ?? null
 }
 
 export function weeklySummaryFor(personId: string, phase: DetailPhase = 'grown'): WeeklySummary | null {
-  if (isBelieved(phase)) return null
+  if (isBelieved(phase)) return BELIEVED_WEEKLY_SUMMARY[personId] ?? null
   return WEEKLY_SUMMARY[personId] ?? null
 }
 
 export function hrAnalysisFor(personId: string, phase: DetailPhase = 'grown'): HrAnalysis | null {
-  if (isBelieved(phase)) return null
+  if (isBelieved(phase)) return BELIEVED_HR_ANALYSIS[personId] ?? null
   return HR_ANALYSIS[personId] ?? null
 }
 
@@ -187,6 +234,21 @@ export interface Milestone {
   state: string
 }
 
+// ⚠ 待 Danny 审字。Act1 原始计划：展示 stall，不展示 B8 后的 re-baseline。
+const ACME_BELIEVED_MILESTONES: Milestone[] = [
+  { label: 'Integration test suite', when: 'Wed', state: 'in-progress' },
+  { label: 'Connector hookup for Acme', when: 'Thu', state: 'stalled' },
+  { label: 'Acme UAT', when: 'Fri am', state: 'waiting' },
+  { label: 'Pilot ship target', when: 'Fri', state: 'at-risk' },
+]
+
+const CONNECTOR_BELIEVED_MILESTONES: Milestone[] = [
+  { label: 'GitHub webhook receiver', when: 'Wed', state: 'in-progress' },
+  { label: 'Slack ingest + rate-limit handling', when: 'Thu', state: 'stalled' },
+  { label: 'Connector ↔ Acme hookup', when: 'Thu pm', state: 'stalled' },
+  { label: 'Event dedupe + hashing', when: 'Fri', state: 'waiting' },
+]
+
 // ⚠ 待 Danny 审字。Connector 的 re-baseline 计划（保住周五核心 ship）。
 const CONNECTOR_MILESTONES: Milestone[] = [
   { label: 'GitHub webhook receiver', when: 'Wed', state: 'planned' },
@@ -199,11 +261,15 @@ const CONNECTOR_MILESTONES: Milestone[] = [
 
 // 渲染用：state → 标签 + 视觉 tone class（held / conditional / deferred 视觉可辨）。
 export const MILESTONE_STATE_COPY: Record<string, { label: string; tone: string }> = {
+  'at-risk': { label: 'At risk', tone: 'is-stalled' },
+  'in-progress': { label: 'In progress', tone: 'is-planned' },
   planned: { label: 'Planned', tone: 'is-planned' },
   replanned: { label: 'Replanned', tone: 'is-replanned' },
   held: { label: 'Held', tone: 'is-held' },
   deferred: { label: 'Deferred', tone: 'is-deferred' },
   conditional: { label: 'Conditional', tone: 'is-conditional' },
+  stalled: { label: 'Stalled', tone: 'is-stalled' },
+  waiting: { label: 'Waiting', tone: 'is-conditional' },
 }
 
 // 时间排序键；未知 when 落到末尾（不破坏排序）。
@@ -222,7 +288,11 @@ export function milestoneOrder(when: string): number {
 }
 
 export function projectMilestones(projectId: string, phase: DetailPhase = 'grown'): Milestone[] | null {
-  if (isBelieved(phase)) return null
+  if (isBelieved(phase)) {
+    if (projectId === 'p_acme') return ACME_BELIEVED_MILESTONES
+    if (projectId === 'p_connector') return CONNECTOR_BELIEVED_MILESTONES
+    return null
+  }
   if (projectId === 'p_acme') return [...TIMELINE.milestones]
   if (projectId === 'p_connector') return CONNECTOR_MILESTONES
   return null
@@ -352,8 +422,21 @@ export const WEEKLY_UPDATES: Record<string, WeeklyUpdate[]> = {
   ],
 }
 
+// ⚠ 待 Danny 审字。believed 态项目周更只陈列现场事实，不写 re-baseline / offload 决策。
+export const BELIEVED_WEEKLY_UPDATES: Record<string, WeeklyUpdate[]> = {
+  p_acme: [
+    { personId: 'u_vanessa', update: 'Friday pilot scope is still the target; Connector hookup remains the exposed dependency.' },
+    { personId: 'u_kristen', update: 'Integration suite is moving, but Connector-dependent paths cannot finish yet.' },
+    { personId: 'u_aidy', update: 'UAT is waiting on the Connector hookup before the run can start.' },
+  ],
+  p_connector: [
+    { personId: 'u_bill', update: 'GitHub webhook receiver is moving; Slack rate-limit handling is still stalled.' },
+    { personId: 'u_jason', update: 'Billing v1 is steady at 30% progress; Jason is at 70% workload.' },
+  ],
+}
+
 export function weeklyUpdatesForProject(projectId: string, phase: DetailPhase = 'grown'): WeeklyUpdate[] {
-  if (isBelieved(phase)) return []
+  if (isBelieved(phase)) return BELIEVED_WEEKLY_UPDATES[projectId] ?? []
   return WEEKLY_UPDATES[projectId] ?? []
 }
 
@@ -362,7 +445,6 @@ export function weeklyUpdatesForProject(projectId: string, phase: DetailPhase = 
 // 这样 Acme（依赖 Connector）也能看到完整证据链。texture 项目无信号 → 空态。
 
 export function signalsForProject(projectId: string, phase: DetailPhase = 'grown'): Signal[] {
-  if (isBelieved(phase)) return []
   const project = PROJECTS.find((p) => p.id === projectId)
   if (!project) return []
   const projectIds = new Set<string>([projectId, ...(project.dependsOn ?? [])])
@@ -381,6 +463,20 @@ export function signalsForProject(projectId: string, phase: DetailPhase = 'grown
       (signal.subjectType === 'task' && taskIds.has(signal.subjectId)) ||
       (signal.subjectType === 'person' && ownerIds.has(signal.subjectId)),
   )
+}
+
+export function reportMismatchForProject(projectId: string): {
+  reported: string
+  signalsSay: string
+  gapType: string
+  rootCause: string
+  safeFraming: string
+} | null {
+  const projectIds = new Set<string>([projectId])
+  const project = PROJECTS.find((p) => p.id === projectId)
+  for (const depId of project?.dependsOn ?? []) projectIds.add(depId)
+  if (!projectIds.has(MISMATCH.subjectProjectId)) return null
+  return MISMATCH
 }
 
 // ════════════════════════════════════════════════════════════════════════════

@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
+import type { Signal } from '../data/fixtures'
 import { useCanvas } from '../store/canvasStore'
 
 // 共享详情壳（P3-01 员工页 / P3-02 项目页复用）。
@@ -61,5 +62,40 @@ export function DetailSection({
       </div>
       {empty != null ? <p className="detail-empty">{empty}</p> : children}
     </section>
+  )
+}
+
+export function SourceAnchor({
+  signals,
+  label = 'Source',
+}: {
+  signals: Signal[]
+  label?: string
+}) {
+  const [isOpen, setIsOpen] = useState(false)
+
+  if (signals.length === 0) return null
+
+  return (
+    <span className={['source-anchor', isOpen ? 'is-open' : undefined].filter(Boolean).join(' ')}>
+      <button
+        type="button"
+        className="source-anchor-button"
+        aria-expanded={isOpen}
+        onClick={() => setIsOpen((value) => !value)}
+      >
+        {label}
+      </button>
+      <span className="source-popover" role="note">
+        {signals.map((signal) => (
+          <span key={signal.id} className="source-popover-row">
+            <strong>{signal.source}</strong>
+            <span>
+              {signal.summary} <em>{signal.ageDays}d ago</em>
+            </span>
+          </span>
+        ))}
+      </span>
+    </span>
   )
 }

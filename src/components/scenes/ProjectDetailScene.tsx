@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { PEOPLE, PROJECTS } from '../../data/fixtures'
+import { PEOPLE, PROJECTS, type Signal } from '../../data/fixtures'
 import {
   MILESTONE_STATE_COPY,
   TASK_BOARD_COLUMNS,
@@ -7,12 +7,13 @@ import {
   milestoneOrder,
   projectMilestones,
   projectTeam,
+  reportMismatchForProject,
   signalsForProject,
   tasksForProject,
   weeklyUpdatesForProject,
   type DetailPhase,
 } from '../../data/fixtures.p3'
-import { DetailSection, DetailShell } from '../DetailShell'
+import { DetailSection, DetailShell, SourceAnchor } from '../DetailShell'
 import { useCanvas } from '../../store/canvasStore'
 
 // P5-03：项目详情页 state-aware。Nexus 完成前只显 raw facts；B9 后智能层长出。
@@ -44,9 +45,23 @@ const GROWN_STATUS_LABEL: Record<string, string> = {
   p_connector: 'at risk · diagnosed · actions in flight',
 }
 
+// ⚠ 待 Danny 审字：Act1/Act3 detail shell copy.
+const NO_HANDOFFS_COPY = 'No handoffs yet — agent actions have not been generated.'
+const RISK_CALLOUT_LABEL = {
+  believed: 'Reported vs signals',
+  grown: 'Reality gap',
+} satisfies Record<DetailPhase, string>
+
 function statusLabel(projectId: string, status: string, phase: DetailPhase) {
   if (phase === 'grown') return GROWN_STATUS_LABEL[projectId] ?? status.replace('-', ' ')
   return status.replace('-', ' ')
+}
+
+function actionSignalsFor(handoffText: string, symptomSignals: Signal[], interruptSignals: Signal[]) {
+  if (/Bill|interrupt|focus/i.test(handoffText) && interruptSignals.length > 0) {
+    return interruptSignals
+  }
+  return symptomSignals
 }
 
 type HandoffState = 'open' | 'done' | 'discarded'
@@ -79,6 +94,12 @@ export function ProjectDetailScene() {
   const handoffs = handoffsForProject(project.id, phase)
   const weekly = weeklyUpdatesForProject(project.id, phase)
   const signals = signalsForProject(project.id, phase)
+  const mismatch = reportMismatchForProject(project.id)
+  const milestoneEyebrow = isGrown ? 'Re-baselined' : 'Original plan'
+  const symptomSourceSignals = signals.filter((signal) => signal.tag !== 'interrupt')
+  const interruptSourceSignals = signals.filter((signal) => signal.tag === 'interrupt')
+  const fallbackSymptomSignals = symptomSourceSignals.length > 0 ? symptomSourceSignals : signals
+  const fallbackInterruptSignals = interruptSourceSignals.length > 0 ? interruptSourceSignals : signals
 
   const setHandoff = (id: string, state: HandoffState) =>
     setHandoffState((prev) => ({ ...prev, [id]: state }))
@@ -109,37 +130,82 @@ export function ProjectDetailScene() {
               Depends on {titleOf(depId)}
             </span>
           ))}
+          {mismatch ? (
+            <>
+              <span className="brief-mismatch">Connector reported {mismatch.reported}</span>
+              <span className="brief-mismatch">
+                Signals say {mismatch.signalsSay.toLowerCase()}
+                <SourceAnchor signals={fallbackSymptomSignals} />
+              </span>
+            </>
+          ) : null}
         </div>
+        {mismatch ? (
+          <div className={`anchored-claim-panel ${isGrown ? 'is-grown' : 'is-believed'}`}>
+            <p className="overview-label">{RISK_CALLOUT_LABEL[phase]}</p>
+            {isGrown ? (
+              <>
+                <strong>
+                  {mismatch.gapType}: diagnosed, actions in flight, still at-risk.
+                  <SourceAnchor signals={fallbackSymptomSignals} />
+                </strong>
+                <span>
+                  {mismatch.rootCause}
+                  <SourceAnchor signals={fallbackInterruptSignals} />
+                </span>
+                <em>
+                  {mismatch.safeFraming}
+                  <SourceAnchor signals={fallbackInterruptSignals} />
+                </em>
+              </>
+            ) : (
+              <>
+                <strong>
+                  Connector is the visible blocker: reported on-track, but the live signals are at-risk.
+                  <SourceAnchor signals={fallbackSymptomSignals} />
+                </strong>
+                <span>
+                  Bill's interrupt load is visible, but no agent diagnosis has been generated yet.
+                  <SourceAnchor signals={fallbackInterruptSignals} />
+                </span>
+              </>
+            )}
+          </div>
+        ) : null}
       </section>
 
-      {isGrown ? (
-        <DetailSection
-          eyebrow="Re-baselined"
-          title="Delivery milestones"
-          empty={sortedMilestones ? undefined : 'No milestone plan yet — nothing scheduled.'}
-        >
-          {sortedMilestones ? (
-            <ol className="milestone-track">
-              {sortedMilestones.map((milestone) => {
-                const copy = MILESTONE_STATE_COPY[milestone.state] ?? {
-                  label: milestone.state,
-                  tone: '',
-                }
-                return (
-                  <li key={`${milestone.when}-${milestone.label}`} className={`milestone ${copy.tone}`}>
-                    <span className="milestone-when">{milestone.when}</span>
-                    <span className="milestone-dot" aria-hidden="true" />
-                    <div className="milestone-body">
-                      <strong>{milestone.label}</strong>
-                      <span className="milestone-state">{copy.label}</span>
-                    </div>
-                  </li>
-                )
-              })}
-            </ol>
-          ) : null}
-        </DetailSection>
-      ) : null}
+      <DetailSection
+        eyebrow={milestoneEyebrow}
+        title="Delivery milestones"
+        empty={sortedMilestones ? undefined : 'No milestone plan yet — nothing scheduled.'}
+      >
+        {sortedMilestones ? (
+          <ol className="milestone-track">
+            {sortedMilestones.map((milestone) => {
+              const copy = MILESTONE_STATE_COPY[milestone.state] ?? {
+                label: milestone.state,
+                tone: '',
+              }
+              const milestoneSignals = ['stalled', 'at-risk', 'waiting'].includes(milestone.state)
+                ? fallbackSymptomSignals
+                : []
+              return (
+                <li key={`${milestone.when}-${milestone.label}`} className={`milestone ${copy.tone}`}>
+                  <span className="milestone-when">{milestone.when}</span>
+                  <span className="milestone-dot" aria-hidden="true" />
+                  <div className="milestone-body">
+                    <strong>
+                      {milestone.label}
+                      <SourceAnchor signals={milestoneSignals} />
+                    </strong>
+                    <span className="milestone-state">{copy.label}</span>
+                  </div>
+                </li>
+              )
+            })}
+          </ol>
+        ) : null}
+      </DetailSection>
 
       {/* 3 · Team responsibilities */}
       <DetailSection
@@ -182,12 +248,26 @@ export function ProjectDetailScene() {
                   {columnTasks.length === 0 ? (
                     <p className="task-column-empty">Nothing here</p>
                   ) : (
-                    columnTasks.map((task) => (
-                      <article key={task.id} className="board-card">
-                        <strong>{task.title}</strong>
-                        <span>{nameOf(task.assigneeId)}</span>
-                      </article>
-                    ))
+                    columnTasks.map((task) => {
+                      const directSignals = signals.filter(
+                        (signal) => signal.subjectType === 'task' && signal.subjectId === task.id,
+                      )
+                      const taskSignals =
+                        directSignals.length > 0
+                          ? directSignals
+                          : task.status === 'stalled'
+                            ? fallbackSymptomSignals
+                            : []
+                      return (
+                        <article key={task.id} className="board-card">
+                          <strong>
+                            {task.title}
+                            <SourceAnchor signals={taskSignals} />
+                          </strong>
+                          <span>{nameOf(task.assigneeId)}</span>
+                        </article>
+                      )
+                    })
                   )}
                 </div>
               </div>
@@ -196,123 +276,109 @@ export function ProjectDetailScene() {
         </div>
       </DetailSection>
 
-      {isGrown ? (
-        <>
-          {/* 5 · Handoffs（checklist：done / discard · 部分一键飞回 Nexus）*/}
-          <DetailSection
-            eyebrow="Ready to act"
-            title="Handoffs"
-            empty={handoffs.length === 0 ? 'No handoffs — nothing to action right now.' : undefined}
-          >
-            <div className="handoff-list">
-              {handoffs.map((handoff) => {
-                const state = handoffState[handoff.id] ?? 'open'
-                return (
-                  <article key={handoff.id} className={`handoff-card is-${state}`}>
-                    <div className="handoff-body">
-                      <strong>{handoff.text}</strong>
-                      {handoff.detail ? <p>{handoff.detail}</p> : null}
-                      {handoff.flyToNexus ? (
-                        <button
-                          type="button"
-                          className="handoff-fly"
-                          onClick={() => askQuestion(handoff.flyToNexus as string)}
-                        >
-                          Dig in via Nexus →
-                        </button>
-                      ) : null}
-                    </div>
-                    <div className="handoff-actions">
-                      {state === 'open' ? (
-                        <>
-                          <button
-                            type="button"
-                            className="handoff-done"
-                            onClick={() => setHandoff(handoff.id, 'done')}
-                          >
-                            Done
-                          </button>
-                          <button
-                            type="button"
-                            className="handoff-discard"
-                            onClick={() => setHandoff(handoff.id, 'discarded')}
-                          >
-                            Discard
-                          </button>
-                        </>
-                      ) : (
-                        <span className="handoff-tag">
-                          {state === 'done' ? 'Done' : 'Discarded'}
-                          <button
-                            type="button"
-                            className="handoff-undo"
-                            onClick={() => setHandoff(handoff.id, 'open')}
-                          >
-                            Undo
-                          </button>
-                        </span>
-                      )}
-                    </div>
-                  </article>
-                )
-              })}
-            </div>
-          </DetailSection>
-
-          {/* 6 · Weekly team updates */}
-          <DetailSection
-            eyebrow="This week"
-            title="Weekly team updates"
-            empty={weekly.length === 0 ? 'No updates logged this week.' : undefined}
-          >
-            <div className="weekly-update-list">
-              {weekly.map((update) => (
-                <div key={update.personId} className="weekly-update-row">
-                  <strong>{nameOf(update.personId)}</strong>
-                  <p>{update.update}</p>
-                </div>
-              ))}
-            </div>
-          </DetailSection>
-
-          {/* 次层级（下沉，护 B9b 之前的 reveal）：Risk & HR signal · Evidence */}
-          <div className="detail-sublayer" aria-label="Secondary signals">
-            <DetailSection
-              eyebrow="Secondary"
-              title="Risk & HR signal"
-              empty={signals.length === 0 ? 'No signals — looks steady.' : undefined}
-            >
-              <ul className="risk-list">
-                {signals.map((signal) => (
-                  <li key={signal.id}>
-                    {signal.tag ? (
-                      <span className="risk-tag">{signal.tag.replace('-', ' ')}</span>
-                    ) : null}
-                    {signal.summary}
-                  </li>
-                ))}
-              </ul>
-            </DetailSection>
-
-            <DetailSection
-              eyebrow="Source traces"
-              title="Evidence"
-              empty={signals.length === 0 ? 'No evidence to trace yet.' : undefined}
-            >
-              <div className="evidence-list">
-                {signals.map((signal) => (
-                  <div key={signal.id} className="evidence-row">
-                    <span>{signal.source}</span>
+      {/* 5 · Handoffs（checklist：done / discard · 部分一键飞回 Nexus）*/}
+      <DetailSection
+        eyebrow="Ready to act"
+        title="Handoffs"
+        empty={handoffs.length === 0 ? NO_HANDOFFS_COPY : undefined}
+      >
+        <div className="handoff-list">
+          {handoffs.map((handoff) => {
+            const state = handoffState[handoff.id] ?? 'open'
+            const handoffSignals = actionSignalsFor(
+              handoff.text,
+              fallbackSymptomSignals,
+              fallbackInterruptSignals,
+            )
+            return (
+              <article key={handoff.id} className={`handoff-card is-${state}`}>
+                <div className="handoff-body">
+                  <strong>
+                    {handoff.text}
+                    <SourceAnchor signals={handoffSignals} label="Why" />
+                  </strong>
+                  {handoff.detail ? (
                     <p>
-                      {signal.summary} <em>· {signal.ageDays}d ago</em>
+                      {handoff.detail}
+                      <SourceAnchor signals={handoffSignals} />
                     </p>
-                  </div>
-                ))}
+                  ) : null}
+                  {handoff.flyToNexus ? (
+                    <button
+                      type="button"
+                      className="handoff-fly"
+                      onClick={() => askQuestion(handoff.flyToNexus as string)}
+                    >
+                      Dig in via Nexus →
+                    </button>
+                  ) : null}
+                </div>
+                <div className="handoff-actions">
+                  {state === 'open' ? (
+                    <>
+                      <button
+                        type="button"
+                        className="handoff-done"
+                        onClick={() => setHandoff(handoff.id, 'done')}
+                      >
+                        Done
+                      </button>
+                      <button
+                        type="button"
+                        className="handoff-discard"
+                        onClick={() => setHandoff(handoff.id, 'discarded')}
+                      >
+                        Discard
+                      </button>
+                    </>
+                  ) : (
+                    <span className="handoff-tag">
+                      {state === 'done' ? 'Done' : 'Discarded'}
+                      <button
+                        type="button"
+                        className="handoff-undo"
+                        onClick={() => setHandoff(handoff.id, 'open')}
+                      >
+                        Undo
+                      </button>
+                    </span>
+                  )}
+                </div>
+              </article>
+            )
+          })}
+        </div>
+      </DetailSection>
+
+      {/* 6 · Weekly team updates */}
+      <DetailSection
+        eyebrow="This week"
+        title="Weekly team updates"
+        empty={weekly.length === 0 ? 'No updates logged this week.' : undefined}
+      >
+        <div className="weekly-update-list">
+          {weekly.map((update) => {
+            const personSignals = signals.filter(
+              (signal) => signal.subjectType === 'person' && signal.subjectId === update.personId,
+            )
+            const updateSignals =
+              personSignals.length > 0 || /Connector|Slack|hookup|blocked|stalled|dependency|UAT/i.test(update.update)
+                ? personSignals.length > 0
+                  ? personSignals
+                  : fallbackSymptomSignals
+                : []
+            return (
+              <div key={update.personId} className="weekly-update-row">
+                <strong>{nameOf(update.personId)}</strong>
+                <p>
+                  {update.update}
+                  <SourceAnchor signals={updateSignals} />
+                </p>
               </div>
-            </DetailSection>
-          </div>
-        </>
-      ) : null}
+            )
+          })}
+        </div>
+      </DetailSection>
     </DetailShell>
   )
 }

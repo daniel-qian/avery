@@ -21,3 +21,4 @@ B7 从 inspector 轻量步**毕业到中央卡片组**（与 mismatch / timeline
 - **不扩 store**——与现有中央卡同一套：读 fixture、由 `thread.steps` 派生显隐，逐条渐显是进场动画，replay-safe（ADR-0006）。
 - **amend ADR-0004 §5**：B7 不再是 inspector 轻量步。
 - 净收益：B7 是 pitch "经人确认" 唯一发生处，升级 = 直接兑现核心卖点，非 scope 膨胀。
+- **P5 迭代（grill 2026-06-06，#2 反馈）**：ChatCard 加 **full composer UI**（真输入框 + 发送）+ **me-vs-the-room 布局**（"You" 独占一侧；Bill + agents 另一侧，agents 加 badge 区分于 Bill）——修复"You / Bill 同侧"+ "不像 chat"两个反馈。⚠ composer 是**纯 input affordance**，**不改本 ADR 的 ①②④**：仍 agent-发起、绑定单决策、用完即合、沉淀进 report；**人不能主动开 / 重开 channel**（守"非 Slack"）。被否的「人也能主动发起 / 常驻面」未被翻转——本次只丰富 UI，不动生命周期。

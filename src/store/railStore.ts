@@ -78,8 +78,13 @@ export const SCRIPT: RailStep[] = [
   },
   {
     beat: 'B9b',
-    label: 'Project detail opens',
+    label: 'Drill Acme — re-baselined',
     run: () => useCanvas.getState().openDetail('project', 'p_acme'),
+  },
+  {
+    beat: 'B9b',
+    label: 'Drill Bill — protected focus',
+    run: () => useCanvas.getState().openDetail('employee', 'u_bill'),
   },
   {
     beat: 'B10',
