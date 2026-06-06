@@ -27,6 +27,19 @@ export const SCRIPT: RailStep[] = [
     label: 'Focus Acme risk cluster',
     run: () => useCanvas.getState().setFocus(focusEntity('project', 'p_acme')),
   },
+  // P5-04 Act1（ADR-0009）：Nexus 前 drill「看现状」。thread.steps 空 → 详情页派生 believed 态（零剧透）。
+  // 顺序参 demo-brief：focus → drill Acme → drill Bill → ask；不用 back()，下一步 askQuestion 自带 goScene('nexus') 飞进 Nexus。
+  // ⚠ 待 Danny 审字：两条 drill 的 caption label。
+  {
+    beat: 'B2',
+    label: 'Drill Acme — current state',
+    run: () => useCanvas.getState().openDetail('project', 'p_acme'),
+  },
+  {
+    beat: 'B2',
+    label: 'Drill Bill — current state',
+    run: () => useCanvas.getState().openDetail('employee', 'u_bill'),
+  },
   {
     beat: 'B3',
     label: 'Ask Nexus',
@@ -43,19 +56,10 @@ export const SCRIPT: RailStep[] = [
     run: () => useCanvas.getState().runAgent(),
   },
   {
+    // P5-04 (ADR-0007)：思考流 B4–B9 零整页 drill-in。B6 塌成单步；Bill 的 drill 已搬到 Act1（B2 前戏段）。
     beat: 'B6',
     label: 'HR root-cause check',
     run: () => useCanvas.getState().runAgent(),
-  },
-  {
-    beat: 'B6',
-    label: 'Bill detail opens',
-    run: () => useCanvas.getState().openDetail('employee', 'u_bill'),
-  },
-  {
-    beat: 'B6',
-    label: 'Return to Nexus',
-    run: () => useCanvas.getState().goScene('nexus'),
   },
   {
     beat: 'B7',
