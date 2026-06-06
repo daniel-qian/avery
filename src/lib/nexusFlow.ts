@@ -1,7 +1,7 @@
 import type { ThreadStep, ThreadStepKind } from '../store/canvasStore'
 import { NEXUS_NODE_ORDER, type NexusEdge, type NexusNodeId } from '../data/nexusLayout'
 
-export type NexusFlowState = 'is-future' | 'is-active' | 'is-complete'
+export type NexusFlowState = 'is-unrevealed' | 'is-future' | 'is-active' | 'is-complete'
 
 export const NEXUS_STEP_NODES: Record<ThreadStepKind, NexusNodeId[]> = {
   'pm-agent': ['question', 'pm-agent', 'evidence', 'project-ops-cap'],
@@ -14,7 +14,7 @@ export const NEXUS_STEP_NODES: Record<ThreadStepKind, NexusNodeId[]> = {
 
 export function deriveNexusNodeStates(steps: ThreadStep[]): Record<NexusNodeId, NexusFlowState> {
   const states = Object.fromEntries(
-    NEXUS_NODE_ORDER.map((id) => [id, 'is-future']),
+    NEXUS_NODE_ORDER.map((id) => [id, 'is-unrevealed']),
   ) as Record<NexusNodeId, NexusFlowState>
 
   if (steps.length === 0) {

@@ -362,6 +362,7 @@ export function NexusScene() {
         {NEXUS_NODES.map((node) => {
           const state = nodeStates[node.id]
           const isActive = state === 'is-active'
+          const isUnrevealed = state === 'is-unrevealed'
           const isSelfReportNode = showMismatch && node.id === 'bill'
           return (
             <button
@@ -369,7 +370,9 @@ export function NexusScene() {
               type="button"
               className={classNames(['flow-node', state])}
               style={nodeStyle(node.id)}
+              aria-hidden={isUnrevealed || undefined}
               aria-pressed={isActive}
+              tabIndex={isUnrevealed ? -1 : undefined}
               onClick={() => {
                 if (isActive) runAgent()
               }}

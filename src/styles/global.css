@@ -839,6 +839,11 @@ h1 {
   opacity: 0.27;
 }
 
+.flow-node.is-unrevealed {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.96);
+}
+
 .flow-node.is-active {
   z-index: 20;
   border-color: rgba(108, 99, 181, 0.58);
@@ -1637,6 +1642,10 @@ h1 {
   pointer-events: none;
 }
 
+.nexus-flow-layer .flow-node.is-unrevealed {
+  pointer-events: none;
+}
+
 .nexus-progress-row,
 .nexus-active-list {
   display: flex;
@@ -1697,6 +1706,14 @@ h1 {
     opacity var(--medium) ease,
     filter var(--medium) ease,
     transform var(--medium) ease;
+}
+
+.scene-nexus .nexus-flow-layer .flow-node {
+  transition:
+    filter var(--medium) ease,
+    transform var(--medium) ease,
+    border-color var(--medium) ease,
+    box-shadow var(--medium) ease;
 }
 
 .scene-nexus.has-mismatch .canvas-grid {
@@ -1766,6 +1783,11 @@ h1 {
 
 .scene-nexus.has-structured-output .nexus-edge-path:not(.is-active) {
   opacity: 0.08;
+}
+
+.scene-nexus .flow-node.is-unrevealed {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .timeline-card {
@@ -3958,6 +3980,10 @@ h1 {
 
 .scene-nexus.has-chat .flow-node.is-active {
   opacity: 0.78;
+}
+
+.scene-nexus.has-chat .flow-node.is-unrevealed {
+  opacity: 0;
 }
 
 .scene-nexus.has-chat .nexus-edge-path:not(.is-active) {
