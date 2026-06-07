@@ -11,6 +11,7 @@ export function DetailShell({
   eyebrow,
   title,
   subtitle,
+  media,
   children,
 }: {
   ariaLabel: string
@@ -18,6 +19,7 @@ export function DetailShell({
   eyebrow: string
   title: string
   subtitle?: ReactNode
+  media?: ReactNode
   children: ReactNode
 }) {
   const back = useCanvas((s) => s.back)
@@ -32,6 +34,7 @@ export function DetailShell({
           <button type="button" className="scene-tab detail-back" onClick={back}>
             ← Back
           </button>
+          {media ? <div className="detail-hero-media">{media}</div> : null}
           <p className="eyebrow">{eyebrow}</p>
           <h2>{title}</h2>
           {subtitle ? <p className="detail-subtitle">{subtitle}</p> : null}

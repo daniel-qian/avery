@@ -572,20 +572,14 @@ h1 {
 }
 
 .composer-card {
-  display: grid;
-  gap: 0;
+  display: flex;
+  flex-direction: column;
   padding: 9px;
   border: 1px solid var(--rule);
   border-radius: 999px;
   background: rgba(255, 253, 248, 0.91);
   box-shadow: var(--shadow);
-  backdrop-filter: blur(12px);
   text-align: left;
-  transition: border-radius var(--fast) ease;
-}
-
-.composer-layer.is-expanded .composer-card {
-  border-radius: var(--radius);
 }
 
 .composer-main-row,
@@ -608,7 +602,6 @@ h1 {
 }
 
 .composer-reference-row {
-  margin-top: 8px;
   align-items: flex-start;
 }
 
@@ -692,7 +685,6 @@ h1 {
 .composer-reference-picker {
   display: grid;
   gap: 8px;
-  margin-top: 9px;
   padding: 10px;
   border: 1px solid var(--rule);
   border-radius: var(--radius);
@@ -2771,6 +2763,13 @@ h1 {
   font-weight: 700;
 }
 
+.phase-note {
+  margin: 8px 0 0;
+  color: var(--ink-faint);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
 /* Weekly summary + sentiment */
 .weekly-block p {
   margin: 12px 0 0;
@@ -3307,6 +3306,10 @@ h1 {
 .board-card span {
   color: var(--ink-soft);
   font-size: 11px;
+}
+
+.board-card .phase-note {
+  color: var(--ink-faint);
 }
 
 /* Handoffs checklist */
@@ -4472,4 +4475,71 @@ h1 {
     transform: none;
     animation: none;
   }
+}
+
+/* ───────────────────────── P5 · Shared PixelAvatar ───────────────────────── */
+/* 场景无关像素头像：详情页 team / 员工页头部 / Nexus chat / Bill 节点 / report。 */
+/* DashboardScene 仍走自己的 .scene-dashboard scoped 规则，避免回归（待 ⑤ 重写时再统一）。 */
+.pixel-avatar {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  flex: none;
+  border: 1px solid rgba(52, 48, 40, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 253, 248, 0.84);
+  box-shadow: inset 0 -6px 12px rgba(52, 48, 40, 0.05);
+}
+
+.pixel-avatar-sprite {
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+  background-image: var(--avatar-image);
+  background-repeat: no-repeat;
+  background-position: var(--avatar-x) var(--avatar-y);
+  background-size: var(--avatar-sheet-width) auto;
+  image-rendering: pixelated;
+  transform: scale(1.32);
+  transform-origin: 50% 58%;
+}
+
+/* 员工详情页头部头像 */
+.detail-hero-media {
+  margin-bottom: 12px;
+}
+
+.detail-avatar {
+  border-radius: 12px;
+}
+
+/* Nexus chat 发言者头像 */
+.chat-avatar {
+  border-radius: 6px;
+}
+
+/* Nexus Bill 节点头像（钉右上角，不挤文字流）*/
+.flow-node-avatar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border-radius: 7px;
+  box-shadow: none;
+}
+
+/* report 内联人名头像（覆盖 .confirmation-list span / .next-task-row span 的 display:block）*/
+.confirmation-list .confirmation-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.next-task-row .next-task-assignee {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.inline-avatar {
+  border-radius: 5px;
+  box-shadow: none;
 }

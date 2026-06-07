@@ -1,15 +1,15 @@
-import { CAPABILITIES, PEOPLE, PROJECTS, TASKS, type Task } from '../../data/fixtures'
+import { CAPABILITIES, PEOPLE, PROJECTS, type Task } from '../../data/fixtures'
 import {
-  deriveStatus,
+  employeeOverviewFor,
   hrAnalysisFor,
-  hrSignalFor,
-  ownedProjectProgress,
   signalsFor,
+  tasksForPerson,
   weeklySummaryFor,
   type DetailPhase,
   type Sentiment,
 } from '../../data/fixtures.p3'
 import { DetailSection, DetailShell, SourceAnchor } from '../DetailShell'
+import { PixelAvatar } from '../PixelAvatar'
 import { useCanvas } from '../../store/canvasStore'
 
 // P5-03：员工详情页 state-aware。Nexus 完成前只显 raw facts；B9 后智能层长出。
@@ -53,11 +53,9 @@ export function EmployeeDetailScene() {
     )
   }
 
-  const status = deriveStatus(person.capacityPct)
-  const owned = ownedProjectProgress(person.id)
   const phase: DetailPhase = isGrown ? 'grown' : 'believed'
-  const hrSignal = hrSignalFor(person.id, phase)
-  const tasks = TASKS.filter((task) => task.assigneeId === person.id)
+  const overview = employeeOverviewFor(person, phase)
+  const tasks = tasksForPerson(person.id, phase)
   const weekly = weeklySummaryFor(person.id, phase)
   const analysis = hrAnalysisFor(person.id, phase)
   const personSignals = signalsFor(person.id, phase)
@@ -70,41 +68,38 @@ export function EmployeeDetailScene() {
       eyebrow="Employee detail"
       title={person.name}
       subtitle={`${person.role} · ${person.team}`}
+      media={<PixelAvatar person={person} size={56} className="detail-avatar" />}
     >
       {/* 1 · 概览卡：Workload / Status / Progress / HR signal */}
       <section className="overview-card" aria-label="Overview">
         <div className="overview-grid">
-          {person.capacityPct != null ? (
-            <div className="overview-stat">
-              <span className="overview-label">Workload</span>
-              <strong>{person.capacityPct}%</strong>
-            </div>
-          ) : null}
+          <div className="overview-stat">
+            <span className="overview-label">{overview.workloadLabel}</span>
+            <strong>{overview.workloadValue}</strong>
+          </div>
 
-          {status ? (
-            <div className="overview-stat">
-              <span className="overview-label">Status</span>
-              <strong>
-                <span className={`status-dot ${status.tone}`} aria-hidden="true" />
-                {status.label}
-              </strong>
-            </div>
-          ) : null}
+          <div className="overview-stat">
+            <span className="overview-label">Status</span>
+            <strong>
+              <span className={`status-dot ${isGrown ? 'tone-stable' : 'tone-warning'}`} aria-hidden="true" />
+              {overview.statusLabel}
+            </strong>
+          </div>
 
-          {owned ? (
-            <div className="overview-stat">
-              <span className="overview-label">Progress · {owned.project.title}</span>
-              <strong>{owned.progress}%</strong>
+          <div className="overview-stat">
+            <span className="overview-label">{overview.progressLabel}</span>
+            <strong>{overview.progressValue}</strong>
+            {person.capacityPct != null ? (
               <div className="progress-track" aria-hidden="true">
-                <div className="progress-fill" style={{ width: `${owned.progress}%` }} />
+                <div className="progress-fill" style={{ width: `${Math.min(person.capacityPct, 100)}%` }} />
               </div>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
 
           <div className="overview-stat">
             <span className="overview-label">HR signal</span>
-            <strong className={hrSignal ? undefined : 'is-empty'}>
-              {hrSignal ?? 'No HR signal — looks steady'}
+            <strong className={overview.hrSignal ? undefined : 'is-empty'}>
+              {overview.hrSignal ?? 'No HR signal — looks steady'}
               <SourceAnchor signals={personSignals} />
             </strong>
           </div>
@@ -125,6 +120,7 @@ export function EmployeeDetailScene() {
                 <span>{projectTitleOf(task.projectId)}</span>
                 <span className="task-status-pill">{TASK_STATUS_LABEL[task.status]}</span>
               </span>
+              <p className="phase-note">{task.note}</p>
             </article>
           ))}
         </div>

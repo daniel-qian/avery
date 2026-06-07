@@ -15,6 +15,7 @@ import { NEXUS_EDGES, NEXUS_NODES, NEXUS_POS, type NexusNodeId } from '../../dat
 import { edgePath } from '../../lib/edges'
 import { deriveNexusEdgeState, deriveNexusNodeStates, NEXUS_STEP_NODES } from '../../lib/nexusFlow'
 import { useCanvas, type ThreadStepKind } from '../../store/canvasStore'
+import { PixelAvatar } from '../PixelAvatar'
 
 const STEP_LABELS: Record<ThreadStepKind, string> = {
   'pm-agent': 'PM agent checks delivery evidence',
@@ -65,6 +66,15 @@ function taskTemplateKey(task: TaskTemplate) {
 function nameOf(personId: string) {
   return PEOPLE.find((person) => person.id === personId)?.name ?? personId
 }
+
+// 人名标签 → Person。chat speaker 用精确名（"Bill" / "You"）；report confirmation 用前导词
+// （"Vanessa — Acme scope cut" → "Vanessa"）。agent 名（"PM agent"）取不到 person → 返回 undefined。
+function personByName(label: string) {
+  const token = label.split(/\s[—(–-]/)[0].trim()
+  return PEOPLE.find((person) => person.name === token)
+}
+
+const BILL_PERSON = PEOPLE.find((person) => person.id === 'u_bill')
 
 function NexusEdgeLayer({
   steps,
@@ -237,9 +247,15 @@ function StructuredOutputCard({
         <section className="report-section" aria-label="Needs confirmation from">
           <p className="report-section-label">Needs confirmation from</p>
           <div className="confirmation-list">
-            {AGENT_OUTPUT.needsConfirmationFrom.map((person) => (
-              <span key={person}>{person}</span>
-            ))}
+            {AGENT_OUTPUT.needsConfirmationFrom.map((label) => {
+              const person = personByName(label)
+              return (
+                <span key={label} className="confirmation-chip">
+                  {person ? <PixelAvatar person={person} size={20} className="inline-avatar" /> : null}
+                  {label}
+                </span>
+              )
+            })}
           </div>
         </section>
 
@@ -248,11 +264,15 @@ function StructuredOutputCard({
           <div className="next-task-list">
             {AGENT_OUTPUT.nextTasks.map((task) => {
               const dispatched = dispatchedTaskKeys.has(taskTemplateKey(task))
+              const assigneePerson = PEOPLE.find((person) => person.id === task.assigneeId)
               return (
                 <article key={taskTemplateKey(task)} className="next-task-row">
                   <div>
                     <strong>{task.title}</strong>
-                    <span>
+                    <span className="next-task-assignee">
+                      {assigneePerson ? (
+                        <PixelAvatar person={assigneePerson} size={20} className="inline-avatar" />
+                      ) : null}
                       {nameOf(task.assigneeId)} · due {task.due}
                     </span>
                   </div>
@@ -278,6 +298,13 @@ function StructuredOutputCard({
       </footer>
     </section>
   )
+}
+
+// 人类发言者的像素头像（agent 发言无 person sprite，返回 null 保持文字 badge）。
+function ChatAvatar({ role, speaker }: { role: string; speaker: string }) {
+  if (role !== 'human') return null
+  const person = personByName(speaker)
+  return person ? <PixelAvatar person={person} size={24} className="chat-avatar" /> : null
 }
 
 // P5-02 (ADR-0008)：B7 human-loop 的中央 Chat 卡。与 mismatch/timeline/output 同级，
@@ -312,6 +339,7 @@ function ChatCard() {
             style={{ '--chat-i': index } as CSSProperties}
           >
             <div className="chat-speaker-row">
+              <ChatAvatar role={message.role} speaker={message.speaker} />
               <span className="chat-speaker">{message.speaker}</span>
               {message.agentKind ? (
                 <span className="chat-agent-badge">{message.agentKind.toUpperCase()} agent</span>
@@ -402,6 +430,9 @@ export function NexusScene() {
                 if (isActive) runAgent()
               }}
             >
+              {node.id === 'bill' && BILL_PERSON ? (
+                <PixelAvatar person={BILL_PERSON} size={30} className="flow-node-avatar" />
+              ) : null}
               <span className="flow-kind">{isSelfReportNode ? 'Self-report' : node.kind}</span>
               <h3>{isSelfReportNode ? 'Bill standup status' : node.label}</h3>
               <p>{isSelfReportNode ? MISMATCH.reported : node.detail}</p>
@@ -424,7 +455,6 @@ export function NexusScene() {
 
       <section className="nexus-brief">
         <p className="eyebrow">Nexus orchestration</p>
-        <h2>The question becomes a coordinated thread.</h2>
         <p>&ldquo;{question}&rdquo;</p>
         <div className="nexus-progress-row" aria-label="Nexus progress">
           <span>{progressLabel}</span>

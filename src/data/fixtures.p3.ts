@@ -33,6 +33,94 @@ export type DetailPhase = 'believed' | 'grown'
 
 const isBelieved = (phase: DetailPhase = 'grown') => phase === 'believed'
 
+export interface DashboardPersonCopy {
+  roleLine: string
+  loadLine: string
+}
+
+export interface DashboardProjectCopy {
+  statusLabel: string
+  summary: string
+  progressLabel: string
+}
+
+const DASHBOARD_PERSON_COPY: Record<DetailPhase, Record<string, DashboardPersonCopy>> = {
+  believed: {
+    u_bill: {
+      roleLine: 'Overloaded by Acme interrupts',
+      loadLine: '134% load · 9 pulls',
+    },
+    u_jason: {
+      roleLine: 'Capacity visible',
+      loadLine: '70% load · available',
+    },
+    u_vanessa: {
+      roleLine: 'Friday dependency exposed',
+      loadLine: '88% load · carrying Acme',
+    },
+  },
+  grown: {
+    u_bill: {
+      roleLine: 'Protected focus route',
+      loadLine: 'Focus protected · interrupts rerouted',
+    },
+    u_jason: {
+      roleLine: 'Short-term overflow route',
+      loadLine: 'Taking Acme-support overflow',
+    },
+    u_vanessa: {
+      roleLine: 'Friday scope protected',
+      loadLine: 'Re-baseline in motion',
+    },
+  },
+}
+
+const DASHBOARD_PROJECT_COPY: Record<DetailPhase, Record<string, DashboardProjectCopy>> = {
+  believed: {
+    p_acme: {
+      statusLabel: 'at risk · dependency exposed',
+      summary: 'Friday pilot still depends on a stalled Connector hookup.',
+      progressLabel: '72% complete · no replan yet',
+    },
+    p_connector: {
+      statusLabel: 'reported on track · signals at risk',
+      summary: 'Slack rate limits and no-update signals conflict with Monday status.',
+      progressLabel: '48% complete · stalled surface',
+    },
+  },
+  grown: {
+    p_acme: {
+      statusLabel: 'at risk · diagnosed · Friday held',
+      summary: 'Connector core is re-baselined; Friday ship is protected with Tuesday held as contingency.',
+      progressLabel: '72% complete · actions in flight',
+    },
+    p_connector: {
+      statusLabel: 'at risk · re-baselined',
+      summary: 'Core Slack + GitHub ship is protected; non-core dedupe moves to next week.',
+      progressLabel: '48% complete · focus route active',
+    },
+  },
+}
+
+export function dashboardPersonCopy(person: Person, phase: DetailPhase): DashboardPersonCopy {
+  return (
+    DASHBOARD_PERSON_COPY[phase][person.id] ?? {
+      roleLine: person.role,
+      loadLine: `${person.capacityPct ?? 100}% load`,
+    }
+  )
+}
+
+export function dashboardProjectCopy(project: Project, phase: DetailPhase): DashboardProjectCopy {
+  return (
+    DASHBOARD_PROJECT_COPY[phase][project.id] ?? {
+      statusLabel: project.status.replace('-', ' '),
+      summary: project.summary ?? 'No project summary yet.',
+      progressLabel: `${project.progress}% complete`,
+    }
+  )
+}
+
 // Status 三档（issue / ADR-0005 口径）：>110 Overloaded · 85–110 Steady · <75 Has capacity。
 // 75–85 灰区归 Steady（"Has capacity" 只留给确有余量的 <75）。无 capacityPct → null。
 export function deriveStatus(
@@ -52,6 +140,21 @@ export function ownedProjectProgress(
   const project = PROJECTS.find((p) => p.ownerId === personId)
   if (!project) return null
   return { project, progress: project.progress }
+}
+
+export function employeeOverviewFor(person: Person, phase: DetailPhase): EmployeeOverviewCopy {
+  const owned = ownedProjectProgress(person.id)
+  const status = deriveStatus(person.capacityPct)
+  return (
+    EMPLOYEE_OVERVIEW_COPY[phase][person.id] ?? {
+      workloadLabel: 'Workload',
+      workloadValue: `${person.capacityPct ?? 100}%`,
+      statusLabel: status?.label ?? 'Steady',
+      progressLabel: owned ? `Progress · ${owned.project.title}` : 'Progress',
+      progressValue: owned ? `${owned.progress}%` : 'No owned project',
+      hrSignal: hrSignalFor(person.id, phase),
+    }
+  )
 }
 
 // 挂在某人身上的工作信号（subjectType === 'person'）。Bill = 两条 interrupt 证据；
@@ -81,6 +184,70 @@ export interface WeeklySummary {
   text: string
   sentiment: Sentiment
   sentimentNote: string
+}
+
+export interface EmployeeOverviewCopy {
+  workloadLabel: string
+  workloadValue: string
+  statusLabel: string
+  progressLabel: string
+  progressValue: string
+  hrSignal: string | null
+}
+
+const EMPLOYEE_OVERVIEW_COPY: Record<DetailPhase, Record<string, EmployeeOverviewCopy>> = {
+  believed: {
+    u_bill: {
+      workloadLabel: 'Observed load',
+      workloadValue: '134% raw load',
+      statusLabel: 'Overload symptoms',
+      progressLabel: 'Connector progress',
+      progressValue: '48% stalled',
+      hrSignal: 'Raw interrupt load: 9 pulls',
+    },
+    u_jason: {
+      workloadLabel: 'Observed load',
+      workloadValue: '70% raw load',
+      statusLabel: 'Capacity visible',
+      progressLabel: 'Billing progress',
+      progressValue: '30% steady',
+      hrSignal: 'Raw capacity: 70%',
+    },
+    u_vanessa: {
+      workloadLabel: 'Observed load',
+      workloadValue: '88% raw load',
+      statusLabel: 'Deadline carrier',
+      progressLabel: 'Acme progress',
+      progressValue: '72% dependency exposed',
+      hrSignal: 'Friday owner: dependency exposed',
+    },
+  },
+  grown: {
+    u_bill: {
+      workloadLabel: 'Protected route',
+      workloadValue: 'Focus blocks reserved',
+      statusLabel: 'Protected focus',
+      progressLabel: 'Connector progress',
+      progressValue: '48% re-baselining',
+      hrSignal: 'Manager check-in + reroute',
+    },
+    u_jason: {
+      workloadLabel: 'Overflow route',
+      workloadValue: 'Taking support pulls',
+      statusLabel: 'Absorbing overflow',
+      progressLabel: 'Billing progress',
+      progressValue: '30% protected',
+      hrSignal: 'Has bandwidth to absorb',
+    },
+    u_vanessa: {
+      workloadLabel: 'Delivery route',
+      workloadValue: 'Friday scope protected',
+      statusLabel: 'Re-baseline owner',
+      progressLabel: 'Acme progress',
+      progressValue: '72% actions in flight',
+      hrSignal: 'Friday scope protected',
+    },
+  },
 }
 
 // ⚠ 待 Danny 审字。believed 态只放可观察症状，不放 agent 诊断 / 建议。
@@ -219,6 +386,60 @@ export function hrAnalysisFor(personId: string, phase: DetailPhase = 'grown'): H
   return HR_ANALYSIS[personId] ?? null
 }
 
+export interface EmployeeTaskView extends Task {
+  note: string
+}
+
+const EMPLOYEE_TASK_OVERRIDES: Record<DetailPhase, Record<string, Partial<EmployeeTaskView>>> = {
+  believed: {
+    t_acme_hook: {
+      title: 'Hook up Connector to Acme - stalled under interrupt load',
+      note: 'Raw assignment pressure; no reroute yet.',
+    },
+    t_con_slack: {
+      title: 'Slack ingest + rate-limit handling - stalled',
+      note: 'Blocked signal visible; still assigned to Bill.',
+    },
+    t_con_gh: {
+      title: 'GitHub webhook receiver - competing with Acme support',
+      note: 'Moving, but support pulls are fragmenting focus.',
+    },
+    t_con_dedupe: {
+      title: 'Event dedupe + hashing - waiting',
+      note: 'Still on the original scope.',
+    },
+  },
+  grown: {
+    t_acme_hook: {
+      title: 'Hook up Connector to Acme - protected core path',
+      note: 'Bill focus protected; scope confirmation routes through Vanessa.',
+    },
+    t_con_slack: {
+      title: 'Slack ingest + rate-limit handling - focus block',
+      note: 'Primary protected task; decides Friday vs Tuesday contingency.',
+    },
+    t_con_gh: {
+      title: 'GitHub webhook receiver - core Friday scope',
+      note: 'Kept in the Friday core ship.',
+    },
+    t_con_dedupe: {
+      title: 'Event dedupe + hashing - deferred out of Friday',
+      status: 'todo',
+      note: 'Non-core work moved to next week.',
+    },
+  },
+}
+
+export function tasksForPerson(personId: string, phase: DetailPhase = 'grown'): EmployeeTaskView[] {
+  return TASKS.filter((task) => task.assigneeId === personId).map((task) => ({
+    ...task,
+    ...EMPLOYEE_TASK_OVERRIDES[phase][task.id],
+    note:
+      EMPLOYEE_TASK_OVERRIDES[phase][task.id]?.note ??
+      (isBelieved(phase) ? 'Current assignment from the raw board.' : 'No generated change needed.'),
+  }))
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 // P3-02 · Project 详情页内容 + 派生 helper（additive）
 // ════════════════════════════════════════════════════════════════════════════
@@ -232,6 +453,46 @@ export interface Milestone {
   label: string
   when: string
   state: string
+}
+
+export interface ProjectBriefCopy {
+  summary: string
+  statusLabel: string
+  progressLabel: string
+  dependencyLabel?: string
+}
+
+const PROJECT_BRIEF_COPY: Record<DetailPhase, Record<string, ProjectBriefCopy>> = {
+  believed: {
+    p_acme: {
+      summary:
+        'Observed state: Friday is still the target, but the Connector dependency is exposed and no diagnosis has been generated.',
+      statusLabel: 'at risk · dependency symptom',
+      progressLabel: '72% complete · original plan',
+      dependencyLabel: 'Depends on Connector - unresolved',
+    },
+    p_connector: {
+      summary:
+        'Observed state: Monday says on track, but Slack rate-limit and no-update signals say the Connector is at risk.',
+      statusLabel: 'reported on track · signals at risk',
+      progressLabel: '48% complete · stalled signals',
+    },
+  },
+  grown: {
+    p_acme: {
+      summary:
+        'Diagnosed state: Acme remains at risk, but the blocker is owned, Friday core ship is held, and actions are in flight.',
+      statusLabel: 'at risk · diagnosed · Friday held',
+      progressLabel: '72% complete · re-baselined',
+      dependencyLabel: 'Depends on Connector - core scope protected',
+    },
+    p_connector: {
+      summary:
+        'Diagnosed state: Bill gets protected focus, Acme-support interrupts route to Jason, and non-core work leaves Friday scope.',
+      statusLabel: 'at risk · diagnosed · actions in flight',
+      progressLabel: '48% complete · focus route active',
+    },
+  },
 }
 
 // ⚠ 待 Danny 审字。Act1 原始计划：展示 stall，不展示 B8 后的 re-baseline。
@@ -298,15 +559,52 @@ export function projectMilestones(projectId: string, phase: DetailPhase = 'grown
   return null
 }
 
+export function projectBriefFor(project: Project, phase: DetailPhase): ProjectBriefCopy {
+  return (
+    PROJECT_BRIEF_COPY[phase][project.id] ?? {
+      summary: project.summary ?? 'No project summary yet.',
+      statusLabel: project.status.replace('-', ' '),
+      progressLabel: `${project.progress}% complete`,
+      dependencyLabel: project.dependsOn?.length ? 'Dependencies attached' : undefined,
+    }
+  )
+}
+
 // ───────────────────────── Team responsibilities ──────────────────────────────
 // owner + task assignees 派生的成员集合（owner 置顶，去重）。
 
 export interface TeamMember {
   person: Person
   role: 'Owner' | 'Contributor'
+  note: string
 }
 
-export function projectTeam(projectId: string): TeamMember[] {
+const PROJECT_TEAM_NOTES: Record<DetailPhase, Record<string, Record<string, string>>> = {
+  believed: {
+    p_acme: {
+      u_vanessa: 'Owner · holding Friday target',
+      u_kristen: 'Contributor · integration waits on Connector',
+      u_bill: 'Contributor · still owns blocked hookup',
+      u_aidy: 'Contributor · UAT waiting',
+    },
+    p_connector: {
+      u_bill: 'Owner · still carrying Connector and Acme interrupts',
+    },
+  },
+  grown: {
+    p_acme: {
+      u_vanessa: 'Owner · confirms trimmed Friday scope',
+      u_kristen: 'Contributor · protects core UAT path',
+      u_bill: 'Contributor · protected Connector focus',
+      u_aidy: 'Contributor · UAT runs after core hookup',
+    },
+    p_connector: {
+      u_bill: 'Owner · protected focus on rate-limit blocker',
+    },
+  },
+}
+
+export function projectTeam(projectId: string, phase: DetailPhase = 'grown'): TeamMember[] {
   const project = PROJECTS.find((p) => p.id === projectId)
   if (!project) return []
   const assigneeIds = TASKS.filter((task) => task.projectId === projectId).map(
@@ -320,7 +618,12 @@ export function projectTeam(projectId: string): TeamMember[] {
     seen.add(id)
     const person = PEOPLE.find((p) => p.id === id)
     if (!person) continue
-    team.push({ person, role: id === project.ownerId ? 'Owner' : 'Contributor' })
+    const role = id === project.ownerId ? 'Owner' : 'Contributor'
+    team.push({
+      person,
+      role,
+      note: PROJECT_TEAM_NOTES[phase][projectId]?.[id] ?? `${role} · ${person.role}`,
+    })
   }
   return team
 }
@@ -343,8 +646,82 @@ export const TASK_BOARD_COLUMNS: TaskColumn[] = [
   { key: 'done-waiting', title: 'Done or waiting', statuses: ['done', 'todo'] },
 ]
 
-export function tasksForProject(projectId: string): Task[] {
-  return TASKS.filter((task) => task.projectId === projectId)
+export interface ProjectTaskView extends Task {
+  note: string
+}
+
+const PROJECT_TASK_OVERRIDES: Record<DetailPhase, Record<string, Partial<ProjectTaskView>>> = {
+  believed: {
+    t_acme_int: {
+      title: 'Integration test suite - blocked paths still pending',
+      note: 'Raw progress; Connector-dependent coverage cannot close.',
+    },
+    t_acme_data: {
+      title: 'Seed pilot demo data - original Friday prep',
+      note: 'Current assignment; no scope trim yet.',
+    },
+    t_acme_hook: {
+      title: 'Hook up Connector to Acme - stalled',
+      note: 'Visible blocker; no replan generated.',
+    },
+    t_acme_uat: {
+      title: 'UAT with Acme - waiting on hookup',
+      note: 'Friday run exposed to Connector stall.',
+    },
+    t_con_slack: {
+      title: 'Slack ingest + rate-limit handling - stalled',
+      note: 'Repeated blocker still unresolved.',
+    },
+    t_con_gh: {
+      title: 'GitHub webhook receiver - partial progress',
+      note: 'Moving while Bill is interrupted.',
+    },
+    t_con_dedupe: {
+      title: 'Event dedupe + hashing - original scope waiting',
+      note: 'Still included in the visible plan.',
+    },
+  },
+  grown: {
+    t_acme_int: {
+      title: 'Integration test suite - core path guarded',
+      note: 'Tests aim at the trimmed Friday scope.',
+    },
+    t_acme_data: {
+      title: 'Seed pilot demo data - Friday core only',
+      note: 'Non-core Connector assumptions removed.',
+    },
+    t_acme_hook: {
+      title: 'Hook up Connector to Acme - protected focus',
+      note: 'Bill focus blocks assigned; Vanessa confirms scope.',
+    },
+    t_acme_uat: {
+      title: 'UAT with Acme - queued after core hookup',
+      note: 'Run waits for protected core ship, not original full scope.',
+    },
+    t_con_slack: {
+      title: 'Slack ingest + rate-limit handling - action in flight',
+      note: 'Protected focus task; decides contingency.',
+    },
+    t_con_gh: {
+      title: 'GitHub webhook receiver - held in core ship',
+      note: 'Kept as Friday core scope.',
+    },
+    t_con_dedupe: {
+      title: 'Event dedupe + hashing - deferred',
+      status: 'todo',
+      note: 'Moved out of Friday scope.',
+    },
+  },
+}
+
+export function tasksForProject(projectId: string, phase: DetailPhase = 'grown'): ProjectTaskView[] {
+  return TASKS.filter((task) => task.projectId === projectId).map((task) => ({
+    ...task,
+    ...PROJECT_TASK_OVERRIDES[phase][task.id],
+    note:
+      PROJECT_TASK_OVERRIDES[phase][task.id]?.note ??
+      (isBelieved(phase) ? 'Raw board item; no generated action yet.' : 'No generated change needed.'),
+  }))
 }
 
 // ───────────────────────── Handoffs（按 projectId）─────────────────────────────

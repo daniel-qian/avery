@@ -5,6 +5,7 @@ import {
   TASK_BOARD_COLUMNS,
   handoffsForProject,
   milestoneOrder,
+  projectBriefFor,
   projectMilestones,
   projectTeam,
   reportMismatchForProject,
@@ -14,6 +15,7 @@ import {
   type DetailPhase,
 } from '../../data/fixtures.p3'
 import { DetailSection, DetailShell, SourceAnchor } from '../DetailShell'
+import { PixelAvatar } from '../PixelAvatar'
 import { useCanvas } from '../../store/canvasStore'
 
 // P5-03：项目详情页 state-aware。Nexus 完成前只显 raw facts；B9 后智能层长出。
@@ -23,15 +25,6 @@ import { useCanvas } from '../../store/canvasStore'
 
 const nameOf = (id: string) => PEOPLE.find((p) => p.id === id)?.name ?? id
 const titleOf = (id: string) => PROJECTS.find((p) => p.id === id)?.title ?? id
-
-function initials(name: string) {
-  return name
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
-}
 
 function statusTone(status: string) {
   if (status === 'blocked') return 'tone-danger'
@@ -85,12 +78,13 @@ export function ProjectDetailScene() {
   }
 
   const phase: DetailPhase = isGrown ? 'grown' : 'believed'
+  const brief = projectBriefFor(project, phase)
   const milestones = projectMilestones(project.id, phase)
   const sortedMilestones = milestones
     ? [...milestones].sort((a, b) => milestoneOrder(a.when) - milestoneOrder(b.when))
     : null
-  const team = projectTeam(project.id)
-  const tasks = tasksForProject(project.id)
+  const team = projectTeam(project.id, phase)
+  const tasks = tasksForProject(project.id, phase)
   const handoffs = handoffsForProject(project.id, phase)
   const weekly = weeklyUpdatesForProject(project.id, phase)
   const signals = signalsForProject(project.id, phase)
@@ -114,20 +108,20 @@ export function ProjectDetailScene() {
     >
       {/* 1 · Project brief */}
       <section className="brief-card" aria-label="Project brief">
-        {project.summary ? <p className="brief-summary">{project.summary}</p> : null}
+        <p className="brief-summary">{brief.summary}</p>
         <div className="progress-track" aria-hidden="true">
           <div className="progress-fill" style={{ width: `${project.progress}%` }} />
         </div>
         <div className="brief-meta">
           <span className={`brief-status ${statusTone(project.status)}`}>
             <span className="status-dot" aria-hidden="true" />
-            {statusLabel(project.id, project.status, phase)}
+            {brief.statusLabel || statusLabel(project.id, project.status, phase)}
           </span>
-          <span>{project.progress}% complete</span>
+          <span>{brief.progressLabel}</span>
           {project.dueDate ? <span>Due {project.dueDate}</span> : null}
           {project.dependsOn?.map((depId) => (
             <span key={depId} className="brief-dep">
-              Depends on {titleOf(depId)}
+              {brief.dependencyLabel ?? `Depends on ${titleOf(depId)}`}
             </span>
           ))}
           {mismatch ? (
@@ -214,15 +208,13 @@ export function ProjectDetailScene() {
         empty={team.length === 0 ? 'No one assigned yet.' : undefined}
       >
         <div className="team-avatars">
-          {team.map(({ person, role }) => (
+          {team.map(({ person, role, note }) => (
             <div key={person.id} className="team-member">
-              <span className="avatar" aria-hidden="true">
-                {initials(person.name)}
-              </span>
+              <PixelAvatar person={person} size={34} />
               <div>
                 <strong>{person.name}</strong>
                 <span>
-                  {role} · {person.role}
+                  {note || `${role} · ${person.role}`}
                 </span>
               </div>
             </div>
@@ -265,6 +257,7 @@ export function ProjectDetailScene() {
                             <SourceAnchor signals={taskSignals} />
                           </strong>
                           <span>{nameOf(task.assigneeId)}</span>
+                          <p className="phase-note">{task.note}</p>
                         </article>
                       )
                     })

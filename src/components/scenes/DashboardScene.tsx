@@ -12,6 +12,11 @@ import {
   type Project,
 } from '../../data/fixtures'
 import { PERSON_POS, PROJECT_POS, type Pos } from '../../data/layout'
+import {
+  dashboardPersonCopy,
+  dashboardProjectCopy,
+  type DetailPhase,
+} from '../../data/fixtures.p3'
 import { focusEntity, focusSearch, focusTags } from '../../lib/focus'
 import { SvgEdgeLayer } from '../SvgEdgeLayer'
 import { useCanvas, type Focus } from '../../store/canvasStore'
@@ -148,6 +153,7 @@ export function DashboardScene() {
   const [referenceQuery, setReferenceQuery] = useState('')
   const [references, setReferences] = useState<ComposerReference[]>([])
 
+  const dashboardPhase: DetailPhase = briefing.version === 2 ? 'grown' : 'believed'
   const hasFocus = Boolean(focus)
   const selectedTagIds = focus?.source === 'tag' ? focus.selector?.tags ?? [] : []
   const transition: Transition = prefersReducedMotion
@@ -355,6 +361,7 @@ export function DashboardScene() {
           const pos = PERSON_POS[person.id]
           if (!pos) return null
           const hud = personHud(person)
+          const cardCopy = dashboardPersonCopy(person, dashboardPhase)
           const related = isRelated(focus, 'person', person.id)
           const primary = isPrimary(focus, 'person', person.id)
           const muted = hasFocus && !related
@@ -385,7 +392,7 @@ export function DashboardScene() {
               </span>
               <span className="person-body">
                 <h3>{person.name}</h3>
-                <p className="person-role">{person.role}</p>
+                <p className="person-role">{cardCopy.roleLine}</p>
                 <span className="person-stats person-hud" aria-hidden="true">
                   <span className="hud-meter hud-hp">
                     <span className="hud-label">
@@ -405,7 +412,7 @@ export function DashboardScene() {
                       <span className="hud-fill" style={{ width: `${hud.mpPct}%` }} />
                     </span>
                   </span>
-                  <span className="hud-load">{hud.loadPct}% load</span>
+                  <span className="hud-load">{cardCopy.loadLine}</span>
                 </span>
               </span>
             </motion.button>
@@ -417,6 +424,7 @@ export function DashboardScene() {
         {PROJECTS.map((project) => {
           const pos = PROJECT_POS[project.id]
           if (!pos) return null
+          const cardCopy = dashboardProjectCopy(project, dashboardPhase)
           const related = isRelated(focus, 'project', project.id)
           const primary = isPrimary(focus, 'project', project.id)
           const muted = hasFocus && !related
@@ -442,16 +450,16 @@ export function DashboardScene() {
             >
               <span className="project-status">
                 <span className={`status-dot ${statusTone(project.status)}`} />
-                <span>{project.status.replace('-', ' ')}</span>
+                <span>{cardCopy.statusLabel}</span>
               </span>
               <h3>{project.title}</h3>
               <div className="project-detail">
-                {project.summary && <p>{project.summary}</p>}
+                <p>{cardCopy.summary}</p>
                 <div className="progress-track" aria-label={`${project.progress}% complete`}>
                   <div className="progress-fill" style={{ width: `${project.progress}%` }} />
                 </div>
                 <div className="project-meta">
-                  <span>{project.progress}% complete</span>
+                  <span>{cardCopy.progressLabel}</span>
                   <span>{ownerName(project)}</span>
                 </div>
               </div>
@@ -467,12 +475,17 @@ export function DashboardScene() {
         transition={transition}
         onClick={stopPropagation}
       >
-        <form className="composer-card" onSubmit={handleAskQuestion}>
+        <motion.form
+          className="composer-card"
+          onSubmit={handleAskQuestion}
+          animate={{ borderRadius: isComposerExpanded ? 8 : 999 }}
+          transition={transition}
+        >
           <div className="composer-main-row">
             <input
               value={question}
               onClick={() => setComposerOpen(true)}
-              onFocus={() => window.setTimeout(() => setComposerOpen(true), 180)}
+              onFocus={() => setComposerOpen(true)}
               onChange={(event) => setQuestion(event.currentTarget.value)}
               aria-label="Ask Nexus"
             />
@@ -485,10 +498,11 @@ export function DashboardScene() {
             {isComposerExpanded && (
               <motion.div
                 className="composer-reference-row"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 8 }}
+                initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                animate={{ opacity: 1, height: 'auto', marginTop: 8 }}
+                exit={{ opacity: 0, height: 0, marginTop: 0 }}
                 transition={transition}
+                style={{ overflow: 'hidden' }}
               >
                 <button
                   type="button"
@@ -527,10 +541,11 @@ export function DashboardScene() {
             {referenceMenuOpen && (
               <motion.div
                 className="composer-reference-picker"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 8 }}
+                initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                animate={{ opacity: 1, height: 'auto', marginTop: 9 }}
+                exit={{ opacity: 0, height: 0, marginTop: 0 }}
                 transition={transition}
+                style={{ overflow: 'hidden' }}
               >
                 <div className="reference-picker-actions">
                   <button type="button" onClick={addAttachment}>
@@ -569,7 +584,7 @@ export function DashboardScene() {
               </motion.div>
             )}
           </AnimatePresence>
-        </form>
+        </motion.form>
       </motion.div>
     </section>
   )
