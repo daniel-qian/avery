@@ -43,3 +43,24 @@ Dashboard 与 Nexus 共用一个 pan/zoom 画板基座。六条：
 - **CONTEXT.md 不动**：可平移画板是**视觉机制、非领域概念**（glossary 明确 _Avoid_ "canvas" 作术语）。
 - replay-safe（ADR-0006）/ rail 可删（ADR-0003）均不变。
 - 解耦：Dashboard 几何、composer 动画、删标题、avatar 各自独立可落，互不阻塞 ⑥ 的画板基座。
+
+## 修订 1（2026-06-09，P5 实跑回归后 — 修订决策 2 与 4）
+
+第一版 handoff（`handoff-p5-canvas-foundation.md`）**忠实**实现了决策 2/4，但实跑被 git reset 退回，暴露两个回归，**根因都在原决策本身，不在执行**：
+
+1. **比例崩**：people 节点很小、briefing 卡与文字巨大。原因——chrome 在 `<TransformComponent>` **外**、永不被 `scale`；节点在内、被 `scale` 乘。board zoom-to-fit 时（任何 `initialScale<1`）节点缩、chrome 不缩 → 设计师按 1:1 调好的比例当场崩。
+2. **拖拽像在转节点环、不像移动背景**：`canvas-grid`（`global.css` `inset:0`）被当 chrome 留在画板外恒定不动；briefing 钉死正中（`top/left:50%`）坐在节点环的甜甜圈洞里。pan 时 grid 不动、中心卡不动、只有环在滑 → 读作"我抓住了节点环在拖"，因为**没有任何看起来像世界表面的东西随镜头移动**。
+
+诊断：决策 2 的 chrome/canvas 线把"几乎一切"划成 viewport-fixed，board 上只剩裸节点——既无世界表面传达运动（症状 2），也与 chrome 不共享 scale（症状 1）。原决策遗漏了**三份未写明的契约**。下列五条修订之，**取代决策 2 的分层清单与决策 4 的镜头取景**：
+
+1. **重画 world / HUD 线。** **world**（在可平移画板上、随镜头 pan+zoom）= 一张 board 尺寸的**背景表面**（原 `canvas-grid` 搬进画板、放大到 board 尺寸）＋ 实体节点 ＋ 连线 ＋ **briefing** ＋ **`nexus-brief`** ＋ **Nexus 中央结果卡**（Mismatch / Timeline / Chat / StructuredOutput——原 ADR 两张清单都没收录它们，是 gap）。**HUD**（仅 viewport-fixed 浮层）= 只剩真正的"控件家具"：Topbar、Ask composer、dashboard tags/search、alert pills、`nexus-inspector`、advance bar。→ briefing/nexus-brief/结果卡均改判 world，**与节点同缩**，症状 1 大半自愈。
+
+2. **board px only（scale 契约）。** 一切 world 对象的尺寸与定位**纯用 board 像素**——禁 `vw`、禁视口 `%`、禁 `clamp(...100%...)`；这些单位**只在 HUD 合法**。必改的三处遗漏：`nodeStyle()` 的 `clamp(half,pos%,calc(100%-half))` → board px；briefing 宽 `min(460px,calc(100vw-48px))` → 定 px；briefing `h2` 的 `clamp(28px,3.4vw,44px)`（巨字元凶，`vw` 跟的是窗口不是 board）→ 定 px。board 只有一套坐标系，比例对 scale 不变。
+
+3. **calm / 初始镜头 = 公式算的"全图 fit"。** 原 ADR 只定义了 active-step / focus 的派生镜头，**没定义静息镜头**——于是 rzpp 回退默认（`initialScale:1` + `centerOnInit`），装不下 board，执行者多半手设了个小 `initialScale` 硬塞，这正是"开局节点很小"的另一半成因。改为：calm target = 整张 calm map（环＋briefing）包围盒 fit + padding 居中，**复用同一套派生镜头机器**，**不手设 `initialScale`**（守 memory `prefer-runtime-navigation-over-handtuned-layout` ＋ 本 ADR 决策 4）。briefing 既已成 world（可被 pan 出屏），calm 镜头是"开局必见 headline"的保证，非可选。
+
+4. **step / focus 镜头 = 飞向 local bbox（与 calm 相反的操作）。** 中央结果卡既是 world 对象，每拍 rail（及 free-click focus）**飞向 (该拍 active 节点簇 ＋ 该拍结果卡) 的局部包围盒**、zoom 到**结果卡可读**——**不是**把"卡＋整环"塞进全图 fit（大报告卡会把一切缩小 = 症状 1 从后门回来）。环成为出框的可平移上下文；报告是"飞过去的目的地"，非 modal。结果卡因此需要**真实 board 坐标**（锚在各自簇旁），不再 CSS 居中。**calm = 全图 fit；step = 局部 fit，二者方向相反。**
+
+5. **镜头 fit 到 HUD-safe 视口矩形（取代 board-side gutter）。** Topbar（上）/ inspector（右）/ composer（下）都浮在 board 之上；若镜头 fit 整个视口，飞过去的簇与卡会落到这些家具**底下**——即原 ADR 开篇的 "Nexus 撞 inspector" 借镜头复活。原步骤 B 用"board 侧留 inspector 宽 gutter"挡——但 gutter 是固定 board 距离去对抗视口尺寸的面板，跨屏会 mis-fit。改为：镜头 fit-bbox 用**视口减去 HUD 上/右/下 margin 后的安全矩形**，任何缩放下飞过去的内容都落在空净区。**退役 board-side gutter。**
+
+未变：决策 1（选 rzpp）、3（坐标系 viewport-%→board，本修订只是把"什么算 board 对象"扩大）、5（Dashboard 同心放射几何）、6（PixelAvatar）。不扩 `canvasStore` 铁律、replay-safe、rail 可删、CONTEXT.md 不动（world/HUD 同 "canvas"，是视觉机制非领域词）均不变。

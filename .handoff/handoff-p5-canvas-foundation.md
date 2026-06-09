@@ -8,6 +8,7 @@
 ## 0 · READ FIRST（别跳过，决策不要重新发明）
 
 1. **`docs/adr/0012-pannable-zoomable-canvas-rail-derived-camera.md`** — 本次工作的全部决策与否决项。**这份 handoff 不复述它的内容**，只补执行细节。
+   - ⚠️ **先读该 ADR 的「修订 1」节**（第一版被 git reset 退回后写定）。修订 **取代了决策 2 的分层清单与决策 4 的镜头取景**；下方 §2 的步骤 A / 跨④⑤镜头段已按修订更新，但以 ADR 修订为准。五条契约速记：(1) world = 背景表面＋节点＋连线＋briefing＋nexus-brief＋Nexus 结果卡；HUD 只剩控件家具；(2) world 对象 **board px only**，禁 vw/视口%/clamp(…100%)；(3) calm 镜头 = 公式算全图 fit，不手设 initialScale；(4) step/focus 镜头 = 飞向局部 bbox（活跃簇＋该拍结果卡），与 calm 相反；(5) 镜头 fit 到 **HUD-safe 视口矩形**（视口减 HUD margin），退役 board-side gutter。
 2. `CONTEXT.md`（repo 根）— glossary。Dashboard = ambient 空间式指挥中心 / 平静地图；Nexus = 放射编排画布；Calm/Focus 定义。**glossary 只放领域词，明确 _Avoid_ 把 "canvas" 当术语——别加。**
 3. 相关 ADR：`0004`（Nexus 手摆放射坐标——被本 ADR 触及：坐标搬 board 空间，topology 不变）、`0006`（rail replay-to-target，无状态）、`0003`（rail 可删、free-click 是 core）、`0010`（地图层守 calm——这是 ⑤ 选 organic 而非团队扇区的原因）、`0001`（prototype/demo-only）。
 4. 用户工作偏好 memory：`C:\Users\86139\.claude\projects\D--TeamMaster-Prototype-2-0\memory\prefer-runtime-navigation-over-handtuned-layout.md` — **别手摆像素坐标硬塞一屏；用公式算坐标 + 运行时 pan/zoom 导航。** 这正是 ④⑤⑥ 的全部动机。
@@ -27,14 +28,17 @@
 ### 步骤 A — 画板地基（gate 住 ④⑤）
 - 装依赖：`react-zoom-pan-pinch`（v3.4.3，React 18 OK）。
 - 新建 `src/components/PanZoomCanvas.tsx`：包 `<TransformWrapper>` / `<TransformComponent>`，Dashboard 与 Nexus **共用**（强化 ADR-0004"同一产品两面"）。`forwardRef` 暴露 `ReactZoomPanPinchRef` 给镜头 hook。
-- **chrome / canvas 分层**（最关键的一刀）：只有「实体节点 + 连线 SVG」放进 `<TransformComponent>`；其余全部留在外面当 viewport-fixed 浮层 —— Topbar、Ask composer、dashboard tags/search、briefing-layer、alert-pill-layer、`nexus-brief`、`nexus-inspector`、`nexus-advance-bar`。
+- **world / HUD 分层**（最关键的一刀——已按 ADR 修订 1 重画，**勿用旧的"只有节点进画板"版本**）：
+  - **放进 `<TransformComponent>`（world，随镜头 pan+zoom）**：① 一张 board 尺寸的**背景表面**（把 `canvas-grid` 搬进画板、放大到 board 尺寸——这是"拖拽像移动世界而非转节点环"的关键，旧版漏了它）② 实体节点 ③ 连线 SVG ④ `briefing-layer` ⑤ `nexus-brief` ⑥ **Nexus 中央结果卡**（Mismatch/Timeline/Chat/StructuredOutput，需给 board 坐标、不再 CSS 居中）。
+  - **留在外面（HUD，viewport-fixed，只剩控件家具）**：Topbar、Ask composer、dashboard tags/search、`alert-pill-layer`、`nexus-inspector`、`nexus-advance-bar`。
+  - **board px only**：上述 world 对象全部用 board 像素尺寸/定位，**禁 vw / 视口% / `clamp(...100%...)`**（这些只在 HUD 合法）。必清三处：`nodeStyle()` 的 clamp、briefing 宽 `min(460px,100vw-48px)`、briefing `h2` 的 `3.4vw`。
 - **坐标系切换**：`PERSON_POS`/`PROJECT_POS`（`src/data/layout.ts`）、`NEXUS_POS`（`src/data/nexusLayout.ts`）从"视口百分比 + `clamp()`"改为**固定 board 像素坐标**（定一个 board 尺寸，如 1600×1200，可更高）。
   - `DashboardScene.tsx` 的 `nodeStyle()` 现在是 `clamp(half, pos%, calc(100%-half))` → 改成 board 空间的绝对 `left/top` px。
   - `src/components/SvgEdgeLayer.tsx` 和 `NexusScene.tsx` 内的 `NexusEdgeLayer`：现在 `viewBox="0 0 100 100" preserveAspectRatio="none"`（% 坐标）→ 改成 board 尺寸 viewBox，去掉 `preserveAspectRatio="none"`，path 用 board 坐标（`src/lib/edges.ts` 的 `edgePath()`）。
 
 ### 步骤 B — ④ Nexus 安全区 / 向下延申
 - **不重摆 `NEXUS_POS` 的放射 topology**，只搬进 board 坐标。
-- 右侧留一条 = `nexus-inspector` 宽度的 gutter，让 resting 时节点不停在固定面板正后方。
+- **～~右侧留 inspector 宽 gutter~~ 已废**（见修订 1 契约 5）：改用**镜头 HUD-safe inset 取景**解决"撞 inspector"——镜头 fit 时可视区减去右侧 inspector margin，飞过去的内容自然落在面板左侧空净区，不需要在 board 上预留固定 gutter。
 - board 高度可大于视口；节点向下延申由 pan + 镜头兜住。inspector 是 viewport-fixed 浮层，节点平移到它背后即可（不再"撞"）。
 
 ### 步骤 C — ⑤ Dashboard 同心放射（organic，公式算坐标）
@@ -46,9 +50,13 @@
 - **不要团队扇区/org-chart**（ADR-0010 守 calm）。
 - 顺手：把 DashboardScene 里内联的 `avatarStyle()` 换成共享 `<PixelAvatar>`（本 session 已建，见 §4）——ADR-0012 提到的收尾。
 
-### 跨 ④⑤ — rail 派生镜头（camera-on-rail）
-- 新建 `src/lib/useRailCamera.ts`（或 hook）：读活跃 step（Nexus：`thread.steps` 末项 kind；Dashboard：`focus`）→ 算该拍活跃节点簇 → 经 ref 调 `zoomToElement(id, scale?, animationTime?)` 或 `setTransform(x,y,scale,animationTime,'easeOut')` 动画 fit。
-- 给每个节点稳定 DOM `id`，`zoomToElement` 才能定位；簇可 fit 到一个包裹元素或自己算 bbox 后 `setTransform`。
+### 跨 ④⑤ — rail 派生镜头（camera-on-rail，已按 ADR 修订 1 更新）
+- 新建 `src/lib/useRailCamera.ts`（或 hook）：读活跃 step（Nexus：`thread.steps` 末项 kind；Dashboard：`focus`）→ 算镜头目标 → 经 ref `zoomToElement` / `setTransform(x,y,scale,animationTime,'easeOut')` 动画 fit。
+- **两种相反的取景**：
+  - **calm / 静息（无 active step、focus=null、首帧）= 全图 fit**：算整张 map（节点环＋briefing）包围盒，fit 到视口 + padding 居中。**不要手设 `initialScale`**（公式算，守 memory `prefer-runtime-navigation-over-handtuned-layout`）。
+  - **step / focus = 飞向局部 bbox**：算 (该拍活跃节点簇 ＋ 该拍 Nexus 结果卡) 包围盒，zoom 到**结果卡可读**——**不是**把卡＋整环塞进全图 fit（大报告卡会缩小一切 = 比例 bug 复活）。
+- **fit 到 HUD-safe 视口矩形**：包围盒→scale/position 换算时，可视区用**视口减去 HUD margin**（上 Topbar、右 inspector、下 composer），否则飞过去的簇/卡落到固定面板底下（= 原 "撞 inspector" 复活）。**这取代了旧步骤 B 的 "board 侧留 inspector 宽 gutter"——别再做 gutter。**
+- 给每个节点 + 每张结果卡稳定 DOM `id`，`zoomToElement` 才能定位；或自己算 bbox 后 `setTransform`。
 - 纯派生：effect 以"派生出的镜头目标"为 dep。**不入 store**。手动 pan 后下一拍 rail 再收回——与 focus 同构。
 - 镜头同时适用 Dashboard 与 Nexus。
 
