@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState, type CSSProperties, type FormEvent, type MouseEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent } from 'react'
 import { AnimatePresence, motion, useReducedMotion, type Transition } from 'framer-motion'
+import type { ReactZoomPanPinchRef } from 'react-zoom-pan-pinch'
 import {
   CAPABILITIES,
   DASHBOARD_TAGS,
@@ -11,7 +12,8 @@ import {
   type Person,
   type Project,
 } from '../../data/fixtures'
-import { PERSON_POS, PROJECT_POS, type Pos } from '../../data/layout'
+import { PERSON_POS, PROJECT_POS, TEAM_ZONES, type Pos } from '../../data/layout'
+import { bboxOf, type BoardRect } from '../../data/board'
 import {
   dashboardPersonCopy,
   dashboardProjectCopy,
@@ -19,9 +21,18 @@ import {
 } from '../../data/fixtures.p3'
 import { focusEntity, focusSearch, focusTags } from '../../lib/focus'
 import { SvgEdgeLayer } from '../SvgEdgeLayer'
+import { PanZoomCanvas } from '../PanZoomCanvas'
+import { useRailCamera, type SafeInsets } from '../../lib/useRailCamera'
+import { PixelAvatar } from '../PixelAvatar'
 import { useCanvas, type Focus } from '../../store/canvasStore'
 
-const NODE_GUTTER = 18
+// world 对象的估算半宽/半高（board px），仅供镜头算包围盒。
+const PERSON_HALF = { w: 95, h: 62 }
+const PROJECT_HALF = { w: 110, h: 86 }
+
+// Dashboard inset（修订 3）：full-bleed——近零 inset 让 glance map 填满整屏；HUD（briefing/alerts/
+// composer）作为可叠放角落 chrome 浮在地图边角之上。只留够清 Topbar/tag 条与 composer 的薄边。
+const DASHBOARD_INSETS: SafeInsets = { top: 76, right: 28, bottom: 112, left: 28 }
 
 type ReferenceKind = 'person' | 'project' | 'capability' | 'file'
 type ReferenceFilter = 'all' | Exclude<ReferenceKind, 'file'>
@@ -40,14 +51,9 @@ const REFERENCE_FILTERS: Array<{ id: ReferenceFilter; label: string }> = [
   { id: 'capability', label: 'Capabilities' },
 ]
 
-function nodeStyle(pos: Pos, widthPx: number) {
-  const half = Math.ceil(widthPx / 2) + NODE_GUTTER
-  return {
-    left: `clamp(${half}px, ${pos.x}%, calc(100% - ${half}px))`,
-    top: `clamp(112px, ${pos.y}%, calc(100% - 118px))`,
-    x: '-50%',
-    y: '-50%',
-  }
+// board 绝对坐标（修订 2：world 对象 board px only，禁 clamp/vw）。
+function nodeStyle(pos: Pos) {
+  return { left: `${pos.x}px`, top: `${pos.y}px`, x: '-50%', y: '-50%' }
 }
 
 function statusTone(status: string) {
@@ -73,18 +79,6 @@ function personTone(hud: ReturnType<typeof personHud>) {
   if (hud.hpPct <= 0) return 'tone-danger'
   if (hud.hpPct <= 12) return 'tone-warning'
   return 'tone-stable'
-}
-
-function avatarStyle(person: Person) {
-  const sprite = person.avatarSprite
-  return {
-    '--avatar-image': `url(${sprite.src})`,
-    '--avatar-size': `${sprite.frameSize}px`,
-    '--avatar-sheet-width': `${sprite.sheetWidth}px`,
-    '--avatar-x': `-${sprite.frameX}px`,
-    '--avatar-y': `-${sprite.frameY}px`,
-    '--avatar-idle-end-x': `-${sprite.frameX + sprite.frameSize * 4}px`,
-  } as CSSProperties
 }
 
 function ownerName(project: Project) {
@@ -181,6 +175,46 @@ export function DashboardScene() {
   }, [])
 
   const focusReference = useMemo(() => focusReferenceOf(focus), [focus])
+
+  // ── rail 派生镜头（ADR-0012 决策 4）：calm = 全图 fit；focus = 飞向关联簇局部 bbox。──
+  const camRef = useRef<ReactZoomPanPinchRef | null>(null)
+
+  const cameraTarget = useMemo<BoardRect | null>(() => {
+    const items: Array<{ pos: Pos; halfW: number; halfH: number }> = []
+    if (!focus) {
+      PEOPLE.forEach((p) => {
+        const pos = PERSON_POS[p.id]
+        if (pos) items.push({ pos, halfW: PERSON_HALF.w, halfH: PERSON_HALF.h })
+      })
+      PROJECTS.forEach((p) => {
+        const pos = PROJECT_POS[p.id]
+        if (pos) items.push({ pos, halfW: PROJECT_HALF.w, halfH: PROJECT_HALF.h })
+      })
+      return bboxOf(items)
+    }
+    const personIds = new Set(focus.personIds)
+    if (focus.primary?.kind === 'person') personIds.add(focus.primary.id)
+    const projectIds = new Set(focus.projectIds)
+    if (focus.primary?.kind === 'project') projectIds.add(focus.primary.id)
+    personIds.forEach((id) => {
+      const pos = PERSON_POS[id]
+      if (pos) items.push({ pos, halfW: PERSON_HALF.w, halfH: PERSON_HALF.h })
+    })
+    projectIds.forEach((id) => {
+      const pos = PROJECT_POS[id]
+      if (pos) items.push({ pos, halfW: PROJECT_HALF.w, halfH: PROJECT_HALF.h })
+    })
+    return bboxOf(items)
+  }, [focus])
+
+  const cameraKey = useMemo(() => {
+    if (!focus) return 'calm'
+    return `${focus.source}|${[...focus.personIds].sort().join(',')}|${[...focus.projectIds]
+      .sort()
+      .join(',')}|${focus.primary?.id ?? ''}`
+  }, [focus])
+
+  useRailCamera(camRef, cameraTarget, DASHBOARD_INSETS, cameraKey, { maxFitScale: 1.05 })
 
   const visibleReferences = useMemo(() => {
     const refs = focusReference ? [focusReference] : []
@@ -289,72 +323,21 @@ export function DashboardScene() {
       aria-label="Dashboard"
       onClick={clearFocus}
     >
-      <div className="canvas-grid" aria-hidden="true" />
-      <SvgEdgeLayer />
+      <PanZoomCanvas ref={camRef}>
+        <div className="canvas-grid board-surface" aria-hidden="true" />
+        <SvgEdgeLayer />
 
-      <div className="dashboard-control-layer" onClick={stopPropagation}>
-        <div className="dashboard-tags" aria-label="Dashboard focus tags">
-          {DASHBOARD_TAGS.map((tag) => {
-            const active = selectedTagIds.includes(tag.id)
-            return (
-              <button
-                key={tag.id}
-                type="button"
-                className={classNames(['dashboard-tag', active && 'is-active'])}
-                aria-pressed={active}
-                onClick={() => handleTagClick(tag.id)}
-              >
-                {tag.label}
-              </button>
-            )
-          })}
-        </div>
-        <label className="dashboard-search">
-          <span>Find</span>
-          <input
-            type="search"
-            value={searchQuery}
-            placeholder="person or project"
-            onChange={(event) => handleSearchChange(event.currentTarget.value)}
-          />
-        </label>
-      </div>
-
-      <motion.section
-        className="briefing-layer"
-        aria-label="Executive briefing"
-        style={{ x: '-50%', y: '-50%' }}
-        animate={{ opacity: hasFocus ? 0.28 : 1, scale: hasFocus ? 0.96 : 1 }}
-        transition={transition}
-      >
-        <p className="eyebrow">Live organization weather</p>
-        <h2>{briefing.headline}</h2>
-        <p>{briefing.subhead}</p>
-        <div className="metric-row" aria-label="Key metrics">
-          {briefing.metrics.map((m) => (
-            <span key={m.label}>
-              <strong>{m.value}</strong> {m.label}
+        <div className="zone-label-layer" aria-hidden="true">
+          {TEAM_ZONES.map((zone) => (
+            <span
+              key={zone.team}
+              className="team-zone-label"
+              style={{ left: `${zone.labelPos.x}px`, top: `${zone.labelPos.y}px` }}
+            >
+              {zone.label}
             </span>
           ))}
         </div>
-      </motion.section>
-
-      <div className="alert-pill-layer" aria-label="Dashboard alerts" onClick={stopPropagation}>
-        {alertPills.map((pill) => (
-          <button
-            key={pill.id}
-            type="button"
-            className="alert-pill"
-            onClick={() => setFocus(focusEntity('project', pill.projectId))}
-          >
-            <span className="alert-label">{pill.label}</span>
-            <span>
-              <strong>{pill.title}</strong>
-              <small>{pill.detail}</small>
-            </span>
-          </button>
-        ))}
-      </div>
 
       <div className="people-layer" aria-label="People orbit">
         {PEOPLE.map((person) => {
@@ -377,7 +360,7 @@ export function DashboardScene() {
                 related && 'is-related',
                 primary && 'is-focused',
               ])}
-              style={nodeStyle(pos, 156)}
+              style={nodeStyle(pos)}
               animate={{ opacity: muted ? 0.24 : 1, scale: primary ? 1.08 : related ? 1.02 : 1 }}
               transition={transition}
               aria-label={`${primary ? 'Open' : 'Focus'} ${person.name}. HP ${hud.hpPct}. MP ${hud.mpPct}. ${hud.loadPct}% load.`}
@@ -387,9 +370,7 @@ export function DashboardScene() {
                 handleNodeClick('person', person.id)
               }}
             >
-              <span className="avatar pixel-avatar" aria-hidden="true">
-                <span className="pixel-avatar-sprite" style={avatarStyle(person)} />
-              </span>
+              <PixelAvatar person={person} size={34} className="person-avatar" />
               <span className="person-body">
                 <h3>{person.name}</h3>
                 <p className="person-role">{cardCopy.roleLine}</p>
@@ -438,7 +419,7 @@ export function DashboardScene() {
                 related && 'is-related',
                 primary && 'is-focused',
               ])}
-              style={nodeStyle(pos, 244)}
+              style={nodeStyle(pos)}
               animate={{ opacity: muted ? 0.24 : 1, scale: primary ? 1.08 : related ? 1.02 : 1 }}
               transition={transition}
               aria-label={primary ? `Open ${project.title}` : `Focus ${project.title}`}
@@ -466,6 +447,71 @@ export function DashboardScene() {
             </motion.button>
           )
         })}
+      </div>
+      </PanZoomCanvas>
+
+      <div className="dashboard-control-layer" onClick={stopPropagation}>
+        <div className="dashboard-tags" aria-label="Dashboard focus tags">
+          {DASHBOARD_TAGS.map((tag) => {
+            const active = selectedTagIds.includes(tag.id)
+            return (
+              <button
+                key={tag.id}
+                type="button"
+                className={classNames(['dashboard-tag', active && 'is-active'])}
+                aria-pressed={active}
+                onClick={() => handleTagClick(tag.id)}
+              >
+                {tag.label}
+              </button>
+            )
+          })}
+        </div>
+        <label className="dashboard-search">
+          <span>Find</span>
+          <input
+            type="search"
+            value={searchQuery}
+            placeholder="person or project"
+            onChange={(event) => handleSearchChange(event.currentTarget.value)}
+          />
+        </label>
+      </div>
+
+      <motion.section
+        className="briefing-layer"
+        aria-label="Executive briefing"
+        onClick={stopPropagation}
+        animate={{ opacity: hasFocus ? 0.5 : 1 }}
+        transition={transition}
+      >
+        <p className="eyebrow">Live organization weather</p>
+        <h2>{briefing.headline}</h2>
+        <p>{briefing.subhead}</p>
+        <div className="metric-row" aria-label="Key metrics">
+          {briefing.metrics.map((m) => (
+            <span key={m.label}>
+              <strong>{m.value}</strong> {m.label}
+            </span>
+          ))}
+        </div>
+      </motion.section>
+
+      <div className="alert-pill-layer" aria-label="Dashboard alerts" onClick={stopPropagation}>
+        {alertPills.map((pill) => (
+          <button
+            key={pill.id}
+            type="button"
+            className="alert-pill"
+            onClick={() => setFocus(focusEntity('project', pill.projectId))}
+          >
+            <span className="alert-label">{pill.label}</span>
+            <span>
+              <strong>{pill.title}</strong>
+              <small>{pill.detail}</small>
+            </span>
+          </button>
+        ))}
       </div>
 
       <motion.div

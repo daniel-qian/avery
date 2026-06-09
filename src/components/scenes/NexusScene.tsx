@@ -1,4 +1,5 @@
-import { useMemo, useState, type CSSProperties, type FormEvent } from 'react'
+import { useMemo, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from 'react'
+import type { ReactZoomPanPinchRef } from 'react-zoom-pan-pinch'
 import {
   AGENT_OUTPUT,
   HERO_QUESTION,
@@ -11,11 +12,27 @@ import {
   type Signal,
   type TaskTemplate,
 } from '../../data/fixtures'
-import { NEXUS_EDGES, NEXUS_NODES, NEXUS_POS, type NexusNodeId } from '../../data/nexusLayout'
+import {
+  NEXUS_CARD_ANCHORS,
+  NEXUS_EDGES,
+  NEXUS_NODES,
+  NEXUS_POS,
+  type NexusNodeId,
+} from '../../data/nexusLayout'
+import { NEXUS_BOARD, bboxOf, type BoardRect, type Pos } from '../../data/board'
 import { edgePath } from '../../lib/edges'
 import { deriveNexusEdgeState, deriveNexusNodeStates, NEXUS_STEP_NODES } from '../../lib/nexusFlow'
 import { useCanvas, type ThreadStepKind } from '../../store/canvasStore'
+import { PanZoomCanvas } from '../PanZoomCanvas'
+import { useRailCamera, type SafeInsets } from '../../lib/useRailCamera'
 import { PixelAvatar } from '../PixelAvatar'
+
+// Nexus 节点的估算半宽/半高（board px），供镜头算包围盒。
+const NODE_HALF = { w: 110, h: 70 }
+
+// Nexus inset（修订 3）：full-bleed——inspector 降级为右上角落 chrome（非实体右面板），
+// 故不再为它留宽 inset；只留薄边清 Topbar / advance-bar。
+const NEXUS_INSETS: SafeInsets = { top: 80, right: 28, bottom: 100, left: 28 }
 
 const STEP_LABELS: Record<ThreadStepKind, string> = {
   'pm-agent': 'PM agent checks delivery evidence',
@@ -30,9 +47,24 @@ function classNames(parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(' ')
 }
 
+// board 绝对坐标（修订 2：world 对象 board px only）。.flow-node 基类带 translate(-50%,-50%)。
 function nodeStyle(nodeId: NexusNodeId) {
   const pos = NEXUS_POS[nodeId]
-  return { left: `${pos.x}%`, top: `${pos.y}%` }
+  return { left: `${pos.x}px`, top: `${pos.y}px` }
+}
+
+// 中央结果卡的 board 锚点容器：定位到该拍 card anchor，居中对齐。
+function CardSlot({ step, children }: { step: ThreadStepKind; children: ReactNode }) {
+  const anchor = NEXUS_CARD_ANCHORS[step]
+  if (!anchor) return <>{children}</>
+  return (
+    <div
+      className="nexus-card-slot"
+      style={{ left: `${anchor.pos.x}px`, top: `${anchor.pos.y}px` }}
+    >
+      {children}
+    </div>
+  )
 }
 
 const mismatchEvidence = MISMATCH.evidenceSignalIds
@@ -86,8 +118,7 @@ function NexusEdgeLayer({
   return (
     <svg
       className="nexus-edge-layer"
-      viewBox="0 0 100 100"
-      preserveAspectRatio="none"
+      viewBox={`0 0 ${NEXUS_BOARD.width} ${NEXUS_BOARD.height}`}
       aria-hidden="true"
     >
       {NEXUS_EDGES.map((edge) => {
@@ -398,6 +429,26 @@ export function NexusScene() {
     goScene('dashboard')
   }
 
+  // ── rail 派生镜头（ADR-0012 决策 4 + 修订 4）：calm = 全图 fit；step = 飞向「活跃簇 + 结果卡」局部 bbox。──
+  const camRef = useRef<ReactZoomPanPinchRef | null>(null)
+  const cameraTarget = useMemo<BoardRect | null>(() => {
+    const items: Array<{ pos: Pos; halfW: number; halfH: number }> = []
+    if (!activeStep) {
+      NEXUS_NODES.forEach((n) =>
+        items.push({ pos: NEXUS_POS[n.id], halfW: NODE_HALF.w, halfH: NODE_HALF.h }),
+      )
+      return bboxOf(items)
+    }
+    NEXUS_STEP_NODES[activeStep].forEach((id) =>
+      items.push({ pos: NEXUS_POS[id], halfW: NODE_HALF.w, halfH: NODE_HALF.h }),
+    )
+    const card = NEXUS_CARD_ANCHORS[activeStep]
+    if (card) items.push({ pos: card.pos, halfW: card.half.w, halfH: card.half.h })
+    return bboxOf(items)
+  }, [activeStep])
+
+  useRailCamera(camRef, cameraTarget, NEXUS_INSETS, activeStep ?? 'calm', { maxFitScale: 1.1 })
+
   return (
     <section
       className={classNames([
@@ -409,8 +460,9 @@ export function NexusScene() {
       ])}
       aria-label="Nexus"
     >
-      <div className="canvas-grid" aria-hidden="true" />
-      <div className="nexus-flow-layer" aria-label="Nexus orchestration topology">
+      <PanZoomCanvas ref={camRef} board={NEXUS_BOARD}>
+        <div className="canvas-grid board-surface" aria-hidden="true" />
+        <div className="nexus-flow-layer" aria-label="Nexus orchestration topology">
         <NexusEdgeLayer steps={thread.steps} activeStep={activeStep} />
         {NEXUS_NODES.map((node) => {
           const state = nodeStates[node.id]
@@ -441,17 +493,32 @@ export function NexusScene() {
         })}
       </div>
 
-      {showMismatch ? <MismatchCard /> : null}
-      {showTimeline ? <TimelineCard /> : null}
-      {showStructuredOutput ? (
-        <StructuredOutputCard
-          dispatchedTaskKeys={dispatchedTaskKeys}
-          onDispatchTask={dispatchTask}
-          onReturnDashboard={returnToDashboard}
-        />
-      ) : null}
+        {showMismatch ? (
+          <CardSlot step="cross-check">
+            <MismatchCard />
+          </CardSlot>
+        ) : null}
+        {showTimeline ? (
+          <CardSlot step="timeline">
+            <TimelineCard />
+          </CardSlot>
+        ) : null}
+        {showStructuredOutput ? (
+          <CardSlot step="structured-output">
+            <StructuredOutputCard
+              dispatchedTaskKeys={dispatchedTaskKeys}
+              onDispatchTask={dispatchTask}
+              onReturnDashboard={returnToDashboard}
+            />
+          </CardSlot>
+        ) : null}
+        {showChat ? (
+          <CardSlot step="human-loop">
+            <ChatCard />
+          </CardSlot>
+        ) : null}
 
-      {showChat ? <ChatCard /> : null}
+      </PanZoomCanvas>
 
       <section className="nexus-brief">
         <p className="eyebrow">Nexus orchestration</p>

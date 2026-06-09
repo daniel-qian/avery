@@ -64,3 +64,37 @@ Dashboard 与 Nexus 共用一个 pan/zoom 画板基座。六条：
 5. **镜头 fit 到 HUD-safe 视口矩形（取代 board-side gutter）。** Topbar（上）/ inspector（右）/ composer（下）都浮在 board 之上；若镜头 fit 整个视口，飞过去的簇与卡会落到这些家具**底下**——即原 ADR 开篇的 "Nexus 撞 inspector" 借镜头复活。原步骤 B 用"board 侧留 inspector 宽 gutter"挡——但 gutter 是固定 board 距离去对抗视口尺寸的面板，跨屏会 mis-fit。改为：镜头 fit-bbox 用**视口减去 HUD 上/右/下 margin 后的安全矩形**，任何缩放下飞过去的内容都落在空净区。**退役 board-side gutter。**
 
 未变：决策 1（选 rzpp）、3（坐标系 viewport-%→board，本修订只是把"什么算 board 对象"扩大）、5（Dashboard 同心放射几何）、6（PixelAvatar）。不扩 `canvasStore` 铁律、replay-safe、rail 可删、CONTEXT.md 不动（world/HUD 同 "canvas"，是视觉机制非领域词）均不变。
+
+## 修订 4（2026-06-09，修订3 后微调 — 两个 brief 统一为顶部居中 HUD 文字）
+
+纯视觉微调：(1) Dashboard weather/briefing 由左上「卡片」改为**顶部居中的干净文字**（去背景/边框、字更小），仍 HUD。(2) Nexus orchestration brief 由 world 卡改为**顶部居中 HUD**（样式不变），与 Dashboard weather 同位同型。两面 brief 至此统一为顶部居中 HUD 文字。未触及几何 / 镜头 / 数据。
+
+## 修订 3（2026-06-09，修订2 落地后实跑 — 全幅取景、退役 HUD-safe 通则、顶部 HUD 与 team 标签）
+
+修订 2 落地后实跑（截图）仍三处不对：(a) calm map 仍偏小——根因是为"躲恒显 HUD"把镜头 inset 收成左右各 300 的中间窄带，地图没用满屏；(b) 顶部 tags/search 被我堆进窄左列、换行拥挤；(c) team 名水印钉在簇心、被中心节点压住读不到。经 grill 定三条，**取代 修订 5 的「fit HUD-safe 矩形」通则**：
+
+1. **全幅取景（full-bleed），HUD 一律=可叠放角落 chrome。** 镜头用近零 inset 填满整屏；briefing / alerts / tabs / composer / **Nexus inspector** 全部视作叠在 world 之上、容许压住地图边角的角落 chrome。**关键连带：Nexus inspector 从"实体右侧面板"降级为紧凑角落卡（右上）**——修订 5 当初要 HUD-safe inset 是怕"飞过去的簇/卡藏到实体右面板背后"；现在用**"不存在实体侧面板"**这个更强的不变量替代它（没有实体 panel，自然没有"藏在背后"）。⇒ **修订 5 的「镜头 fit HUD-safe 视口矩形」作为通则退役**；新不变量 = "HUD 无实体侧面板，全是可叠放角落 chrome"。calm = full-fit 整图 / step = 飞局部 bbox 的方向不变，只是 inset 收到近零。
+
+2. **Dashboard 顶部 HUD = 全宽横向 tags/search 条**（恢复 P1 的横向条，非修订2 我误做的窄左列）；briefing 仍为左上 HUD 卡，置于该条**之下**。
+
+3. **team 标签 = 簇上方的安静小标题**（位置随簇尺寸上移到顶节点之上），取代修订2 的簇心大水印（被中心节点压）。仍"team 靠感知不靠画框"：无边界无楔形，只一行安静领域名给方位。
+
+未变：修订 2 的软团队聚簇几何 / briefing 为 HUD / weather-forward 节点 / calm=full-fit 整图（仍全图，只是 inset 近零填满屏）；board px-only；不扩 `canvasStore`、replay-safe、rail 可删、CONTEXT.md 不动均不变。
+
+## 修订 2（2026-06-09，修订1 落地后实跑回归 — 修订决策 5 与「calm 镜头」的执行、briefing 归层、节点表征）
+
+修订 1 忠实落地（full-fit calm + 同心环 + briefing 入 world），但实跑暴露 **calm 开局整图太小、节点不可读**（见实跑截图）。根因不在"full-fit"本身，而在三处执行选择放大了它：(a) board 取 2600×3000 **过高** → full-fit 受高度约束、scale≈0.32；(b) **圆形**同心环在宽视口里受高度约束、左右大片留白，且环间距观感随机；(c) briefing 入 world 后同样被缩成小字。
+
+经 grill-with-docs 逐支决策（对照 CONTEXT.md「Dashboard=ambient 天气地图」「Calm=最简密度、一切在握」+ ADR-0010「地图层守 calm」）定下五条，**取代决策 5 的几何、修订 1 的 briefing 归层，并补「calm 是什么」的语义**：
+
+1. **calm = 整图一览（glance map），full-fit 保留。** calm 的职责确认为：开局读**形状与天气**（簇、热点、辐条），细节靠 zoom/focus。决策 4 / 修订 3 的「公式算 full-fit、不手设 initialScale」**不变**。"initial camera strategy" 这一念头消解——full-fit 就是策略，问题在可读性，不在镜头。
+
+2. **board 改宽屏比例（约 16:10），让 full-fit 横向填满。** board 过高是 calm 太小的首因。改为视口比例的宽 board（如 ~2600×1640），full-fit 转为受**宽度**约束、scale 升到 ~0.55–0.6、节点约 2× 大、无左右死白。守 memory `prefer-runtime-navigation-over-handtuned-layout`：靠公式 + 运行时导航，不是手摆硬塞——本修订只是把 board 形状对齐视口、抬升 glance 可读上限。
+
+3. **决策 5 几何：同心放射环 → 软标签团队聚簇（soft labeled team zones）。** You **不再**居中当 hub，降为 Founders 簇内普通一员（观察者身份由 Topbar/HUD 承载）；13 人按 team 聚成**有机блоб**、铺满宽板；7 项目**各自贴在 owner 旁**（owner→project = 短辐条、project 视觉上归属其人）。**关键边界（守 ADR-0010 + 决策 5 否决「楔形 org-chart」的初衷）：team 只影响"坐在哪"（邻近聚拢）+ 轻量标签，无硬边界、无楔形、无层级 chrome——"team 靠感知、不靠画框"。天气（节点 tone / 热点）仍是视觉主角，结构只承载布局。** 这是对决策 5「同心放射」的**取代式澄清**，非推翻其精神（仍有机、公式化、非生硬结构图）。
+
+4. **briefing：world → HUD（取代修订 1 的 briefing 入 world）。** full-fit glance 下 world-briefing 同样被缩小；改回 HUD = **恒可见**（比"靠 calm 镜头保证"更强的 headline 保证）、且不随 zoom 变形。满卡停靠**左上 tags/search HUD 之下**。CONTEXT.md「Briefing」词义不受影响（HUD/world 是视觉机制）。
+
+5. **节点 = weather-forward 固定表征（否决 zoom-reactive LOD）。** 每个节点恒显 avatar + 名 + 强 tone/状态（天气），HP/MP 用紧凑色条而非待读数字；尺寸调到 **glance scale 可读**。要读细节就 zoom/focus——**同一 DOM 物理放大**即清晰，**不写随 zoom 重渲的 LOD**（守 demo 简洁，ADR-0001）。
+
+未变：决策 1（rzpp）、决策 3（board px-only 坐标契约）、决策 6（PixelAvatar）、修订 1 的 world/HUD 大框架（仅 briefing 一项移回 HUD）、修订 4（Nexus 中央卡飞向局部 bbox）、修订 5（镜头 fit HUD-safe 矩形）。**本修订只动 Dashboard 几何 + briefing 归层 + 节点表征；Nexus 放射 topology 不动。** 不扩 `canvasStore`、replay-safe、rail 可删、CONTEXT.md 不动均不变（软团队聚簇是布局实现，非术语；Dashboard 概念仍是 ambient 天气地图，软邻近聚拢 ≠ 被否的 org-chart）。

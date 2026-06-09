@@ -1,5 +1,6 @@
 import { PROJECTS } from '../data/fixtures'
 import { PERSON_POS, PROJECT_POS } from '../data/layout'
+import { BOARD } from '../data/board'
 import { edgePath } from '../lib/edges'
 import { useCanvas } from '../store/canvasStore'
 
@@ -7,15 +8,14 @@ function classNames(parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(' ')
 }
 
-// owner → project 连线层。viewBox 0–100 + preserveAspectRatio=none：
-// path 直接用布局的 % 坐标，无需测像素；vector-effect 保证线宽不被拉伸。
+// owner → project 连线层。P5 (ADR-0012)：viewBox 改为 board 尺寸，path 用 board px 坐标
+// （随镜头一起缩放）。vector-effect=non-scaling-stroke 保证线宽不被 zoom 拉伸。
 export function SvgEdgeLayer() {
   const focus = useCanvas((s) => s.focus)
   return (
     <svg
       className="edge-layer"
-      viewBox="0 0 100 100"
-      preserveAspectRatio="none"
+      viewBox={`0 0 ${BOARD.width} ${BOARD.height}`}
       aria-hidden="true"
     >
       {PROJECTS.map((p) => {

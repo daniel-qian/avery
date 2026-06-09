@@ -1,4 +1,4 @@
-import type { Pos } from './layout'
+import type { Pos } from './board'
 import type { ThreadStepKind } from '../store/canvasStore'
 
 export type NexusNodeId =
@@ -95,7 +95,10 @@ export const NEXUS_NODES: NexusNode[] = [
   },
 ]
 
-export const NEXUS_POS: Record<NexusNodeId, Pos> = {
+// P5 ④ (ADR-0012 决策 3 + 修订)：放射 topology 不变（决策 2/ADR-0004 保留），仅把坐标
+// 从「视口百分比」搬进 board 像素。源 topology 仍以 0–100 描述（易读），模块加载时按公式
+// 映射到 board 空间：flow 居中在 board 中轴、向下延申；右侧 board 区留给中央结果卡。
+const NEXUS_POS_PCT: Record<NexusNodeId, Pos> = {
   question: { x: 50, y: 17 },
   'pm-agent': { x: 32, y: 34 },
   'hr-agent': { x: 68, y: 34 },
@@ -105,6 +108,37 @@ export const NEXUS_POS: Record<NexusNodeId, Pos> = {
   bill: { x: 66, y: 71 },
   tool: { x: 34, y: 72 },
   output: { x: 50, y: 87 },
+}
+
+// pct → board px。flow 横向居中（board 中轴 ±500），纵向 320→2520 向下铺；右侧 board 留给结果卡。
+function toBoard(pct: Pos): Pos {
+  return {
+    x: 1300 + ((pct.x - 50) / 100) * 1000,
+    y: 320 + (pct.y / 100) * 2200,
+  }
+}
+
+export const NEXUS_POS: Record<NexusNodeId, Pos> = Object.fromEntries(
+  (Object.keys(NEXUS_POS_PCT) as NexusNodeId[]).map((id) => [id, toBoard(NEXUS_POS_PCT[id])]),
+) as Record<NexusNodeId, Pos>
+
+// 中央结果卡的 board 锚点（修订 4：结果卡是 world 对象、需真实 board 坐标，锚在各自簇旁的
+// 右侧空带；每拍镜头飞向「活跃簇 ＋ 该卡」的局部包围盒）。half = 估算半宽/半高，仅供镜头算 bbox，
+// 不必精确（padding 兜误差）。pm-agent / hr-root-cause 无中央卡 → 不在此表。
+// nexus-brief（orchestration headline + 进度）的 board 锚点：顶部带，flow question 节点之上。
+// calm 镜头保证开局必见。
+export const NEXUS_BRIEF_POS: Pos = { x: 1300, y: 360 }
+
+export interface CardAnchor {
+  pos: Pos
+  half: { w: number; h: number }
+}
+
+export const NEXUS_CARD_ANCHORS: Partial<Record<ThreadStepKind, CardAnchor>> = {
+  'cross-check': { pos: { x: 2100, y: 1420 }, half: { w: 310, h: 280 } },
+  'human-loop': { pos: { x: 2100, y: 1320 }, half: { w: 280, h: 300 } },
+  timeline: { pos: { x: 2100, y: 1430 }, half: { w: 340, h: 300 } },
+  'structured-output': { pos: { x: 2100, y: 1470 }, half: { w: 380, h: 360 } },
 }
 
 export const NEXUS_EDGES: NexusEdge[] = [
