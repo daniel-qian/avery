@@ -1,0 +1,2226 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>teamMaster PM Dashboard UI</title>
+  <style>
+    :root {
+      --bg: #f6f2ea;
+      --paper: #fffdf8;
+      --surface: #ffffff;
+      --soft: #faf8f1;
+      --line: #e6ded0;
+      --ink: #202832;
+      --muted: #667085;
+      --faint: #98a2b3;
+      --iris: #5b55d9;
+      --iris-dark: #4038b8;
+      --iris-soft: #eeedff;
+      --mint: #0f9675;
+      --mint-soft: #e7f8f1;
+      --amber: #ae741c;
+      --amber-soft: #fff3d5;
+      --rose: #c33d5d;
+      --rose-soft: #fff0f3;
+      --blue: #256fb5;
+      --blue-soft: #e9f3ff;
+      --slate: #111827;
+      --shadow: 0 18px 44px rgba(32, 40, 50, .10);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 5% 4%, rgba(91, 85, 217, .10), transparent 28%),
+        radial-gradient(circle at 100% 0%, rgba(15, 150, 117, .10), transparent 26%),
+        var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 248px minmax(0, 1fr);
+    }
+
+    .side {
+      border-right: 1px solid var(--line);
+      background: rgba(255, 253, 248, .82);
+      backdrop-filter: blur(14px);
+      padding: 24px 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 8px 24px;
+    }
+
+    .mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      background: linear-gradient(135deg, var(--iris), var(--mint));
+      font-weight: 900;
+    }
+
+    .brand b { display: block; font-size: 16px; }
+    .brand span { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; }
+
+    .nav { display: grid; gap: 6px; }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-radius: 13px;
+      padding: 11px 12px;
+      color: #475467;
+      font-size: 14px;
+      font-weight: 750;
+    }
+
+    .nav-item.active {
+      color: #fff;
+      background: var(--slate);
+      box-shadow: 0 13px 30px rgba(17, 24, 39, .16);
+    }
+
+    .nav-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 9px;
+      display: grid;
+      place-items: center;
+      background: rgba(102, 112, 133, .11);
+      font-size: 12px;
+    }
+
+    .side-card {
+      margin: 28px 8px 0;
+      border: 1px solid #bcebdc;
+      background: var(--mint-soft);
+      border-radius: 18px;
+      padding: 16px;
+    }
+
+    .side-card b {
+      display: block;
+      color: #08745b;
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .side-card p {
+      margin: 8px 0 0;
+      color: #286455;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    main {
+      padding: 28px;
+      min-width: 0;
+    }
+
+    .view[hidden] { display: none; }
+
+    .topbar,
+    .hero {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 24px;
+      margin-bottom: 18px;
+    }
+
+    .hero {
+      border: 1px solid var(--line);
+      background: rgba(255, 253, 248, .88);
+      box-shadow: var(--shadow);
+      border-radius: 28px;
+      padding: 24px;
+    }
+
+    .eyebrow {
+      color: var(--iris-dark);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 34px;
+      line-height: 1.08;
+      letter-spacing: -.03em;
+    }
+
+    .lead {
+      margin: 10px 0 0;
+      max-width: 760px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .status-row,
+    .filters,
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .status-row { justify-content: flex-end; min-width: 330px; }
+
+    .chip,
+    .priority {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.78);
+      color: #475467;
+      padding: 8px 11px;
+      font-size: 12px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .good { color: #08745b; background: var(--mint-soft); border-color: #bcebdc; }
+    .warn { color: #8a5a12; background: var(--amber-soft); border-color: #f6d994; }
+    .risk { color: #9f2445; background: var(--rose-soft); border-color: #fecdd8; }
+    .info { color: #245f9e; background: var(--blue-soft); border-color: #c8def6; }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .filter,
+    .search {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.74);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 9px 12px;
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .filter.active {
+      background: var(--slate);
+      color: white;
+      border-color: var(--slate);
+    }
+
+    .search { border-radius: 14px; min-width: 280px; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .card,
+    .panel,
+    .section {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .card {
+      position: relative;
+      overflow: hidden;
+      min-height: 300px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card:before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 6px;
+      background: var(--mint);
+    }
+
+    .card.critical:before { background: var(--rose); }
+    .card.warning:before { background: var(--amber); }
+    .card.info-card:before { background: var(--blue); }
+
+    .card-head {
+      padding: 20px 20px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .title-wrap {
+      display: flex;
+      gap: 13px;
+      align-items: flex-start;
+      min-width: 0;
+    }
+
+    .project-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      border: 1px solid #d8d4ff;
+      background: var(--iris-soft);
+      color: var(--iris-dark);
+      font-size: 14px;
+      font-weight: 950;
+    }
+
+    .project-title h2 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.18;
+      letter-spacing: -.02em;
+    }
+
+    .project-title p {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .card-body {
+      padding: 0 20px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+    }
+
+    .meta-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .meta,
+    .mini-card,
+    .source,
+    .task {
+      border: 1px solid var(--line);
+      background: var(--soft);
+      border-radius: 16px;
+      padding: 12px;
+    }
+
+    .meta span,
+    .mini-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .meta b,
+    .mini-card b {
+      display: block;
+      margin-top: 7px;
+      font-size: 14px;
+    }
+
+    .team-box,
+    .follow-box,
+    .milestone {
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, #fff, #fbfaf6);
+      border-radius: 17px;
+      padding: 13px;
+    }
+
+    .box-head,
+    .milestone-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .box-head b,
+    .milestone-head b {
+      color: var(--muted);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+    }
+
+    .people {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+    }
+
+    .person-chip {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 9px 6px 6px;
+      cursor: pointer;
+      box-shadow: 0 6px 14px rgba(32, 40, 50, .06);
+    }
+
+    .person-chip:hover {
+      border-color: #d8d4ff;
+      background: var(--iris-soft);
+    }
+
+    .avatar {
+      position: relative;
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      overflow: hidden;
+      background: var(--blue-soft);
+      border: 1px solid #c8def6;
+      color: var(--blue);
+      font-size: 9px;
+      font-weight: 950;
+    }
+
+    .avatar:before {
+      content: "";
+      position: absolute;
+      top: 7px;
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: currentColor;
+      opacity: .35;
+    }
+
+    .avatar:after {
+      content: "";
+      position: absolute;
+      bottom: 5px;
+      width: 18px;
+      height: 10px;
+      border-radius: 999px 999px 5px 5px;
+      background: currentColor;
+      opacity: .26;
+    }
+
+    .avatar span { position: relative; z-index: 1; margin-top: 2px; }
+    .avatar.iris { background: var(--iris-soft); border-color: #d8d4ff; color: var(--iris-dark); }
+    .avatar.mint { background: var(--mint-soft); border-color: #bcebdc; color: #08745b; }
+    .avatar.amber { background: var(--amber-soft); border-color: #f6d994; color: #8a5a12; }
+    .avatar.rose { background: var(--rose-soft); border-color: #fecdd8; color: #9f2445; }
+
+    .person-copy { min-width: 0; text-align: left; }
+    .person-copy b { display: block; max-width: 95px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+    .person-copy small { display: block; margin-top: 1px; max-width: 95px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 10.5px; }
+
+    .follow-box p,
+    .panel p,
+    .section p,
+    .source span,
+    .task span {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .follow-box p {
+      color: var(--ink);
+      font-weight: 650;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 10px;
+    }
+
+    .tag {
+      border-radius: 999px;
+      background: #f3f4f6;
+      color: #475467;
+      padding: 6px 9px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .timeline {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      padding-top: 15px;
+    }
+
+    .timeline:before {
+      content: "";
+      position: absolute;
+      left: 8%;
+      right: 8%;
+      top: 21px;
+      height: 3px;
+      border-radius: 999px;
+      background: #e8e2d8;
+    }
+
+    .timeline:after {
+      content: "";
+      position: absolute;
+      left: 8%;
+      top: 21px;
+      width: var(--progress, 50%);
+      height: 3px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--iris), var(--mint));
+    }
+
+    .step {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      min-width: 0;
+    }
+
+    .dot {
+      width: 15px;
+      height: 15px;
+      border-radius: 999px;
+      margin: 0 auto 8px;
+      border: 3px solid #e8e2d8;
+      background: #fff;
+    }
+
+    .step.done .dot { border-color: var(--mint); background: var(--mint); }
+    .step.active .dot { border-color: var(--iris); box-shadow: 0 0 0 5px var(--iris-soft); }
+    .step.risk .dot { border-color: var(--rose); box-shadow: 0 0 0 5px var(--rose-soft); }
+
+    .step span {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 850;
+    }
+
+    .actions {
+      display: flex;
+      gap: 9px;
+      margin-top: auto;
+    }
+
+    .btn {
+      appearance: none;
+      border: 0;
+      border-radius: 13px;
+      padding: 10px 12px;
+      font-size: 12px;
+      font-weight: 950;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
+
+    .btn.primary { color: #fff; background: var(--iris); box-shadow: 0 12px 22px rgba(91,85,217,.20); }
+    .btn.secondary { color: var(--iris-dark); background: var(--iris-soft); border: 1px solid #d8d4ff; }
+    .btn.ghost { color: var(--muted); background: transparent; border: 1px solid var(--line); }
+
+    .right-stack,
+    .stack {
+      display: grid;
+      gap: 14px;
+    }
+
+    .panel,
+    .section {
+      padding: 18px;
+    }
+
+    .panel h2,
+    .section h2 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: -.02em;
+    }
+
+    .sub {
+      margin: 6px 0 14px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .list {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .source b,
+    .task b {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+
+    .ai-panel {
+      background: var(--slate);
+      color: #fff;
+      border: 0;
+    }
+
+    .ai-panel h2 { color: #fff; }
+    .ai-panel .sub { color: #cbd5e1; }
+
+    .back {
+      margin-bottom: 16px;
+    }
+
+    .hero-kpis {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(130px, 1fr));
+      gap: 10px;
+      min-width: 300px;
+    }
+
+    .kpi {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 18px;
+      padding: 14px;
+    }
+
+    .kpi span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+
+    .kpi b {
+      display: block;
+      margin-top: 8px;
+      font-size: 18px;
+    }
+
+    .detail-layout,
+    .nexus-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .decision-strip,
+    .task-board,
+    .weekly-grid,
+    .suggestions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .decision-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .task-board { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    .suggestion,
+    .context-pill {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: var(--soft);
+      border-radius: 16px;
+      padding: 12px;
+      color: var(--ink);
+      text-align: left;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .context-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 14px 0;
+    }
+
+    .context-pill {
+      border-radius: 999px;
+      padding: 8px 10px;
+      color: var(--muted);
+      background: #fff;
+    }
+
+    .context-pill.active,
+    .suggestion.active,
+    .suggestion:hover {
+      color: #08745b;
+      border-color: #bcebdc;
+      background: var(--mint-soft);
+    }
+
+    textarea,
+    input,
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 16px;
+      color: var(--ink);
+      font: inherit;
+      font-size: 13px;
+      line-height: 1.45;
+      padding: 12px;
+    }
+
+    textarea { min-height: 110px; resize: vertical; }
+
+    .answer,
+    .thread {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .message {
+      border: 1px solid var(--line);
+      background: var(--soft);
+      border-radius: 18px;
+      padding: 13px;
+    }
+
+    .message.user { border-color: #d8d4ff; background: var(--iris-soft); }
+    .message.assistant { border-color: #bcebdc; background: var(--mint-soft); }
+
+    .message b {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .report-deck {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .slide-card {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 22px;
+      padding: 18px;
+      min-height: 230px;
+      box-shadow: 0 10px 24px rgba(32, 40, 50, .06);
+    }
+
+    .slide-card.wide-slide {
+      grid-column: 1 / -1;
+      min-height: 520px;
+      background: #f7f7f5;
+      border-color: #deded8;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ppt-title {
+      margin: 0 0 24px;
+      font-size: 42px;
+      line-height: 1.05;
+      font-weight: 350;
+      letter-spacing: 0;
+    }
+
+    .ppt-title strong {
+      font-weight: 900;
+    }
+
+    .ppt-star {
+      position: absolute;
+      top: 28px;
+      right: 32px;
+      width: 62px;
+      height: 62px;
+      background: var(--rose);
+      clip-path: polygon(50% 0%, 57% 30%, 79% 9%, 70% 39%, 100% 31%, 73% 50%, 100% 69%, 70% 61%, 79% 91%, 57% 70%, 50% 100%, 43% 70%, 21% 91%, 30% 61%, 0% 69%, 27% 50%, 0% 31%, 30% 39%, 21% 9%, 43% 30%);
+    }
+
+    .column-report {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 42px;
+      align-items: center;
+    }
+
+    .column-graph {
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr);
+      gap: 12px;
+      align-items: stretch;
+      min-height: 320px;
+    }
+
+    .y-axis {
+      display: grid;
+      grid-template-rows: repeat(5, 1fr);
+      color: #3f3f3f;
+      font-size: 12px;
+      font-weight: 850;
+      text-align: right;
+      padding: 0 0 34px;
+    }
+
+    .plot {
+      position: relative;
+      height: 320px;
+      border-bottom: 2px solid #777;
+      background:
+        linear-gradient(to bottom, rgba(0,0,0,.11) 0 1px, transparent 1px) 0 0 / 100% 25%;
+    }
+
+    .bar-groups {
+      position: absolute;
+      inset: 0 12px 0 12px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 24px;
+    }
+
+    .bar-group {
+      position: relative;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 8px;
+      padding-bottom: 32px;
+    }
+
+    .bar-col {
+      width: 18px;
+      height: var(--h);
+      border-radius: 5px 5px 0 0;
+      border: 2px solid #1f1f1f;
+      background: #fff;
+      box-shadow: 0 1px 0 rgba(0,0,0,.2);
+    }
+
+    .bar-col.red { background: #ff315d; }
+    .bar-col.blue { background: #4c4bd7; }
+    .bar-col.black { background: #191919; }
+    .bar-col.outline { background: #fff; }
+
+    .group-label {
+      position: absolute;
+      bottom: 8px;
+      left: 0;
+      right: 0;
+      color: #3d3d3d;
+      font-size: 11px;
+      font-weight: 900;
+      text-align: center;
+    }
+
+    .report-legend {
+      display: grid;
+      gap: 24px;
+    }
+
+    .legend-row {
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .legend-swatch {
+      width: 24px;
+      height: 24px;
+      margin-top: 6px;
+      border: 2px solid #1f1f1f;
+      background: #fff;
+    }
+
+    .legend-swatch.red { background: #ff315d; }
+    .legend-swatch.blue { background: #4c4bd7; }
+    .legend-swatch.black { background: #191919; }
+
+    .legend-row b {
+      display: block;
+      font-size: 28px;
+      line-height: 1.05;
+      margin-bottom: 6px;
+    }
+
+    .legend-row span {
+      display: block;
+      color: #333;
+      font-size: 15px;
+      line-height: 1.35;
+    }
+
+    .ppt-footer {
+      margin-top: 22px;
+      color: #242424;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .timeline-slide {
+      grid-column: 1 / -1;
+      min-height: 430px;
+      background: #fffdf8;
+    }
+
+    .report-timeline {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 34px;
+      padding-top: 34px;
+    }
+
+    .report-timeline:before {
+      content: "";
+      position: absolute;
+      left: 7%;
+      right: 7%;
+      top: 48px;
+      height: 4px;
+      border-radius: 999px;
+      background: #dfddd5;
+    }
+
+    .report-timeline:after {
+      content: "";
+      position: absolute;
+      left: 7%;
+      top: 48px;
+      width: var(--timeline-progress, 50%);
+      height: 4px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--mint), var(--iris));
+    }
+
+    .timeline-card {
+      position: relative;
+      z-index: 1;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 18px;
+      padding: 42px 13px 13px;
+      min-height: 160px;
+      box-shadow: 0 8px 18px rgba(32, 40, 50, .05);
+    }
+
+    .timeline-pin {
+      position: absolute;
+      top: -1px;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      border: 4px solid #dfddd5;
+      background: #fff;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 950;
+    }
+
+    .timeline-card.done .timeline-pin {
+      border-color: var(--mint);
+      background: var(--mint);
+      color: #fff;
+    }
+
+    .timeline-card.active .timeline-pin {
+      border-color: var(--iris);
+      box-shadow: 0 0 0 6px var(--iris-soft);
+      color: var(--iris-dark);
+    }
+
+    .timeline-card.risk .timeline-pin {
+      border-color: var(--rose);
+      box-shadow: 0 0 0 6px var(--rose-soft);
+      color: var(--rose);
+    }
+
+    .timeline-card h4 {
+      margin: 0 0 8px;
+      font-size: 14px;
+      line-height: 1.2;
+    }
+
+    .timeline-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .timeline-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 11px;
+    }
+
+    .timeline-meta span {
+      border-radius: 999px;
+      background: #f3f4f6;
+      color: #475467;
+      padding: 5px 8px;
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .timeline-legend {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .timeline-legend .source {
+      background: var(--soft);
+    }
+
+    .slide-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .slide-number {
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      background: var(--iris-soft);
+      color: var(--iris-dark);
+      font-size: 12px;
+      font-weight: 950;
+    }
+
+    .slide-card h3 {
+      margin: 0;
+      font-size: 17px;
+      letter-spacing: -.02em;
+    }
+
+    .slide-card p {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.48;
+    }
+
+    .chart-row {
+      display: grid;
+      grid-template-columns: 112px minmax(0, 1fr);
+      gap: 16px;
+      align-items: center;
+      margin-top: 14px;
+    }
+
+    .donut {
+      width: 108px;
+      height: 108px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: conic-gradient(var(--iris) var(--value), #ece7dd 0);
+      position: relative;
+    }
+
+    .donut:after {
+      content: "";
+      position: absolute;
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: #fff;
+    }
+
+    .donut b {
+      position: relative;
+      z-index: 1;
+      font-size: 18px;
+    }
+
+    .bar-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 84px minmax(0, 1fr) 42px;
+      gap: 9px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .bar-track {
+      height: 9px;
+      border-radius: 999px;
+      background: #ece7dd;
+      overflow: hidden;
+    }
+
+    .bar-track i {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--mint);
+    }
+
+    .bar-track.warn i { background: var(--amber); }
+    .bar-track.risk i { background: var(--rose); }
+    .bar-track.info i { background: var(--blue); }
+
+    .risk-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .risk-cell {
+      border: 1px solid var(--line);
+      background: var(--soft);
+      border-radius: 14px;
+      padding: 10px;
+      min-height: 72px;
+    }
+
+    .risk-cell.active {
+      border-color: #fecdd8;
+      background: var(--rose-soft);
+    }
+
+    .risk-cell b {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
+
+    .risk-cell span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .checklist {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .check-item {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 18px;
+      padding: 13px;
+      display: grid;
+      grid-template-columns: 26px minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .check-item input {
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      accent-color: var(--iris);
+    }
+
+    .check-item b {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 5px;
+    }
+
+    .check-item span,
+    .review-note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .review-status {
+      border-radius: 999px;
+      padding: 6px 9px;
+      background: var(--blue-soft);
+      color: var(--blue);
+      font-size: 11px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 28px;
+      background: rgba(17, 24, 39, .42);
+      backdrop-filter: blur(10px);
+      z-index: 50;
+    }
+
+    .modal-backdrop.open { display: flex; }
+
+    .modal {
+      width: min(900px, 100%);
+      max-height: min(880px, 92vh);
+      overflow: auto;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      box-shadow: 0 32px 80px rgba(17, 24, 39, .28);
+    }
+
+    .modal-head {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 18px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 253, 248, .96);
+      backdrop-filter: blur(12px);
+      padding: 22px;
+    }
+
+    .modal-title {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .modal-title .avatar {
+      width: 58px;
+      height: 58px;
+    }
+
+    .modal-title h2,
+    .modal-head h2 {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: -.02em;
+    }
+
+    .modal-title p,
+    .modal-head p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .close {
+      appearance: none;
+      border: 1px solid var(--line);
+      width: 38px;
+      height: 38px;
+      border-radius: 14px;
+      background: #fff;
+      color: var(--muted);
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .modal-body {
+      padding: 22px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .modal-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    @media (max-width: 1180px) {
+      .app { grid-template-columns: 1fr; }
+      .side { display: none; }
+      .layout,
+      .detail-layout,
+      .nexus-layout,
+      .column-report,
+      .hero { grid-template-columns: 1fr; display: grid; }
+      .grid,
+      .decision-strip,
+      .task-board,
+      .weekly-grid,
+      .suggestions,
+      .report-deck,
+      .report-timeline,
+      .timeline-legend,
+      .modal-grid,
+      .form-grid { grid-template-columns: 1fr; }
+      .topbar,
+      .toolbar { flex-direction: column; align-items: flex-start; }
+      .status-row,
+      .hero-kpis { min-width: 0; justify-content: flex-start; }
+      .search { min-width: 100%; width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="side">
+      <div class="brand">
+        <div class="mark">tm</div>
+        <div>
+          <b>teamMaster</b>
+          <span>Project command center</span>
+        </div>
+      </div>
+      <nav class="nav">
+        <div class="nav-item active"><span class="nav-icon">P</span>Projects</div>
+        <div class="nav-item"><span class="nav-icon">D</span>Dashboard</div>
+        <div class="nav-item"><span class="nav-icon">T</span>Tasks</div>
+        <div class="nav-item"><span class="nav-icon">N</span>Nexus</div>
+        <div class="nav-item"><span class="nav-icon">R</span>Review</div>
+        <div class="nav-item"><span class="nav-icon">W</span>Workload</div>
+      </nav>
+      <div class="side-card">
+        <b>PM dashboard logic</b>
+        <p>Start from clean project cards, then drill into project details, people, risks, and AI-assisted follow-ups.</p>
+      </div>
+    </aside>
+
+    <main>
+      <section class="view" id="dashboardView">
+        <header class="topbar">
+          <div>
+            <div class="eyebrow">Project Manager Dashboard</div>
+            <h1>Projects that need your attention</h1>
+            <p class="lead">Each card shows the project name, priority, delivery progress, team members, and the fastest next action.</p>
+          </div>
+          <div class="status-row">
+            <span class="chip good">8 active projects</span>
+            <span class="chip risk">2 critical follow-ups</span>
+            <span class="chip warn">5 due this week</span>
+            <span class="chip info">Updated 09:12</span>
+          </div>
+        </header>
+
+        <div class="toolbar">
+          <div class="filters">
+            <span class="filter active">All projects</span>
+            <span class="filter">P0 Critical</span>
+            <span class="filter">Needs follow-up</span>
+            <span class="filter">Blocked</span>
+            <span class="filter">Healthy</span>
+          </div>
+          <div class="search">Search project, teammate, or follow-up</div>
+        </div>
+
+        <section class="layout">
+          <div class="grid" id="projectGrid"></div>
+          <aside class="right-stack">
+            <section class="panel">
+              <h2>Today's PM focus</h2>
+              <p class="sub">Only the highest-priority follow-ups across your projects.</p>
+              <div class="list">
+                <div class="task"><b>Escalate Atlas SSO blocker</b><span>Due today - suggested owner: Ana</span></div>
+                <div class="task"><b>Move API QA checklist</b><span>James is overloaded - Sofia has capacity</span></div>
+                <div class="task"><b>Clean hiring candidate statuses</b><span>Three stale candidate records</span></div>
+              </div>
+            </section>
+            <section class="panel">
+              <h2>Team capacity</h2>
+              <p class="sub">Useful when deciding who can take the next follow-up.</p>
+              <div class="list">
+                <div class="task"><b>James Silva</b><span>92% load - needs manager check-in</span></div>
+                <div class="task"><b>Sofia Lee</b><span>61% load - can take contained QA work</span></div>
+                <div class="task"><b>Ana Martins</b><span>74% load - focused but waiting on decisions</span></div>
+              </div>
+            </section>
+            <section class="panel ai-panel">
+              <h2>AI recommendation</h2>
+              <p class="sub">Create follow-ups only after reviewing the generated action.</p>
+              <div class="task"><b>Create 3 follow-up tasks</b><span>Atlas escalation, API QA reassignment, hiring status cleanup.</span></div>
+            </section>
+          </aside>
+        </section>
+      </section>
+
+      <section class="view" id="nexusView" hidden>
+        <button class="btn ghost back" type="button" onclick="showDashboard()">Back to projects</button>
+        <header class="hero">
+          <div>
+            <div class="eyebrow">Ask Nexus</div>
+            <h1 id="nexusTitle">Ask Nexus about Atlas Onboarding</h1>
+            <p class="lead" id="nexusLead">Use project context, tasks, people signals, HR knowledge, and source evidence to answer one PM question.</p>
+          </div>
+          <div class="hero-kpis">
+            <div class="kpi"><span>Project health</span><b id="nexusHealth">Critical</b></div>
+            <div class="kpi"><span>Delivery</span><b id="nexusDelivery">48%</b></div>
+            <div class="kpi"><span>Priority</span><b id="nexusPriority">P0</b></div>
+            <div class="kpi"><span>Confidence</span><b id="nexusConfidence">88%</b></div>
+          </div>
+        </header>
+
+        <section class="nexus-layout">
+          <div class="stack">
+            <section class="section">
+              <h2>Project question</h2>
+              <p class="sub">Choose what context Nexus should use, then ask or click a suggested question.</p>
+              <div class="context-row" id="contextControls">
+                <button class="context-pill active" type="button" data-context="Project">Project</button>
+                <button class="context-pill active" type="button" data-context="Tasks">Tasks</button>
+                <button class="context-pill active" type="button" data-context="People">People</button>
+                <button class="context-pill active" type="button" data-context="HR">HR</button>
+                <button class="context-pill" type="button" data-context="Docs">Docs</button>
+              </div>
+              <textarea id="nexusQuestion">What should I follow up on today, who is responsible, and is there any HR risk?</textarea>
+              <div class="actions" style="margin-top: 12px;">
+                <button class="btn primary" type="button" onclick="generateNexusAnswer()">Generate answer</button>
+                <button class="btn ghost" type="button" onclick="showDashboard()">Cancel</button>
+              </div>
+            </section>
+            <section class="section">
+              <h2>Suggested questions</h2>
+              <div class="suggestions" id="nexusSuggestions"></div>
+            </section>
+            <section class="section">
+              <h2>Conversation</h2>
+              <div class="thread" id="nexusThread"></div>
+            </section>
+            <section class="section">
+              <h2>Answer</h2>
+              <div class="answer" id="nexusAnswer"></div>
+            </section>
+            <section class="section">
+              <h2>Manager report deck</h2>
+              <p class="sub">Nexus speaks like an employee reporting upward: what I finished, what is blocked, what decision I need, and what the data says.</p>
+              <div class="report-deck" id="nexusReportDeck"></div>
+            </section>
+          </div>
+
+          <aside class="right-stack">
+            <section class="panel">
+              <h2>Project state</h2>
+              <p class="sub" id="nexusStateSummary">The selected project is waiting on the next delivery gate.</p>
+              <div class="list" id="nexusStateList"></div>
+            </section>
+            <section class="panel">
+              <h2>Context used</h2>
+              <p class="sub">The answer is scoped to this project.</p>
+              <div class="list" id="nexusSources"></div>
+            </section>
+            <section class="panel ai-panel">
+              <h2>Suggested action</h2>
+              <p class="sub" id="nexusAction">Create one follow-up task and notify the responsible person.</p>
+              <button class="btn primary" type="button" onclick="openFollowup(currentProject)">Create follow-up</button>
+            </section>
+          </aside>
+        </section>
+      </section>
+
+      <section class="view" id="detailsView" hidden>
+        <button class="btn ghost back" type="button" onclick="showDashboard()">Back to projects</button>
+        <header class="hero">
+          <div>
+            <div class="eyebrow">Project Details</div>
+            <h1 id="detailsTitle">Atlas Onboarding</h1>
+            <p class="lead" id="detailsLead">A single place for project objective, delivery progress, people responsibilities, risks, evidence, and HR signals.</p>
+          </div>
+          <div class="hero-kpis">
+            <div class="kpi"><span>Health</span><b id="detailsHealth">Critical</b></div>
+            <div class="kpi"><span>Delivery</span><b id="detailsDelivery">48%</b></div>
+            <div class="kpi"><span>Priority</span><b id="detailsPriority">P0</b></div>
+            <div class="kpi"><span>Next gate</span><b id="detailsGate">SSO unblock</b></div>
+          </div>
+        </header>
+
+        <section class="detail-layout">
+          <div class="stack">
+            <section class="section">
+              <h2>Project brief</h2>
+              <p id="detailsBrief">Client implementation with SSO dependency.</p>
+              <div class="decision-strip" id="detailsDecisions"></div>
+              <div class="list" id="detailsBriefList"></div>
+            </section>
+            <section class="section">
+              <h2>Delivery milestones</h2>
+              <p id="detailsMilestoneText">Current delivery progress and next gate.</p>
+              <div class="milestone" id="detailsMilestone" style="margin-top:14px;"></div>
+            </section>
+            <section class="section">
+              <h2>Team responsibilities</h2>
+              <p>Click any person to inspect current tasks, weekly summary, personal sentiment, and HR analysis.</p>
+              <div class="people" id="detailsTeam" style="margin-top:14px;"></div>
+            </section>
+            <section class="section">
+              <h2>Task board</h2>
+              <p>Grouped by manager decision state instead of a long task list.</p>
+              <div class="task-board" id="detailsTaskBoard"></div>
+            </section>
+            <section class="section">
+              <h2>Dependencies and handoffs</h2>
+              <div class="list" id="detailsSignals"></div>
+            </section>
+            <section class="section">
+              <h2>Weekly team updates</h2>
+              <div class="weekly-grid" id="detailsWeekly"></div>
+            </section>
+          </div>
+
+          <aside class="right-stack">
+            <section class="panel">
+              <h2>Risk and HR signal</h2>
+              <p class="sub" id="detailsRisk">One owner is overloaded and the blocker needs manager support.</p>
+              <div class="list" id="detailsRiskList"></div>
+            </section>
+            <section class="panel">
+              <h2>Evidence</h2>
+              <p class="sub">Source traces behind the summary.</p>
+              <div class="list" id="detailsSources"></div>
+            </section>
+            <section class="panel ai-panel">
+              <h2>Next best move</h2>
+              <p class="sub" id="detailsAction">Create the follow-up and ask Nexus for a short escalation note.</p>
+              <div class="actions">
+                <button class="btn primary" type="button" onclick="openFollowup(currentProject)">Create follow-up</button>
+                <button class="btn secondary" type="button" onclick="openNexus(currentProject)">Ask Nexus</button>
+                <button class="btn ghost" type="button" onclick="openReview(currentProject)">Manager review</button>
+              </div>
+            </section>
+          </aside>
+        </section>
+      </section>
+
+      <section class="view" id="reviewView" hidden>
+        <button class="btn ghost back" type="button" onclick="showDashboard()">Back to projects</button>
+        <header class="hero">
+          <div>
+            <div class="eyebrow">Manager Review</div>
+            <h1 id="reviewTitle">Manager checklist</h1>
+            <p class="lead" id="reviewLead">A human verification page for task updates. The manager confirms evidence, quality, blockers, ownership, and whether the update can be accepted.</p>
+          </div>
+          <div class="hero-kpis">
+            <div class="kpi"><span>Submitted updates</span><b id="reviewUpdates">4</b></div>
+            <div class="kpi"><span>Need check</span><b id="reviewNeedCheck">2</b></div>
+            <div class="kpi"><span>People signal</span><b id="reviewPeopleSignal">Review</b></div>
+            <div class="kpi"><span>Decision</span><b id="reviewDecision">Pending</b></div>
+          </div>
+        </header>
+
+        <section class="detail-layout">
+          <div class="stack">
+            <section class="section">
+              <h2>Manager checklist</h2>
+              <p class="sub">This is the manager's own checklist before accepting a task update as true, complete, and ready for the next step.</p>
+              <div class="checklist" id="managerChecklist"></div>
+            </section>
+            <section class="section">
+              <h2>Task updates to verify</h2>
+              <p class="sub">Each update needs human review because AI can summarize, but the manager owns acceptance.</p>
+              <div class="list" id="reviewTaskUpdates"></div>
+            </section>
+            <section class="section">
+              <h2>Manager notes</h2>
+              <textarea id="reviewNotes">Before accepting the update, check whether the blocker owner, evidence, and next due time are explicit.</textarea>
+              <div class="actions" style="margin-top:12px;">
+                <button class="btn primary" type="button">Accept verified updates</button>
+                <button class="btn secondary" type="button" onclick="openFollowup(currentProject)">Create follow-up</button>
+                <button class="btn ghost" type="button" onclick="openNexus(currentProject)">Ask Nexus</button>
+              </div>
+            </section>
+          </div>
+
+          <aside class="right-stack">
+            <section class="panel">
+              <h2>Verification summary</h2>
+              <p class="sub" id="reviewSummary">Use this to separate project execution risk from people support risk.</p>
+              <div class="list" id="reviewSignals"></div>
+            </section>
+            <section class="panel">
+              <h2>Evidence to inspect</h2>
+              <p class="sub">The manager should check these before accepting the task update.</p>
+              <div class="list" id="reviewSources"></div>
+            </section>
+            <section class="panel ai-panel">
+              <h2>Manager decision</h2>
+              <p class="sub" id="reviewAction">Accept, ask for clarification, or create a follow-up.</p>
+              <div class="actions">
+                <button class="btn primary" type="button">Accept</button>
+                <button class="btn secondary" type="button">Need clarification</button>
+              </div>
+            </section>
+          </aside>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="personModal" aria-hidden="true">
+    <article class="modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <div class="modal-title">
+          <div class="avatar iris" id="modalAvatar"><span>AM</span></div>
+          <div>
+            <h2 id="modalName">Ana Martins</h2>
+            <p id="modalRole">Project Manager - Atlas Onboarding</p>
+          </div>
+        </div>
+        <button class="close" type="button" onclick="closeModal('personModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-grid" id="personMetrics"></div>
+        <section class="section"><h2>Project responsibility</h2><p id="personResponsibility"></p></section>
+        <section class="section"><h2>Current project tasks</h2><div class="list" id="personTasks"></div></section>
+        <section class="section"><h2>Weekly summary and personal sentiment</h2><p id="personSummary"></p></section>
+        <section class="section good"><h2>HR knowledge analysis</h2><p id="personHr"></p></section>
+      </div>
+    </article>
+  </div>
+
+  <div class="modal-backdrop" id="followupModal" aria-hidden="true">
+    <article class="modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <div>
+          <div class="eyebrow">Create Follow-up</div>
+          <h2 id="followupTitle">Atlas Onboarding</h2>
+          <p id="followupSubtitle">Turn the recommendation into an owned task.</p>
+        </div>
+        <button class="close" type="button" onclick="closeModal('followupModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label for="followupTask">Follow-up task</label>
+          <textarea id="followupTask"></textarea>
+        </div>
+        <div class="form-grid">
+          <div class="field"><label for="followupOwner">Owner</label><select id="followupOwner"></select></div>
+          <div class="field"><label for="followupPriority">Priority</label><select id="followupPriority"><option>P0 Critical</option><option>P1 High</option><option>P2 Medium</option><option>P3 Normal</option></select></div>
+          <div class="field"><label for="followupDue">Due</label><input id="followupDue" /></div>
+          <div class="field"><label for="followupSource">Source</label><input id="followupSource" value="Nexus + weekly updates" /></div>
+        </div>
+        <section class="section good"><h2>AI review before creating</h2><p id="followupNote"></p></section>
+        <div class="actions" style="justify-content:flex-end;">
+          <button class="btn ghost" type="button" onclick="closeModal('followupModal')">Cancel</button>
+          <button class="btn primary" type="button">Create task</button>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <script>
+    const people = {
+      ana: {
+        name: 'Ana Martins',
+        initials: 'AM',
+        avatar: 'iris',
+        role: 'Project Manager',
+        status: 'Focused',
+        progress: '68%',
+        load: '74%',
+        signal: 'Healthy',
+        responsibility: 'Owns client timeline, unblock coordination, stakeholder alignment, and executive status updates.',
+        summary: 'This week Ana coordinated stakeholder updates, clarified two timeline risks, and documented the blocker path. Sentiment is steady, with mild frustration around slow external decisions.',
+        hr: 'No immediate intervention needed. If blocker ownership remains unclear for another 48 hours, schedule a short support conversation to reduce coordination fatigue.',
+        tasks: [['Prepare client blocker update', 'In progress - due today - 70%'], ['Confirm project scope change', 'Waiting on customer - 40%'], ['Review AI task batch', 'Not started - due tomorrow']]
+      },
+      james: {
+        name: 'James Silva',
+        initials: 'JS',
+        avatar: 'rose',
+        role: 'Engineering Lead',
+        status: 'Overloaded',
+        progress: '54%',
+        load: '92%',
+        signal: 'Needs manager check-in',
+        responsibility: 'Owns backend implementation, SSO integration path, technical dependency mapping, and release readiness.',
+        summary: 'This week James completed API review work but has too many parallel responsibilities. His update mentions context switching and difficulty protecting focus time.',
+        hr: 'Recommend a manager conversation this week. Reduce parallel ownership, move QA checklist to Sofia, and agree on one protected focus block per day.',
+        tasks: [['Resolve SSO integration questions', 'Blocked - waiting on Atlas - 48%'], ['Finalize API v2 backend changes', 'In progress - due Friday - 72%'], ['Support QA handoff', 'At risk - owner should change']]
+      },
+      sofia: {
+        name: 'Sofia Lee',
+        initials: 'SL',
+        avatar: 'mint',
+        role: 'QA and Hiring Ops',
+        status: 'Available',
+        progress: '76%',
+        load: '61%',
+        signal: 'Can take more work',
+        responsibility: 'Owns QA readiness, candidate pipeline hygiene, checklists, and operational follow-through.',
+        summary: 'This week Sofia completed QA template updates and moved two candidates forward. Sentiment is positive; she can take a contained QA follow-up.',
+        hr: 'Good candidate for reassignment. Keep scope explicit and avoid turning temporary support into permanent hidden workload.',
+        tasks: [['Run QA readiness checklist', 'Ready to start'], ['Update candidate statuses', 'In progress - 64%'], ['Prepare interview batch summary', 'Not started - due tomorrow']]
+      },
+      carlos: {
+        name: 'Carlos Rivera',
+        initials: 'CR',
+        avatar: 'amber',
+        role: 'Finance Lead',
+        status: 'Stable',
+        progress: '82%',
+        load: '58%',
+        signal: 'Healthy',
+        responsibility: 'Owns financial assumptions, forecast model quality, budget checks, and board-pack numbers.',
+        summary: 'This week Carlos updated the runway model and flagged one CAC assumption for review. Sentiment is neutral-positive, with no overload signals.',
+        hr: 'No conversation needed. Ask for a concise approval checklist so finance review does not become a late-stage blocker.',
+        tasks: [['Confirm CAC assumptions', 'In progress - due Friday - 82%'], ['Review hiring budget impact', 'Done'], ['Prepare board forecast note', 'Pending approval']]
+      }
+    };
+
+    const projects = {
+      'Atlas Onboarding': {
+        icon: 'AT',
+        className: 'critical',
+        subtitle: 'Client implementation - SSO dependency',
+        priority: 'P0 Critical',
+        priorityShort: 'P0',
+        health: 'Critical',
+        delivery: '48%',
+        progress: '48%',
+        due: 'Today, 15:00',
+        nextGate: 'SSO unblock',
+        ownerId: 'ana',
+        followup: 'Confirm who owns the Atlas SSO unblock and send escalation note before 15:00.',
+        brief: 'Atlas is a client onboarding project. The implementation moved through kickoff and data import, but the SSO dependency is blocking the next delivery gate.',
+        risk: 'The project risk is concentrated around unclear blocker ownership and one overloaded technical owner.',
+        action: 'Create a follow-up for Ana to confirm ownership, and ask James for a protected focus block before escalation.',
+        hrNote: 'This is a project follow-up, not a performance note. James shows overload signals, so the manager should check in without blame.',
+        milestones: [['Kickoff', 'done'], ['Data import', 'done'], ['SSO unblock', 'risk'], ['Go live', '']],
+        team: [['ana', 'Client and timeline'], ['james', 'SSO integration'], ['sofia', 'QA readiness'], ['carlos', 'Commercial terms']],
+        tasks: [['Escalate SSO blocker', 'Owner: Ana - due today - not started'], ['Resolve SSO integration questions', 'Owner: James - blocked - 48%'], ['Prepare QA readiness checklist', 'Owner: Sofia - waiting on SSO'], ['Confirm commercial terms', 'Owner: Carlos - done']],
+        details: [['Objective', 'Complete client onboarding and reach go-live readiness.'], ['Current blocker', 'SSO ownership is unclear and has no update in 6 days.'], ['Manager decision', 'Confirm escalation owner and unblock path today.']],
+        signals: [['Delivery risk', 'Six days without a blocker update.'], ['Workload risk', 'James is at 92% capacity.'], ['HR recommendation', 'Schedule a supportive check-in if focus time cannot be protected.']],
+        sources: [['Weekly update', 'James noted context switching and SSO uncertainty.'], ['Project notes', 'Atlas dependency has no owner update for 6 days.'], ['HR knowledge base', 'High workload plus repeated blockers should trigger manager support.']],
+        questions: ['What should I say in the escalation note?', 'Who can take work from James this week?', 'What is the cleanest next action for standup?', 'Is this a project issue or an HR risk?']
+      },
+      'Platform API v2': {
+        icon: 'API',
+        className: 'warning',
+        subtitle: 'Backend delivery - QA handoff',
+        priority: 'P1 High',
+        priorityShort: 'P1',
+        health: 'Warning',
+        delivery: '72%',
+        progress: '72%',
+        due: 'This week',
+        nextGate: 'QA handoff',
+        ownerId: 'sofia',
+        followup: 'Move QA checklist ownership from James to Sofia to reduce delivery risk.',
+        brief: 'Platform API v2 is close to handoff, but engineering ownership and QA ownership are still blended.',
+        risk: 'James owns too much of the delivery path and QA work is not clearly separated.',
+        action: 'Create a follow-up to reassign the QA checklist to Sofia and protect James for backend completion.',
+        hrNote: 'Workload rebalancing is recommended. Make the reassignment explicit so temporary support does not become hidden work.',
+        milestones: [['Design', 'done'], ['Build', 'done'], ['QA handoff', 'active'], ['Release', '']],
+        team: [['james', 'Backend owner'], ['sofia', 'QA handoff'], ['ana', 'Release scope']],
+        tasks: [['Finalize API backend changes', 'Owner: James - due Friday - 72%'], ['Run QA readiness checklist', 'Owner: Sofia - ready to start'], ['Confirm release scope', 'Owner: Ana - in progress']],
+        details: [['Objective', 'Ship API v2 with a clean QA handoff and release checklist.'], ['Current blocker', 'QA checklist ownership still sits with an overloaded engineering lead.'], ['Manager decision', 'Move QA checklist to Sofia and keep James on backend completion.']],
+        signals: [['Capacity signal', 'James is at 92% load.'], ['Delivery signal', 'QA handoff is the next gate.'], ['HR recommendation', 'Reduce context switching and clarify owner boundaries.']],
+        sources: [['Sprint notes', 'Backend changes are in progress.'], ['Weekly summary', 'James reported difficulty protecting focus time.'], ['Workload model', 'Sofia has capacity for a contained QA follow-up.']],
+        questions: ['Draft the reassignment note.', 'What should James stop doing this week?', 'What is the QA handoff checklist?', 'Can Sofia take this without overload risk?']
+      },
+      'Hiring Workflow': {
+        icon: 'HR',
+        className: 'info-card',
+        subtitle: 'Recruiting operations - candidate pipeline',
+        priority: 'P2 Medium',
+        priorityShort: 'P2',
+        health: 'Stable',
+        delivery: '64%',
+        progress: '64%',
+        due: 'Tomorrow',
+        nextGate: 'Interviews',
+        ownerId: 'sofia',
+        followup: 'Update three candidate statuses and confirm next interview batch.',
+        brief: 'Hiring Workflow is a recruiting operations project focused on pipeline hygiene and interview readiness.',
+        risk: 'The main risk is stale candidate data creating confusion before the next interview batch.',
+        action: 'Create a follow-up for Sofia to clean candidate statuses and prepare a short interview batch summary.',
+        hrNote: 'No manager conversation needed. This is an operational cleanup task with healthy capacity.',
+        milestones: [['Roles', 'done'], ['Sourcing', 'done'], ['Interviews', 'active'], ['Offers', '']],
+        team: [['sofia', 'Pipeline owner'], ['ana', 'Role design'], ['carlos', 'Budget approval']],
+        tasks: [['Update candidate statuses', 'Owner: Sofia - in progress - 64%'], ['Review role design', 'Owner: Ana - complete'], ['Review hiring budget impact', 'Owner: Carlos - done']],
+        details: [['Objective', 'Keep candidate pipeline accurate and prepare the next interview batch.'], ['Current blocker', 'Three candidate statuses are stale.'], ['Manager decision', 'Confirm whether interviews can proceed tomorrow.']],
+        signals: [['Data signal', 'Three records are stale.'], ['Capacity signal', 'Sofia is at 61% load.'], ['HR recommendation', 'No support conversation needed right now.']],
+        sources: [['ATS export', 'Three candidate records need status cleanup.'], ['Weekly summary', 'Sofia can take a contained follow-up.'], ['HR workflow guide', 'Candidate communication should not wait on batch cleanup.']],
+        questions: ['What needs to be updated before interviews?', 'Generate a candidate status checklist.', 'Is this blocked or just stale?', 'Who should own the next batch?']
+      },
+      'Finance Forecast': {
+        icon: 'FF',
+        className: '',
+        subtitle: 'Monthly runway model - board prep',
+        priority: 'P3 Normal',
+        priorityShort: 'P3',
+        health: 'Healthy',
+        delivery: '82%',
+        progress: '82%',
+        due: 'Friday',
+        nextGate: 'Review',
+        ownerId: 'carlos',
+        followup: 'Confirm final CAC assumptions before generating board summary.',
+        brief: 'Finance Forecast is the monthly runway model and board preparation workflow.',
+        risk: 'The project is healthy. The only open risk is late approval of CAC assumptions.',
+        action: 'Create a lightweight approval follow-up for Carlos and then generate the board summary.',
+        hrNote: 'No HR concern. Keep the approval checklist concise to avoid a late-stage bottleneck.',
+        milestones: [['Inputs', 'done'], ['Model', 'done'], ['Review', 'active'], ['Board pack', '']],
+        team: [['carlos', 'Forecast owner'], ['ana', 'Board narrative']],
+        tasks: [['Confirm CAC assumptions', 'Owner: Carlos - in progress - 82%'], ['Prepare board forecast note', 'Owner: Carlos - pending approval'], ['Draft board narrative', 'Owner: Ana - not started']],
+        details: [['Objective', 'Finalize forecast assumptions and prepare board-ready numbers.'], ['Current blocker', 'Final CAC assumptions need approval.'], ['Manager decision', 'Approve assumptions or request one correction before board pack generation.']],
+        signals: [['Delivery signal', 'Forecast is 82% delivered.'], ['Approval signal', 'CAC assumption review remains open.'], ['HR recommendation', 'No conversation needed.']],
+        sources: [['Finance model', 'Runway model is updated.'], ['Weekly summary', 'Carlos flagged one CAC assumption.'], ['Board pack template', 'Narrative can start after approval.']],
+        questions: ['What approval is still missing?', 'Generate the board summary outline.', 'What should Ana write after numbers are approved?', 'Is there any people risk here?']
+      }
+    };
+
+    let currentProject = 'Atlas Onboarding';
+    const activeContexts = new Set(['Project', 'Tasks', 'People', 'HR']);
+
+    function project(name) { return projects[name] || projects['Atlas Onboarding']; }
+    function ownerOf(p) { return people[p.ownerId] || people.ana; }
+    function el(id) { return document.getElementById(id); }
+
+    function view(name) {
+      el('dashboardView').hidden = name !== 'dashboard';
+      el('nexusView').hidden = name !== 'nexus';
+      el('detailsView').hidden = name !== 'details';
+      el('reviewView').hidden = name !== 'review';
+      window.scrollTo(0, 0);
+    }
+
+    function showDashboard() { view('dashboard'); }
+
+    function avatar(personId) {
+      const p = people[personId];
+      return '<span class="avatar ' + p.avatar + '"><span>' + p.initials + '</span></span>';
+    }
+
+    function personButton(projectName, personId, scope) {
+      const p = people[personId];
+      return '<button class="person-chip" type="button" onclick="openPerson(\'' + personId + '\', \'' + projectName + '\')">' +
+        avatar(personId) + '<span class="person-copy"><b>' + p.name + '</b><small>' + scope + '</small></span></button>';
+    }
+
+    function milestone(p) {
+      return '<div class="milestone-head"><b>Milestones</b><span class="chip info">' + p.delivery + ' delivered</span></div>' +
+        '<div class="timeline" style="--progress:' + p.progress + '">' +
+        p.milestones.map(function(m) {
+          return '<div class="step ' + m[1] + '"><div class="dot"></div><span>' + m[0] + '</span></div>';
+        }).join('') + '</div>';
+    }
+
+    function pctNumber(value) {
+      return parseInt(String(value).replace('%', ''), 10) || 0;
+    }
+
+    function taskCounts(p) {
+      let done = 0;
+      let blocked = 0;
+      let active = 0;
+      p.tasks.forEach(function(t) {
+        const text = t[1].toLowerCase();
+        if (text.includes('done') || text.includes('complete')) done += 1;
+        else if (text.includes('blocked') || text.includes('waiting') || text.includes('pending')) blocked += 1;
+        else active += 1;
+      });
+      return { done: done, active: active, blocked: blocked, total: Math.max(p.tasks.length, 1) };
+    }
+
+    function workloadBars(p) {
+      return p.team.map(function(t) {
+        const person = people[t[0]];
+        const load = pctNumber(person.load);
+        const cls = load > 85 ? 'risk' : load > 70 ? 'warn' : 'info';
+        return '<div class="bar-row"><span>' + person.name.split(' ')[0] + '</span><div class="bar-track ' + cls + '"><i style="width:' + load + '%"></i></div><span>' + load + '%</span></div>';
+      }).join('');
+    }
+
+    function averageLoad(p) {
+      const total = p.team.reduce(function(sum, t) {
+        return sum + pctNumber(people[t[0]].load);
+      }, 0);
+      return Math.round(total / Math.max(p.team.length, 1));
+    }
+
+    function clamp(value) {
+      return Math.max(10, Math.min(96, value));
+    }
+
+    function columnGroup(label, values) {
+      const classes = ['red', 'blue', 'black', 'outline'];
+      return '<div class="bar-group">' + values.map(function(value, index) {
+        return '<div class="bar-col ' + classes[index] + '" style="--h:' + clamp(value) + '%"></div>';
+      }).join('') + '<div class="group-label">' + label + '</div></div>';
+    }
+
+    function columnGraphSlide(projectName) {
+      const p = project(projectName);
+      const counts = taskCounts(p);
+      const delivery = pctNumber(p.delivery);
+      const load = averageLoad(p);
+      const taskClarity = clamp(48 + counts.done * 12 + counts.active * 7 - counts.blocked * 10);
+      const evidenceQuality = clamp(52 + p.sources.length * 9 + counts.done * 6);
+      const reviewReadiness = clamp(35 + counts.done * 13 + (p.health === 'Healthy' ? 18 : p.health === 'Stable' ? 12 : 4));
+      const groups = [
+        ['Last wk', [delivery - 18, taskClarity - 22, load - 8, reviewReadiness - 20]],
+        ['This wk', [delivery - 7, taskClarity - 8, load, reviewReadiness - 8]],
+        ['Review', [delivery, taskClarity, load + 4, reviewReadiness]],
+        ['Next', [delivery + 14, taskClarity + 10, load - 6, reviewReadiness + 14]]
+      ];
+      return '<article class="slide-card wide-slide">' +
+        '<div class="ppt-star"></div>' +
+        '<h3 class="ppt-title"><strong>Column</strong> graph</h3>' +
+        '<div class="column-report">' +
+        '<div><div class="column-graph"><div class="y-axis"><span>100</span><span>75</span><span>50</span><span>25</span><span>0</span></div><div class="plot"><div class="bar-groups">' + groups.map(function(g) { return columnGroup(g[0], g[1]); }).join('') + '</div></div></div><p class="ppt-footer">Manager report graph for ' + projectName + ': compare actual delivery, task clarity, workload pressure, and review readiness before accepting the update.</p></div>' +
+        '<div class="report-legend">' +
+        '<div class="legend-row"><div class="legend-swatch red"></div><div><b>Delivery</b><span>How much of the project has actually moved forward.</span></div></div>' +
+        '<div class="legend-row"><div class="legend-swatch blue"></div><div><b>Task clarity</b><span>Whether owner, next step, and due time are clear enough.</span></div></div>' +
+        '<div class="legend-row"><div class="legend-swatch black"></div><div><b>Workload</b><span>Team pressure that may require manager support.</span></div></div>' +
+        '<div class="legend-row"><div class="legend-swatch"></div><div><b>Review</b><span>How ready the update is for human manager approval.</span></div></div>' +
+        '</div></div></article>';
+    }
+
+    function milestoneNarrative(projectName, index, label, status) {
+      const p = project(projectName);
+      if (status === 'done') return 'Completed and accepted. No manager action needed unless evidence changes.';
+      if (status === 'risk') return 'Current blocker. Manager should confirm owner, due time, and escalation path.';
+      if (status === 'active') return 'In progress. Manager should verify update quality before marking it accepted.';
+      if (index === p.milestones.length - 1) return 'Upcoming delivery gate. Depends on the previous milestone being accepted.';
+      return 'Not started yet. Keep visible so the team sees what is next.';
+    }
+
+    function milestoneStatusLabel(status) {
+      if (status === 'done') return 'Done';
+      if (status === 'risk') return 'Blocked';
+      if (status === 'active') return 'Active';
+      return 'Next';
+    }
+
+    function timelineSlide(projectName) {
+      const p = project(projectName);
+      return '<article class="slide-card timeline-slide">' +
+        '<div class="slide-top"><div><h3>Milestone timeline</h3><p>Where the project is now, what is accepted, and what still needs manager verification.</p></div><div class="slide-number">T</div></div>' +
+        '<div class="report-timeline" style="--timeline-progress:' + p.progress + '">' +
+        p.milestones.map(function(m, index) {
+          const status = m[1] || '';
+          return '<div class="timeline-card ' + status + '"><div class="timeline-pin">' + (index + 1) + '</div><h4>' + m[0] + '</h4><p>' + milestoneNarrative(projectName, index, m[0], status) + '</p><div class="timeline-meta"><span>' + milestoneStatusLabel(status) + '</span><span>' + (index === 0 ? 'Start' : index === p.milestones.length - 1 ? 'Delivery gate' : 'Checkpoint') + '</span></div></div>';
+        }).join('') + '</div>' +
+        '<div class="timeline-legend"><div class="source"><b>Accepted</b><span>Completed milestones with enough evidence.</span></div><div class="source"><b>Current</b><span>The phase Nexus is reporting on now.</span></div><div class="source"><b>Blocked</b><span>Requires manager decision or follow-up.</span></div><div class="source"><b>Next</b><span>Upcoming handoff after verification.</span></div></div>' +
+        '</article>';
+    }
+
+    function renderCards() {
+      el('projectGrid').innerHTML = Object.keys(projects).map(function(name) {
+        const p = project(name);
+        return '<article class="card ' + p.className + '">' +
+          '<div class="card-head"><div class="title-wrap"><div class="project-icon">' + p.icon + '</div><div class="project-title"><h2>' + name + '</h2><p>' + p.subtitle + '</p></div></div><span class="priority risk">' + p.priority + '</span></div>' +
+          '<div class="card-body">' +
+          '<div class="meta-row"><div class="meta"><span>Due</span><b>' + p.due + '</b></div><div class="meta"><span>Next gate</span><b>' + p.nextGate + '</b></div><div class="meta"><span>Health</span><b>' + p.health + '</b></div></div>' +
+          '<div class="team-box"><div class="box-head"><b>Project team</b><span class="chip info">' + p.team.length + ' people</span></div><div class="people">' + p.team.map(function(t) { return personButton(name, t[0], t[1]); }).join('') + '</div></div>' +
+          '<div class="follow-box"><div class="box-head"><b>Follow-up needed</b><span class="chip warn">' + p.due + '</span></div><p>' + p.followup + '</p><div class="tags"><span class="tag">' + p.nextGate + '</span><span class="tag">' + p.health + '</span></div></div>' +
+          '<div class="milestone">' + milestone(p) + '</div>' +
+          '<div class="actions"><button class="btn primary" type="button" onclick="openFollowup(\'' + name + '\')">Create follow-up</button><button class="btn secondary" type="button" onclick="openNexus(\'' + name + '\')">Ask Nexus</button><button class="btn ghost" type="button" onclick="openDetails(\'' + name + '\')">Details</button><button class="btn ghost" type="button" onclick="openReview(\'' + name + '\')">Manager review</button></div>' +
+          '</div></article>';
+      }).join('');
+    }
+
+    function answerBlocks(projectName, question) {
+      const p = project(projectName);
+      const o = ownerOf(p);
+      const q = question.toLowerCase();
+      if (q.includes('hr') || q.includes('people') || q.includes('risk')) {
+        return [['My people signal', 'Manager, I recommend ' + o.name + ' owns the follow-up. The people risk I found is: ' + p.risk], ['What I need from you', p.hrNote], ['My next action', p.action]];
+      }
+      if (q.includes('say') || q.includes('note') || q.includes('draft')) {
+        return [['Draft message', o.name + ', please confirm the owner and next step for ' + p.nextGate + ' by ' + p.due + '. Keep the update task-specific: blocker, decision, next handoff.'], ['My tone recommendation', 'Calm and operational. I would not make workload feedback sound like a performance judgment.'], ['Evidence I used', p.sources.map(function(s) { return s[0]; }).join(', ')]];
+      }
+      return [['My update', 'Manager, here is my recommendation: ' + p.action], ['Why I am flagging it', p.risk], ['People lens', p.hrNote]];
+    }
+
+    function reportDeck(projectName) {
+      const p = project(projectName);
+      const counts = taskCounts(p);
+      const donePct = Math.round(counts.done / counts.total * 100);
+      const activePct = Math.round(counts.active / counts.total * 100);
+      const blockedPct = Math.round(counts.blocked / counts.total * 100);
+      return [
+        '<article class="slide-card"><div class="slide-top"><div><h3>1. Manager, my short update</h3><p>I reviewed ' + projectName + ' as if I were reporting to you before standup.</p></div><div class="slide-number">1</div></div><div class="list"><div class="task"><b>What moved</b><span>' + p.delivery + ' delivered, next gate is ' + p.nextGate + '.</span></div><div class="task"><b>What I need</b><span>' + p.details[2][1] + '</span></div></div></article>',
+        columnGraphSlide(projectName),
+        timelineSlide(projectName),
+        '<article class="slide-card"><div class="slide-top"><div><h3>2. Delivery progress</h3><p>Visual summary of delivery status.</p></div><div class="slide-number">2</div></div><div class="chart-row"><div class="donut" style="--value:' + p.delivery + '"><b>' + p.delivery + '</b></div><div class="bar-list"><div class="bar-row"><span>Delivered</span><div class="bar-track info"><i style="width:' + p.delivery + '"></i></div><span>' + p.delivery + '</span></div><div class="bar-row"><span>Remaining</span><div class="bar-track warn"><i style="width:' + (100 - pctNumber(p.delivery)) + '%"></i></div><span>' + (100 - pctNumber(p.delivery)) + '%</span></div></div></div></article>',
+        '<article class="slide-card"><div class="slide-top"><div><h3>3. Task update health</h3><p>Task update status should be manager-verified before acceptance.</p></div><div class="slide-number">3</div></div><div class="bar-list"><div class="bar-row"><span>Done</span><div class="bar-track"><i style="width:' + donePct + '%"></i></div><span>' + counts.done + '</span></div><div class="bar-row"><span>Active</span><div class="bar-track info"><i style="width:' + activePct + '%"></i></div><span>' + counts.active + '</span></div><div class="bar-row"><span>Blocked</span><div class="bar-track risk"><i style="width:' + blockedPct + '%"></i></div><span>' + counts.blocked + '</span></div></div></article>',
+        '<article class="slide-card"><div class="slide-top"><div><h3>4. People and workload</h3><p>I am separating execution risk from people support risk.</p></div><div class="slide-number">4</div></div><div class="bar-list">' + workloadBars(p) + '</div></article>',
+        '<article class="slide-card"><div class="slide-top"><div><h3>5. Risk matrix</h3><p>Where I think your attention is needed.</p></div><div class="slide-number">5</div></div><div class="risk-grid"><div class="risk-cell"><b>Low</b><span>Monitor only</span></div><div class="risk-cell ' + (p.health === 'Warning' || p.health === 'Stable' ? 'active' : '') + '"><b>Medium</b><span>Clarify owner</span></div><div class="risk-cell ' + (p.health === 'Critical' ? 'active' : '') + '"><b>High</b><span>Manager decision</span></div></div></article>',
+        '<article class="slide-card"><div class="slide-top"><div><h3>6. My recommendation</h3><p>This is the action I would ask you to approve.</p></div><div class="slide-number">6</div></div><div class="task"><b>Next best move</b><span>' + p.action + '</span></div><div class="actions" style="margin-top:14px;"><button class="btn primary" type="button" onclick="openReview(currentProject)">Review updates</button><button class="btn secondary" type="button" onclick="openFollowup(currentProject)">Create follow-up</button></div></article>'
+      ].join('');
+    }
+
+    function renderNexus(projectName, question) {
+      const p = project(projectName);
+      currentProject = projectName;
+      el('nexusTitle').textContent = 'Ask Nexus about ' + projectName;
+      el('nexusLead').textContent = p.subtitle + '. Nexus keeps the answer scoped to this project context.';
+      el('nexusHealth').textContent = p.health;
+      el('nexusDelivery').textContent = p.delivery;
+      el('nexusPriority').textContent = p.priorityShort;
+      el('nexusConfidence').textContent = p.health === 'Critical' ? '88%' : '82%';
+      el('nexusAction').textContent = p.action;
+      el('nexusQuestion').value = question;
+      el('nexusSuggestions').innerHTML = p.questions.map(function(s, index) {
+        return '<button class="suggestion ' + (index === 0 ? 'active' : '') + '" type="button" onclick="useQuestion(\'' + s.replace(/'/g, "\\'") + '\')">' + s + '</button>';
+      }).join('');
+      el('nexusThread').innerHTML = '<div class="message user"><b>Manager</b><p>' + question + '</p></div><div class="message assistant"><b>Nexus reporting to manager</b><p>Manager, I reviewed the project update and prepared a concise report. My main recommendation: ' + p.action + '</p></div>';
+      const answers = answerBlocks(projectName, question);
+      el('nexusAnswer').innerHTML = answers.map(function(a) { return '<div class="task"><b>' + a[0] + '</b><span>' + a[1] + '</span></div>'; }).join('') +
+        '<div class="actions"><button class="btn primary" type="button" onclick="openReview(currentProject)">Manager review</button><button class="btn secondary" type="button" onclick="openFollowup(currentProject)">Create follow-up</button><button class="btn ghost" type="button" onclick="openDetails(currentProject)">Open details</button></div>';
+      el('nexusReportDeck').innerHTML = reportDeck(projectName);
+      el('nexusStateSummary').textContent = p.brief;
+      el('nexusStateList').innerHTML = '<div class="source"><b>Recommended owner</b><span>' + ownerOf(p).name + '</span></div><div class="source"><b>Next gate</b><span>' + p.nextGate + '</span></div><div class="source"><b>Due</b><span>' + p.due + '</span></div>';
+      el('nexusSources').innerHTML = p.sources.map(function(s) { return '<div class="source"><b>' + s[0] + '</b><span>' + s[1] + '</span></div>'; }).join('');
+    }
+
+    function openNexus(projectName) {
+      const q = 'What should I follow up on for ' + projectName + ' today, who is responsible, and is there any HR risk?';
+      renderNexus(projectName, q);
+      view('nexus');
+    }
+
+    function useQuestion(question) {
+      renderNexus(currentProject, question);
+    }
+
+    function generateNexusAnswer() {
+      renderNexus(currentProject, el('nexusQuestion').value || 'What should I do next?');
+    }
+
+    function taskBoard(p) {
+      const lanes = [['Needs decision', p.tasks.slice(0, 1)], ['In progress', p.tasks.slice(1, 3)], ['Done or waiting', p.tasks.slice(3)]];
+      return lanes.map(function(lane) {
+        return '<div class="mini-card"><span>' + lane[0] + '</span>' + lane[1].map(function(t) { return '<div class="task" style="margin-top:10px;"><b>' + t[0] + '</b><span>' + t[1] + '</span></div>'; }).join('') + '</div>';
+      }).join('');
+    }
+
+    function openDetails(projectName) {
+      const p = project(projectName);
+      currentProject = projectName;
+      el('detailsTitle').textContent = projectName;
+      el('detailsLead').textContent = p.brief;
+      el('detailsHealth').textContent = p.health;
+      el('detailsDelivery').textContent = p.delivery;
+      el('detailsPriority').textContent = p.priorityShort;
+      el('detailsGate').textContent = p.nextGate;
+      el('detailsBrief').textContent = p.brief;
+      el('detailsDecisions').innerHTML = '<div class="mini-card"><span>Decision needed</span><b>' + p.details[2][1] + '</b></div><div class="mini-card"><span>Next PM action</span><b>' + p.followup + '</b></div><div class="mini-card"><span>Operating rhythm</span><b>' + (p.health === 'Critical' ? 'Daily blocker review' : 'Twice-weekly review') + '</b></div>';
+      el('detailsBriefList').innerHTML = p.details.map(function(d) { return '<div class="source"><b>' + d[0] + '</b><span>' + d[1] + '</span></div>'; }).join('');
+      el('detailsMilestoneText').textContent = 'Current delivery status: ' + p.delivery + '. Next gate: ' + p.nextGate + '.';
+      el('detailsMilestone').innerHTML = '<div class="report-timeline" style="--timeline-progress:' + p.progress + '">' + p.milestones.map(function(m, index) {
+        const status = m[1] || '';
+        return '<div class="timeline-card ' + status + '"><div class="timeline-pin">' + (index + 1) + '</div><h4>' + m[0] + '</h4><p>' + milestoneNarrative(projectName, index, m[0], status) + '</p><div class="timeline-meta"><span>' + milestoneStatusLabel(status) + '</span><span>' + (status === 'risk' ? 'Manager decision' : 'Review point') + '</span></div></div>';
+      }).join('') + '</div><div class="timeline-legend"><div class="source"><b>Accepted</b><span>Completed with enough evidence.</span></div><div class="source"><b>Current</b><span>In progress or awaiting verification.</span></div><div class="source"><b>Blocked</b><span>Needs manager decision.</span></div><div class="source"><b>Next</b><span>Upcoming delivery gate.</span></div></div>';
+      el('detailsTeam').innerHTML = p.team.map(function(t) { return personButton(projectName, t[0], t[1]); }).join('');
+      el('detailsTaskBoard').innerHTML = taskBoard(p);
+      el('detailsSignals').innerHTML = p.signals.map(function(s) { return '<div class="source"><b>' + s[0] + '</b><span>' + s[1] + '</span></div>'; }).join('');
+      el('detailsRisk').textContent = p.risk;
+      el('detailsRiskList').innerHTML = p.signals.map(function(s) { return '<div class="source"><b>' + s[0] + '</b><span>' + s[1] + '</span></div>'; }).join('');
+      el('detailsSources').innerHTML = p.sources.map(function(s) { return '<div class="source"><b>' + s[0] + '</b><span>' + s[1] + '</span></div>'; }).join('');
+      el('detailsAction').textContent = p.action;
+      el('detailsWeekly').innerHTML = p.team.map(function(t) {
+        const person = people[t[0]];
+        return '<button class="task" type="button" style="text-align:left;cursor:pointer;" onclick="openPerson(\'' + t[0] + '\', \'' + projectName + '\')"><b>' + person.name + ' - ' + t[1] + '</b><span>' + person.summary + '</span></button>';
+      }).join('');
+      view('details');
+    }
+
+    function checklistItems(p) {
+      return [
+        ['Evidence checked', 'I checked the source update, document, or task note behind the employee status update.', 'Required'],
+        ['Definition of done is clear', 'The update explains what changed, what is finished, and what still remains.', 'Required'],
+        ['Owner and due time confirmed', 'The next owner and next due time are explicit enough for follow-up.', 'Required'],
+        ['Blocker separated from performance', 'If the update mentions overload, I separate project risk from HR support risk.', 'People'],
+        ['Manager decision recorded', p.details[2][1], 'Decision'],
+        ['Follow-up wording reviewed', 'The task message is specific, neutral, and does not turn support feedback into blame.', 'Tone']
+      ];
+    }
+
+    function openReview(projectName) {
+      const p = project(projectName);
+      const counts = taskCounts(p);
+      currentProject = projectName;
+      el('reviewTitle').textContent = projectName + ' manager checklist';
+      el('reviewLead').textContent = 'Human verification before accepting task updates for ' + projectName + '. AI can summarize, but the manager confirms evidence, completion, blocker ownership, and people support.';
+      el('reviewUpdates').textContent = p.tasks.length;
+      el('reviewNeedCheck').textContent = counts.blocked + counts.active;
+      el('reviewPeopleSignal').textContent = p.health === 'Critical' || p.health === 'Warning' ? 'Review' : 'Healthy';
+      el('reviewDecision').textContent = 'Pending';
+      el('managerChecklist').innerHTML = checklistItems(p).map(function(item, index) {
+        const checked = index < 2 ? ' checked' : '';
+        return '<label class="check-item"><input type="checkbox"' + checked + '><span><b>' + item[0] + '</b><span>' + item[1] + '</span></span><span class="review-status">' + item[2] + '</span></label>';
+      }).join('');
+      el('reviewTaskUpdates').innerHTML = p.tasks.map(function(task, index) {
+        const person = people[p.team[Math.min(index, p.team.length - 1)][0]];
+        return '<div class="task"><b>' + task[0] + '</b><span>' + task[1] + '</span><div class="tags"><span class="tag">Submitted by ' + person.name + '</span><span class="tag">Needs manager verification</span></div></div>';
+      }).join('');
+      el('reviewSummary').textContent = p.risk;
+      el('reviewSignals').innerHTML = p.signals.map(function(s) { return '<div class="source"><b>' + s[0] + '</b><span>' + s[1] + '</span></div>'; }).join('');
+      el('reviewSources').innerHTML = p.sources.map(function(s) { return '<div class="source"><b>' + s[0] + '</b><span>' + s[1] + '</span></div>'; }).join('');
+      el('reviewAction').textContent = p.action;
+      el('reviewNotes').value = 'Manager note for ' + projectName + ': verify evidence, confirm owner, and decide whether this update is accepted or needs clarification.';
+      view('review');
+    }
+
+    function openPerson(personId, projectName) {
+      const p = people[personId];
+      el('modalAvatar').className = 'avatar ' + p.avatar;
+      el('modalAvatar').innerHTML = '<span>' + p.initials + '</span>';
+      el('modalName').textContent = p.name;
+      el('modalRole').textContent = p.role + ' - ' + projectName;
+      el('personMetrics').innerHTML = '<div class="mini-card"><span>Status</span><b>' + p.status + '</b></div><div class="mini-card"><span>Progress</span><b>' + p.progress + '</b></div><div class="mini-card"><span>Workload</span><b>' + p.load + '</b></div><div class="mini-card"><span>HR signal</span><b>' + p.signal + '</b></div>';
+      el('personResponsibility').textContent = p.responsibility;
+      el('personSummary').textContent = p.summary;
+      el('personHr').textContent = p.hr;
+      el('personTasks').innerHTML = p.tasks.map(function(t) { return '<div class="task"><b>' + t[0] + '</b><span>' + t[1] + '</span></div>'; }).join('');
+      openModal('personModal');
+    }
+
+    function openFollowup(projectName) {
+      const p = project(projectName);
+      el('followupTitle').textContent = projectName;
+      el('followupSubtitle').textContent = 'Create a clear owned task for ' + p.nextGate + '.';
+      el('followupTask').value = p.followup;
+      el('followupDue').value = p.due;
+      el('followupPriority').value = p.priority;
+      el('followupNote').textContent = p.hrNote;
+      el('followupOwner').innerHTML = p.team.map(function(t) {
+        return '<option' + (t[0] === p.ownerId ? ' selected' : '') + '>' + people[t[0]].name + ' - ' + t[1] + '</option>';
+      }).join('');
+      openModal('followupModal');
+    }
+
+    function openModal(id) {
+      el(id).classList.add('open');
+      el(id).setAttribute('aria-hidden', 'false');
+    }
+
+    function closeModal(id) {
+      el(id).classList.remove('open');
+      el(id).setAttribute('aria-hidden', 'true');
+    }
+
+    document.querySelectorAll('.modal-backdrop').forEach(function(backdrop) {
+      backdrop.addEventListener('click', function(event) {
+        if (event.target === backdrop) closeModal(backdrop.id);
+      });
+    });
+
+    document.querySelectorAll('[data-context]').forEach(function(button) {
+      button.addEventListener('click', function() {
+        const name = button.getAttribute('data-context');
+        if (activeContexts.has(name)) {
+          activeContexts.delete(name);
+          button.classList.remove('active');
+        } else {
+          activeContexts.add(name);
+          button.classList.add('active');
+        }
+        generateNexusAnswer();
+      });
+    });
+
+    window.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        closeModal('personModal');
+        closeModal('followupModal');
+      }
+    });
+
+    renderCards();
+    showDashboard();
+  </script>
+</body>
+</html>
