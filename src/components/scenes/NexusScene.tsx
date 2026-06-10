@@ -16,6 +16,7 @@ import {
   PEOPLE,
   SIGNALS,
   TIMELINE,
+  type Person,
   type Signal,
   type TaskTemplate,
 } from '../../data/fixtures'
@@ -608,6 +609,141 @@ function ComplianceCard({ question }: { question: string }) {
   )
 }
 
+// ── P6-06 (ADR-0013 决策 4)：email errand case 的 Manifest 卡组 ──────────────────
+// 收件人实时派生自 PEOPLE fixture（team === 'Eng' 共 6 人）——不复制名单；
+// 地址 = name.lastInitial@company（如 bill.h@teammaster.io），fixture 口径。
+const ENG_RECIPIENTS = PEOPLE.filter((person) => person.team === 'Eng')
+const EMAIL_DOMAIN = 'teammaster.io' // ⚠ 待 Danny 审字（演示用公司域名）
+
+function emailAddressOf(person: Person) {
+  const last = person.lastInitial ? `.${person.lastInitial.toLowerCase()}` : ''
+  return `${person.name.toLowerCase()}${last}@${EMAIL_DOMAIN}`
+}
+
+// agent 预填的邮件草稿（fixture copy，呼应 memo 占位照片上的要点）。
+const EMAIL_SUBJECT = 'Friday ship: code freeze + Acme support rotation' // ⚠ 待 Danny 审字
+// ⚠ 待 Danny 审字（草稿 body 整段 copy）
+const EMAIL_DRAFT_BODY = `Team,
+
+Two changes for the Acme pilot ship this Friday:
+
+1. Code freeze starts Thursday 6pm — only Friday-path fixes go in after that.
+2. Acme support pings now route to the on-call rotation, not directly to Bill.
+
+If either of these blocks you, raise it in #eng before Thursday standup.
+
+Thanks,
+Danny`
+
+// Manifest ①：可编辑草稿卡。编辑是**组件本地态**（NexusScene 持有，store 零额外字段）——
+// 不入 rail replay（ADR-0006 决策 5 口径）；编辑实时流入 ② email-tool 卡的 body。
+function MemoDraftCard({ body, onChange }: { body: string; onChange: (text: string) => void }) {
+  return (
+    <section className="memo-draft-card" aria-label="Agent draft: editable email text">
+      <header className="memo-draft-header">
+        <div>
+          <p className="eyebrow">Agent draft · Editable {/* ⚠ 待 Danny 审字 */}</p>
+          <h2>Memo, turned into an email {/* ⚠ 待 Danny 审字 */}</h2>
+        </div>
+        <span>From the memo photo {/* ⚠ 待 Danny 审字 */}</span>
+      </header>
+      <textarea
+        className="memo-draft-textarea"
+        value={body}
+        onChange={(event) => onChange(event.target.value)}
+        aria-label="Editable email draft"
+        spellCheck={false}
+      />
+      <p className="memo-draft-hint">
+        Edit anything — changes flow straight into the email below. {/* ⚠ 待 Danny 审字 */}
+      </p>
+    </section>
+  )
+}
+
+// Manifest ②：email-tool 卡。To: 全部 Eng 6 人（PEOPLE 派生）、subject/body 已填、
+// Send 待命。点 Send → sendEmail()（store action，dedupe-guarded）→ 卡翻 "Sent ✓"。
+// ★ Send 不进 rail SCRIPT（同 dispatchTask 先例，ADR-0006 决策 5）：现场 Danny 亲手点，
+// "人扣扳机"必须可见是人的手；rail seek 重置已点状态（replay 不含 sendEmail），接受。
+function EmailToolCard({ body, sent, onSend }: { body: string; sent: boolean; onSend: () => void }) {
+  return (
+    <section className="email-tool-card" aria-label="Email tool: staged message awaiting Send">
+      <header className="email-tool-header">
+        <div>
+          <p className="eyebrow">Email tool {/* ⚠ 待 Danny 审字 */}</p>
+          <h2>Ready to send {/* ⚠ 待 Danny 审字 */}</h2>
+        </div>
+        <span className={classNames(['email-tool-status', sent && 'is-sent'])}>
+          {/* ⚠ 待 Danny 审字（Staged/Sent badge 文案） */}
+          {sent ? 'Sent' : 'Staged'}
+        </span>
+      </header>
+
+      <div className="email-field">
+        <span className="email-field-label">To</span>
+        <div className="email-recipient-list">
+          {ENG_RECIPIENTS.map((person) => (
+            <span key={person.id} className="email-recipient-chip">
+              <PixelAvatar person={person} size={20} className="inline-avatar" />
+              {person.name}
+              <i className="email-recipient-address">{emailAddressOf(person)}</i>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="email-field">
+        <span className="email-field-label">Subject</span>
+        <p className="email-subject">{EMAIL_SUBJECT}</p>
+      </div>
+
+      <div className="email-field is-body">
+        <span className="email-field-label">Body</span>
+        <p className="email-body">{body}</p>
+      </div>
+
+      <footer className="email-tool-footer">
+        <button
+          type="button"
+          className={classNames(['email-send-button', sent && 'is-sent'])}
+          disabled={sent}
+          onClick={onSend}
+        >
+          {/* ⚠ 待 Danny 审字（Send / Sent ✓ 按钮文案） */}
+          {sent ? `Sent ✓ to ${ENG_RECIPIENTS.length} people` : 'Send'}
+        </button>
+      </footer>
+    </section>
+  )
+}
+
+// follow-up：Slack-message 小 Manifest——短版发 #eng（决策 4；chip 锚在 email-tool 卡）。
+const SLACK_SHORT_VERSION = // ⚠ 待 Danny 审字（Slack 短版整段 copy）
+  "Heads-up for Friday's Acme pilot ship — code freeze Thursday 6pm, and Acme support now goes to the on-call rotation (not straight to Bill). Full details in the email just sent to Engineering."
+
+function SlackMessageCard({ question }: { question: string }) {
+  return (
+    <section className="slack-message-card" aria-label="Follow-up output: Slack message to #eng">
+      <header className="slack-message-header">
+        <div>
+          <p className="eyebrow">Follow-up · Slack {/* ⚠ 待 Danny 审字 */}</p>
+          <h2>Short version for #eng {/* ⚠ 待 Danny 审字 */}</h2>
+        </div>
+        <span>#eng {/* ⚠ 待 Danny 审字 */}</span>
+      </header>
+
+      {question ? <p className="slack-message-question">&ldquo;{question}&rdquo;</p> : null}
+
+      <div className="slack-message-bubble">
+        <span className="slack-message-author">
+          TeamMaster agent <i>APP</i> {/* ⚠ 待 Danny 审字 */}
+        </span>
+        <p>{SLACK_SHORT_VERSION}</p>
+      </div>
+    </section>
+  )
+}
+
 // P6-03：常驻自由文本 follow-up composer（HUD，bottom-left）。任意文本被接受、作为显示的
 // follow-up 问题、走 active case 的脚本段——与 B3 askQuestion 同构（ADR-0001 demo-only 诚实）。
 // 注意：不复用 .nexus-empty-composer（那是空态专用、走 askQuestion 会重置 thread）。
@@ -862,6 +998,7 @@ export function NexusScene() {
   const runAgent = useCanvas((s) => s.runAgent)
   const askFollowUp = useCanvas((s) => s.askFollowUp)
   const dispatchTask = useCanvas((s) => s.dispatchTask)
+  const sendEmail = useCanvas((s) => s.sendEmail)
   const regenBriefing = useCanvas((s) => s.regenBriefing)
   const goScene = useCanvas((s) => s.goScene)
   const question = thread.question ?? caseDef.question ?? HERO_QUESTION
@@ -882,6 +1019,14 @@ export function NexusScene() {
   const showWebPreview = reached('web-search')
   const showPolicyGist = reached('policy-gist')
   const showCompliance = reached('follow-up-compliance')
+  // P6-06：email errand case 的卡显形条件（kind 只存在于该 case 的 thread，零串扰）。
+  const showMemoDraft = reached('memo-draft')
+  const showEmailTool = reached('email-ready')
+  const showSlackMessage = reached('follow-up-slack')
+  // P6-06：草稿编辑 = 组件本地态（store 零额外字段，ADR-0006 决策 5）。null = 未编辑
+  //（用 agent 预填 fixture）。不入 replay；切 thread / 重挂载丢编辑——issue 接受口径。
+  const [memoDraftEdit, setMemoDraftEdit] = useState<string | null>(null)
+  const emailBody = memoDraftEdit ?? EMAIL_DRAFT_BODY
   const dispatchedTaskKeys = useMemo(() => new Set(tasks.map(taskTemplateKey)), [tasks])
   const manifestProducerIds = useMemo(
     () => new Set(Object.values(caseDef.manifestProducers)),
@@ -998,6 +1143,7 @@ export function NexusScene() {
     )?.question ?? ''
   const alternativesQuestion = followUpQuestionFor('follow-up-alternatives')
   const complianceQuestion = followUpQuestionFor('follow-up-compliance')
+  const slackQuestion = followUpQuestionFor('follow-up-slack')
 
   return (
     <section className="scene scene-nexus is-active" aria-label="Nexus">
@@ -1041,6 +1187,18 @@ export function NexusScene() {
               <span className="flow-kind">{isSelfReportNode ? 'Self-report' : node.kind}</span>
               <h3>{isSelfReportNode ? 'Bill standup status' : node.label}</h3>
               <p>{isSelfReportNode ? MISMATCH.reported : node.detail}</p>
+              {/* P6-06：question 节点的 memo 照片附件 chip（占位资产——Danny 在 P6-08
+                  换真照片；路径集中在 cases.ts 的 MEMO_PHOTO_SRC）。 */}
+              {node.id === 'question' && caseDef.questionAttachment ? (
+                <span className="question-attachment-chip">
+                  <img
+                    src={caseDef.questionAttachment.src}
+                    alt="Attached memo draft photo"
+                    draggable={false}
+                  />
+                  {caseDef.questionAttachment.name}
+                </span>
+              ) : null}
             </button>
           )
         })}
@@ -1142,6 +1300,38 @@ export function NexusScene() {
             chip={chipStep === 'follow-up-compliance' ? followUpChip : undefined}
           >
             <ComplianceCard question={complianceQuestion} />
+          </CardSlot>
+        ) : null}
+        {/* P6-06：email errand case 的 Manifest 卡组（CardSlot 接法同上）。CardSlot 已
+            排除 textarea/button 的点击触发飞行——草稿编辑与 Send 都不会误触镜头。 */}
+        {showMemoDraft ? (
+          <CardSlot
+            anchor={caseDef.cardAnchors['memo-draft']}
+            isActive={activeStep === 'memo-draft'}
+            onInspect={() => inspectCard('memo-draft')}
+            chip={chipStep === 'memo-draft' ? followUpChip : undefined}
+          >
+            <MemoDraftCard body={emailBody} onChange={setMemoDraftEdit} />
+          </CardSlot>
+        ) : null}
+        {showEmailTool ? (
+          <CardSlot
+            anchor={caseDef.cardAnchors['email-ready']}
+            isActive={activeStep === 'email-ready'}
+            onInspect={() => inspectCard('email-ready')}
+            chip={chipStep === 'email-ready' ? followUpChip : undefined}
+          >
+            <EmailToolCard body={emailBody} sent={thread.emailSent} onSend={sendEmail} />
+          </CardSlot>
+        ) : null}
+        {showSlackMessage ? (
+          <CardSlot
+            anchor={caseDef.cardAnchors['follow-up-slack']}
+            isActive={activeStep === 'follow-up-slack'}
+            onInspect={() => inspectCard('follow-up-slack')}
+            chip={chipStep === 'follow-up-slack' ? followUpChip : undefined}
+          >
+            <SlackMessageCard question={slackQuestion} />
           </CardSlot>
         ) : null}
           </>

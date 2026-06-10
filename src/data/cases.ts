@@ -29,6 +29,10 @@ export type ThreadStepKind =
   | 'web-search' // agent 调 web tool 查 Apple 政策（浏览器预览卡显形）
   | 'policy-gist' // agent 的实际回答：guideline 要点引文 + 回链 URL（gist 卡）
   | 'follow-up-compliance' // follow-up：Acme companion build 合规判定（短 Manifest）
+  // email errand case（P6-06，ADR-0013 决策 4）——数据扩展，不碰 store 契约：
+  | 'memo-draft' // agent 经 doc-reader 读 memo 照片、预填邮件文本（可编辑草稿卡显形）
+  | 'email-ready' // email tool 卡待命：To/subject/body 已填、Send 等人点（sendEmail 不进 SCRIPT）
+  | 'follow-up-slack' // follow-up：短版发 #eng 的 Slack-message Manifest
 
 export interface NexusNode {
   id: NexusNodeId
@@ -75,6 +79,8 @@ export interface CaseDefinition {
   manifestLabelPos: Pos
   cardAnchors: Partial<Record<string, CardAnchor>>
   followUps: FollowUpSegment[]
+  // question 节点的附件 chip（P6-06 email case 的 memo 照片）。可选——其余 case 不带。
+  questionAttachment?: { src: string; name: string }
 }
 
 // ── 公式工具：lane/row → board 坐标；Manifest 堆叠 → 卡锚点。新 case 复用，不逐节点手摆。──
@@ -439,13 +445,144 @@ export const WEB_SEARCH_CASE: CaseDefinition = {
   ],
 }
 
-// ── case 注册表：P6-06（email errand）在此追加 case 定义（数据扩展，不碰 store 契约）。──
+// ════════════════════════════════════════════════════════════════════════════
+// email errand case（P6-06，ADR-0013 决策 4）：memo 照片 → 可编辑草稿 → email 工具 →
+// 人点 Send。"人扣扳机"的经人确认 beat——`sendEmail()` 是 store action（dedupe-guarded）
+// 但**不进 rail SCRIPT**（同 dispatchTask 先例，ADR-0006 决策 5）：现场 Danny 亲手点，
+// rail seek 重置已点状态，接受。草稿编辑 = 组件本地态，不入 replay、store 零额外字段。
+// 短链证"日常主力"：question → comms agent → doc-reader tool → email tool，2 步主段 +
+// 1 步 follow-up（Slack 短版）；context-% 收在 ~17%，与 hero 的 ~71% 形成可见对比。
+// ════════════════════════════════════════════════════════════════════════════
+
+// 单 spine lane（同 web-search errand 语法）：链笔直向下，Manifest 列紧贴右侧。
+const EMAIL_LANE_X = { spine: 620 } as const
+const EMAIL_FLOW_TOP = 320
+const EMAIL_ROW_STEP = 320
+
+const EMAIL_MANIFEST_LEFT = 1060
+const EMAIL_MANIFEST_TOP = 300
+const EMAIL_MANIFEST_GAP = 90
+
+export const EMAIL_CASE_ID: CaseId = 'email-eng-memo'
+
+// ★ memo 照片占位资产（P6-08 HITL：Danny 换真实 memo 照片）——路径集中在这一个常量：
+// 换照片 = 直接覆盖 public/memo-draft-photo.svg，或把真照片放进 public/ 后改这一行。
+export const MEMO_PHOTO_SRC = '/memo-draft-photo.svg'
+export const MEMO_PHOTO_NAME = 'memo-draft.jpg' // attachment chip 显示的文件名 ⚠ 待 Danny 审字
+
+export const EMAIL_CASE: CaseDefinition = {
+  id: EMAIL_CASE_ID,
+  title: 'Memo → Eng email', // ⚠ 待 Danny 审字（tab 短名）
+  // ADR-0013 决策 4 / issue 原文——resolveCaseForQuestion 精确匹配此文本进本 case 的 thread。
+  question: 'Turn this memo draft into an email and send it to everyone in Engineering.', // ⚠ 待 Danny 审字
+
+  nodes: [
+    {
+      id: 'question',
+      kind: 'Question',
+      label: 'Memo → email', // ⚠ 待 Danny 审字
+      detail: 'Turn the attached memo draft into an email for Engineering.', // ⚠ 待 Danny 审字
+    },
+    {
+      id: 'comms-agent',
+      kind: 'Comms agent', // ⚠ 待 Danny 审字
+      label: 'Email drafting', // ⚠ 待 Danny 审字
+      detail: 'Reads the memo photo and drafts the announcement email.', // ⚠ 待 Danny 审字
+    },
+    {
+      id: 'doc-reader',
+      kind: 'Doc-reader tool', // ⚠ 待 Danny 审字
+      label: 'Memo photo', // ⚠ 待 Danny 审字
+      detail: 'Extracts the text from the photographed memo draft.', // ⚠ 待 Danny 审字
+    },
+    {
+      id: 'email-tool',
+      kind: 'Email tool', // ⚠ 待 Danny 审字
+      label: 'Send to Engineering', // ⚠ 待 Danny 审字
+      detail: 'Stages the email — sending waits for a human.', // ⚠ 待 Danny 审字
+    },
+  ],
+
+  nodeOrder: ['question', 'comms-agent', 'doc-reader', 'email-tool'],
+
+  pos: laneRowPositions(EMAIL_LANE_X, EMAIL_FLOW_TOP, EMAIL_ROW_STEP, {
+    question: { lane: 'spine', row: 0 },
+    'comms-agent': { lane: 'spine', row: 1 },
+    'doc-reader': { lane: 'spine', row: 2 },
+    'email-tool': { lane: 'spine', row: 3 },
+  }),
+
+  edges: [
+    { id: 'question-comms', from: 'question', to: 'comms-agent', step: 'memo-draft' },
+    { id: 'comms-doc-reader', from: 'comms-agent', to: 'doc-reader', step: 'memo-draft' },
+    { id: 'doc-reader-email-tool', from: 'doc-reader', to: 'email-tool', step: 'email-ready' },
+  ],
+
+  // 短链主段：2 步（errand 深度，决策 2）。Send 本身不是编排步骤——email-ready 把一切
+  // 备好，扣扳机的是人（sendEmail action，不进 SCRIPT）。
+  orchestration: ['memo-draft', 'email-ready'],
+
+  stepLabels: {
+    'memo-draft': 'Agent reads the memo and drafts the email', // ⚠ 待 Danny 审字
+    'email-ready': 'Email staged — waiting for you to hit Send', // ⚠ 待 Danny 审字
+    'follow-up-slack': 'Agent drafts the short version for #eng', // ⚠ 待 Danny 审字
+  },
+
+  stepNodes: {
+    'memo-draft': ['question', 'comms-agent', 'doc-reader'],
+    'email-ready': ['comms-agent', 'doc-reader', 'email-tool'],
+    // follow-up 重新点亮既有节点（决策 5）——同一条 thread 把活重新拾起来。
+    'follow-up-slack': ['comms-agent', 'email-tool'],
+  },
+
+  // errand thread 的低 context-%（决策 7）：主段收在 ~17%，follow-up 推到 ~24%。
+  stepContextPct: {
+    'memo-draft': 9,
+    'email-ready': 17,
+    'follow-up-slack': 24,
+  },
+
+  // 产出圆语法（修订 6）：草稿卡 ← comms agent（agent 的邮件文本）；email-tool 卡 ←
+  // email tool（工具把信封备好）；Slack 短版 ← comms agent（又是 agent 的回答）。
+  manifestProducers: {
+    'memo-draft': 'comms-agent',
+    'email-ready': 'email-tool',
+    'follow-up-slack': 'comms-agent',
+  },
+
+  // 链终点产出圆 = email tool（calm 起 ghost 在场，修订 5 语义）。
+  manifestNodeId: 'email-tool',
+
+  manifestLabelPos: { x: EMAIL_MANIFEST_LEFT + 330, y: 210 },
+
+  cardAnchors: buildManifestStack(EMAIL_MANIFEST_LEFT, EMAIL_MANIFEST_TOP, EMAIL_MANIFEST_GAP, [
+    ['memo-draft', { w: 330, h: 280 }], // 可编辑草稿卡（textarea）
+    ['email-ready', { w: 330, h: 330 }], // email-tool 卡（To/subject/body + Send）
+    ['follow-up-slack', { w: 330, h: 190 }], // Slack-message 小卡
+  ]),
+
+  // follow-up showcase（决策 5）：chip 锚在 email-tool 卡。
+  followUps: [
+    {
+      id: 'slack-short-version',
+      anchorStep: 'email-ready',
+      suggestedQuestion: 'Also post a short version to #eng in Slack', // ⚠ 待 Danny 审字
+      steps: ['follow-up-slack'],
+    },
+  ],
+
+  // question 节点的 memo 照片附件 chip（占位资产，见 MEMO_PHOTO_SRC 注释）。
+  questionAttachment: { src: MEMO_PHOTO_SRC, name: MEMO_PHOTO_NAME },
+}
+
+// ── case 注册表：后续 case 在此追加定义（数据扩展，不碰 store 契约）。──
 
 export const DEFAULT_CASE_ID: CaseId = BILL_ACME_CASE_ID
 
 export const CASES: Record<CaseId, CaseDefinition> = {
   [BILL_ACME_CASE_ID]: BILL_ACME_CASE,
   [WEB_SEARCH_CASE_ID]: WEB_SEARCH_CASE,
+  [EMAIL_CASE_ID]: EMAIL_CASE,
 }
 
 // askQuestion 的 case 解析（ADR-0013：askQuestion 变 case-aware）：问题文本精确命中某 case

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ★ 占位资产（P6-06）：photographed-memo 占位图。P6-08 HITL：Danny 用真实 memo 照片
+     覆盖本文件（或改 src/data/cases.ts 的 MEMO_PHOTO_SRC 指向新文件）。 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" role="img" aria-label="Placeholder photo of a handwritten memo draft">
+  <!-- 照片底（桌面） -->
+  <rect width="640" height="480" fill="#8a8073" />
+  <rect width="640" height="480" fill="url(#vignette)" />
+  <defs>
+    <radialGradient id="vignette" cx="50%" cy="42%" r="75%">
+      <stop offset="0%" stop-color="#a89d8d" />
+      <stop offset="100%" stop-color="#6f6557" />
+    </radialGradient>
+  </defs>
+  <!-- 微倾斜的纸片（手机随手拍的 memo） -->
+  <g transform="rotate(-3 320 240)">
+    <rect x="120" y="56" width="400" height="368" rx="6" fill="#f7f3e8" stroke="#d8d0bd" />
+    <rect x="120" y="56" width="400" height="368" rx="6" fill="none" stroke="#3d382f" stroke-opacity="0.12" />
+    <!-- 手写体标题 -->
+    <text x="150" y="110" font-family="'Segoe Script', 'Comic Sans MS', cursive" font-size="30" fill="#3d382f">MEMO — Friday ship</text>
+    <line x1="148" y1="124" x2="430" y2="124" stroke="#3d382f" stroke-opacity="0.45" stroke-width="2" />
+    <!-- 手写行（潦草笔记的占位线条 + 关键词） -->
+    <text x="150" y="168" font-family="'Segoe Script', 'Comic Sans MS', cursive" font-size="21" fill="#4a443a">- code freeze Thu 6pm</text>
+    <text x="150" y="206" font-family="'Segoe Script', 'Comic Sans MS', cursive" font-size="21" fill="#4a443a">- only Friday-path fixes after</text>
+    <text x="150" y="244" font-family="'Segoe Script', 'Comic Sans MS', cursive" font-size="21" fill="#4a443a">- Acme support → on-call rota,</text>
+    <text x="166" y="278" font-family="'Segoe Script', 'Comic Sans MS', cursive" font-size="21" fill="#4a443a">NOT straight to Bill!!</text>
+    <text x="150" y="324" font-family="'Segoe Script', 'Comic Sans MS', cursive" font-size="21" fill="#4a443a">- raise blockers in #eng</text>
+    <text x="166" y="358" font-family="'Segoe Script', 'Comic Sans MS', cursive" font-size="21" fill="#4a443a">before Thu standup</text>
+    <text x="150" y="404" font-family="'Segoe Script', 'Comic Sans MS', cursive" font-size="19" fill="#6b6354">— D.</text>
+  </g>
+  <!-- 占位水印：提醒这是待换资产 -->
+  <text x="320" y="466" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="13" fill="#f7f3e8" fill-opacity="0.55">placeholder — replace with real memo photo (P6-08)</text>
+</svg>

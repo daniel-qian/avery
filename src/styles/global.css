@@ -5864,3 +5864,294 @@ h1 {
   font-weight: 600;
   line-height: 1.5;
 }
+
+/* ── P6-06 · email errand case：memo 附件 chip + 可编辑草稿卡 + email-tool 卡 + Slack 小卡 ──
+   守 ADR-0002：入场动画复用 p6-card-in（只动 transform/opacity），被全局 reduced-motion
+   毯式规则覆盖。卡宽 = 2 × cases.ts 锚点 half.w（660px），同 P6-05 errand 卡组。 */
+
+/* question 节点的 memo 照片附件 chip（占位图缩略 + 文件名——P6-08 Danny 换真照片）。 */
+.question-attachment-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 6px 10px 6px 6px;
+  border: 1px solid rgba(52, 48, 40, 0.2);
+  border-radius: 10px;
+  background: rgba(255, 253, 248, 0.85);
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.question-attachment-chip img {
+  display: block;
+  width: 44px;
+  height: 33px;
+  border-radius: 6px;
+  object-fit: cover;
+  user-select: none;
+}
+
+/* ① 可编辑草稿卡：agent 邮件文本预填的 textarea。编辑 = 组件本地态（不入 replay）。 */
+.memo-draft-card {
+  width: 660px;
+  padding: 20px;
+  border: 1px solid rgba(196, 148, 58, 0.36);
+  border-radius: var(--radius);
+  background: rgba(255, 253, 248, 0.94);
+  box-shadow: 0 30px 110px rgba(50, 45, 36, 0.22);
+  backdrop-filter: blur(18px);
+  animation: p6-card-in 0.5s ease-out both;
+}
+
+.memo-draft-header,
+.email-tool-header,
+.slack-message-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.memo-draft-header h2,
+.email-tool-header h2,
+.slack-message-header h2 {
+  margin: 0;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 25px;
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.memo-draft-header > span,
+.slack-message-header > span {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  border: 1px solid rgba(196, 148, 58, 0.42);
+  border-radius: 999px;
+  background: rgba(196, 148, 58, 0.1);
+  color: rgba(151, 110, 37, 1);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.memo-draft-textarea {
+  display: block;
+  width: 100%;
+  min-height: 300px;
+  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.62);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.memo-draft-textarea:focus-visible {
+  border-color: rgba(196, 148, 58, 0.6);
+  outline: 2px solid rgba(196, 148, 58, 0.3);
+  outline-offset: 1px;
+}
+
+.memo-draft-hint {
+  margin: 10px 0 0;
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* ② email-tool 卡：To/Subject/Body 已填，Send 按钮待命 → Sent ✓。 */
+.email-tool-card {
+  width: 660px;
+  padding: 20px;
+  border: 1px solid rgba(105, 128, 109, 0.34);
+  border-radius: var(--radius);
+  background: rgba(255, 253, 248, 0.94);
+  box-shadow: 0 30px 110px rgba(50, 45, 36, 0.22);
+  backdrop-filter: blur(18px);
+  animation: p6-card-in 0.5s ease-out both;
+}
+
+/* Staged → Sent badge：状态翻转只换底色/字色（无布局动画）。 */
+.email-tool-status {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  border: 1px solid rgba(52, 48, 40, 0.24);
+  border-radius: 999px;
+  background: rgba(52, 48, 40, 0.06);
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.email-tool-status.is-sent {
+  border-color: rgba(105, 128, 109, 0.45);
+  background: rgba(105, 128, 109, 0.12);
+  color: rgba(83, 104, 87, 0.98);
+}
+
+.email-field {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  align-items: start;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--rule);
+}
+
+.email-field-label {
+  margin-top: 3px;
+  color: var(--ink-faint);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.email-recipient-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.email-recipient-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 5px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.email-recipient-address {
+  color: var(--ink-faint);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.email-subject {
+  margin: 0;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.email-body {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.email-tool-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule);
+}
+
+/* Send 按钮：待命态醒目（这是"人扣扳机"的 beat）；Sent 态翻绿、禁点（dedupe 可见）。 */
+.email-send-button {
+  padding: 9px 26px;
+  border: 1px solid rgba(83, 104, 87, 0.5);
+  border-radius: 999px;
+  background: rgba(105, 128, 109, 0.92);
+  color: #fffdf8;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.email-send-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.email-send-button.is-sent {
+  border-color: rgba(105, 128, 109, 0.4);
+  background: rgba(105, 128, 109, 0.14);
+  color: rgba(83, 104, 87, 0.98);
+  cursor: default;
+}
+
+/* ③ follow-up Slack-message 小卡：#eng 频道里的一条 app 消息。 */
+.slack-message-card {
+  width: 660px;
+  padding: 20px;
+  border: 1px solid rgba(108, 99, 181, 0.3);
+  border-radius: var(--radius);
+  background: rgba(255, 253, 248, 0.94);
+  box-shadow: 0 30px 110px rgba(50, 45, 36, 0.22);
+  backdrop-filter: blur(18px);
+  animation: p6-card-in 0.5s ease-out both;
+}
+
+.slack-message-header > span {
+  border-color: rgba(108, 99, 181, 0.4);
+  background: rgba(108, 99, 181, 0.12);
+  color: rgba(108, 99, 181, 0.95);
+}
+
+.slack-message-question {
+  margin-bottom: 12px;
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-style: italic;
+}
+
+.slack-message-bubble {
+  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  border-left: 3px solid rgba(108, 99, 181, 0.55);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.slack-message-author {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.slack-message-author i {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(52, 48, 40, 0.1);
+  color: var(--ink-faint);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.slack-message-bubble p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.55;
+}
