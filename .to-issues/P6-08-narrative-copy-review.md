@@ -6,6 +6,9 @@
 
 本 wave 的人工收口：Danny 逐字审全部 Venus-facing 新 copy、换真资产、现场 feel 验收。
 
+> AFK 盘点已完成（2026-06-10）：逐条审字清单（文件:行号 + copy 原文 + 一致性发现 + 换照片步骤）见
+> **[P6-08-review-checklist.md](./P6-08-review-checklist.md)**。
+
 **审字清单（全部 `⚠ 待 Danny 审字` 标记）：**
 
 - bill/acme follow-up：chip 文本（`"I have a job for Jason — is there any alternative?"`）+ alternatives Manifest 卡内容（P6-03）。

@@ -11,7 +11,7 @@
 
 权威 artifacts（动手前读）：
 
-- **`docs/20260603-design/demo-brief.md`** — demo 的 **PRD**：一句话 pitch、虚构公司 TeamMaster Inc.、cast、hero 问题、**12-beat sheet**、scene inventory、fixture 清单。**必读。**
+- **`docs/archived/20260603-design/demo-brief.md`** — demo 的 **PRD**：一句话 pitch、虚构公司 TeamMaster Inc.、cast、hero 问题、beat sheet（原 12 beat；P5/P6 后 rail 已扩到 **26 beat / 29 step**，见 ADR-0007/0013 与 `src/store/railStore.ts`）、scene inventory、fixture 清单。**必读。**
 - **`CONTEXT.md`** — 术语表（Dashboard / Nexus / Briefing / Reality gap / Capabilities）。**用 canonical 词，别用 `_Avoid_` 词（如 CAPA）。**
 - **`docs/adr/`** — `0001` demo-only 范围 · `0002` stack · `0003` rail = 可拆 driver。
 - **`src/data/fixtures.ts`** — demo 全部内容真相源（SNL cast、Acme/Bill mismatch 故事、agent 6 段输出、briefings v1/v2、timeline、onboarding…）。导出的 **types = state 数据契约**。
@@ -53,7 +53,7 @@ build 顺序见 demo-brief；简表：
 - **P1 Dashboard**（下一个）：**先 layout + density pass**（修重叠 + 渲染安全边界 + 落地方案 A 的 calm→focus 密度）→ focus 暗化/缩放动画 → composer → alert pills → framer-motion 接入。
 - **P2 Nexus**：spatial orchestration flow + inspector + agent 输出渲染。
 - **P3 详情 4 scene**：project / employee / capabilities / onboarding（内部模块 placeholder）。
-- **P4 rail**（当前；P1/P2/P3 ✅）：16-step / 12-beat `SCRIPT` + DemoControls 驱动 action API（ADR-0003 可拆 + **ADR-0006** replay-to-target）。grill 锁定见 §5.2。
+- **P4 rail**（✅；P1/P2/P3 ✅）：`SCRIPT` + DemoControls 驱动 action API（ADR-0003 可拆 + **ADR-0006** replay-to-target）。grill 锁定见 §5.2（当时 16 step / 12 beat；P5 加 Capabilities 收尾、P6 三幕化后现为 **29 step / 26 beat**，见 ADR-0013 与 `railStore.ts`）。
 - **P5 polish**：动效，按 Danny 的 motion 参考迭代。
 
 ## 5. P1 启动须知（已知待办 / 悬而未决）

@@ -4521,7 +4521,7 @@ h1 {
 }
 
 /* P5-01 (ADR-0007)：Capabilities 移出思考流，inspector 内的 free-click 入口按钮已删。
-   free-click 仍走 Topbar tab；rail 走收尾 13/13 beat。原 .nexus-capabilities-link 样式随按钮移除。 */
+   free-click 仍走 Topbar tab；rail 走收尾 B11 beat（P6 三幕化后为末拍 26/26）。原 .nexus-capabilities-link 样式随按钮移除。 */
 
 .rail-caption {
   display: flex;
