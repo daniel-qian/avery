@@ -245,16 +245,17 @@ h1 {
   pointer-events: none;
 }
 
+/* 修订 5：team 标签 = 名册各组上方的安静小字（比修订 3 的簇标签更小）。 */
 .team-zone-label {
   position: absolute;
   transform: translate(-50%, -50%);
   color: var(--ink-faint);
-  font-size: 22px;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   white-space: nowrap;
-  opacity: 0.4;
+  opacity: 0.55;
 }
 
 .edge-path {
@@ -887,9 +888,10 @@ h1 {
   z-index: 6;
 }
 
+/* 修订 6：链压窄成左侧细带——节点变小，Manifest 让位为主角。 */
 .flow-node {
-  width: 230px;
-  padding: 14px;
+  width: 180px;
+  padding: 12px;
 }
 
 .flow-node.is-future {
@@ -901,11 +903,9 @@ h1 {
   transform: translate(-50%, -50%) scale(0.96);
 }
 
+/* 修订 6：活跃强调（scale/border）删除——活跃只靠 breathe glow 说话。 */
 .flow-node.is-active {
   z-index: 20;
-  border-color: rgba(108, 99, 181, 0.58);
-  transform: translate(-50%, -50%) scale(1.08);
-  box-shadow: 0 28px 90px rgba(74, 64, 144, 0.18);
 }
 
 .flow-node.is-complete {
@@ -1278,25 +1278,35 @@ h1 {
   width: min(300px, calc(100vw - 48px));
 }
 
+/* 修订 5：calm 名册圆点 = 像素 avatar 圆（tone 色环）+ 名牌，无卡片底。
+   focus 时原位长成详情卡（grow-in-place）。 */
 .scene-dashboard .person-node {
-  width: 156px;
-  min-height: 54px;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  grid-template-columns: 34px 1fr;
-  padding: 6px 8px;
+  gap: 7px;
+  width: 150px;
+  padding: 10px 8px;
+  border-color: transparent;
+  background: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  text-align: center;
 }
 
 .scene-dashboard .avatar {
-  width: 34px;
-  height: 34px;
+  width: 56px;
+  height: 56px;
 }
 
 .scene-dashboard .pixel-avatar {
   overflow: hidden;
-  border: 1px solid rgba(52, 48, 40, 0.14);
-  border-radius: 8px;
-  background: rgba(255, 253, 248, 0.84);
-  box-shadow: inset 0 -6px 12px rgba(52, 48, 40, 0.05);
+  border: 2px solid rgba(105, 128, 109, 0.5);
+  border-radius: 50%;
+  background: rgba(255, 253, 248, 0.92);
+  box-shadow:
+    0 0 0 4px rgba(105, 128, 109, 0.1),
+    inset 0 -6px 12px rgba(52, 48, 40, 0.05);
 }
 
 .scene-dashboard .pixel-avatar-sprite {
@@ -1316,13 +1326,20 @@ h1 {
 }
 
 .scene-dashboard .person-node.tone-warning .pixel-avatar {
-  border-color: rgba(178, 123, 43, 0.34);
-  background: rgba(255, 248, 234, 0.82);
+  border-color: rgba(178, 123, 43, 0.62);
+  background: rgba(255, 248, 234, 0.9);
+  box-shadow:
+    0 0 0 4px rgba(178, 123, 43, 0.14),
+    inset 0 -6px 12px rgba(52, 48, 40, 0.05);
 }
 
 .scene-dashboard .person-node.tone-danger .pixel-avatar {
-  border-color: rgba(188, 92, 73, 0.42);
-  background: rgba(255, 241, 236, 0.82);
+  border-color: rgba(188, 92, 73, 0.78);
+  background: rgba(255, 241, 236, 0.92);
+  box-shadow:
+    0 0 0 4px rgba(188, 92, 73, 0.18),
+    0 10px 34px rgba(188, 92, 73, 0.22),
+    inset 0 -6px 12px rgba(52, 48, 40, 0.05);
 }
 
 @keyframes dashboard-avatar-idle {
@@ -1337,6 +1354,10 @@ h1 {
 
 .scene-dashboard .person-body {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
 }
 
 .scene-dashboard .person-node h3,
@@ -1345,8 +1366,7 @@ h1 {
 }
 
 .scene-dashboard .person-role,
-.scene-dashboard .person-stats,
-.scene-dashboard .project-detail {
+.scene-dashboard .person-stats {
   display: none;
 }
 
@@ -1358,23 +1378,28 @@ h1 {
   display: flex;
 }
 
-.scene-dashboard .person-node.tone-stable {
+/* 修订 5：calm 圆点无卡片底——tone 卡片 chrome 只在 focus 长大后出现。 */
+.scene-dashboard .person-node.is-focused {
+  width: 196px;
+  padding: 14px 12px;
   border-color: rgba(52, 48, 40, 0.13);
+  background: rgba(255, 253, 248, 0.95);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(10px);
 }
 
-.scene-dashboard .person-node.tone-warning {
+.scene-dashboard .person-node.is-focused.tone-warning {
   border-color: rgba(178, 123, 43, 0.42);
-  background: rgba(255, 253, 248, 0.9);
   box-shadow: 0 14px 44px rgba(178, 123, 43, 0.1);
 }
 
-.scene-dashboard .person-node.tone-danger {
+.scene-dashboard .person-node.is-focused.tone-danger {
   border-color: rgba(188, 92, 73, 0.56);
   background: rgba(255, 250, 247, 0.94);
   box-shadow: 0 18px 56px rgba(188, 92, 73, 0.16);
 }
 
-.scene-dashboard .person-hud,
+/* HP/MP 条 calm 隐藏（修订 5：weather 只留 tone 色环），focus 长大后才显示。 */
 .scene-dashboard.has-focus .person-node.is-focused .person-hud {
   display: grid;
 }
@@ -1472,27 +1497,256 @@ h1 {
   display: block;
 }
 
+/* 修订 5：项目 = 统一尺寸横条（名称 + status + 细进度条），focus 原位展开 detail。 */
 .scene-dashboard .project-card {
-  width: 244px;
-  min-height: 58px;
-  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  width: 720px;
+  min-height: 64px;
+  padding: 14px 20px;
 }
 
 .scene-dashboard .project-card.is-focused {
-  width: 244px;
+  width: 720px;
+}
+
+.scene-dashboard .project-bar-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.scene-dashboard .project-bar-row h3 {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .scene-dashboard .project-status {
-  margin-bottom: 5px;
+  margin-bottom: 0;
   letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* calm 即全卡（co-founder 反馈）：summary + 带标签/百分比的单条进度 + owner/due。 */
+.scene-dashboard .project-summary {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.scene-dashboard .project-progress {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.scene-dashboard .project-progress-label {
+  color: var(--ink-faint);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.scene-dashboard .project-progress-pct {
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.scene-dashboard .project-strip {
+  display: block;
+  overflow: hidden;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(52, 48, 40, 0.1);
+}
+
+.scene-dashboard .project-strip-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: rgba(105, 128, 109, 0.78);
+}
+
+/* 进度条按百分比分档着色（与 status 解耦）：<40 红、40–69 琥珀、≥70 绿。 */
+.scene-dashboard .project-strip.strip-low .project-strip-fill {
+  background: var(--terracotta);
+}
+
+.scene-dashboard .project-strip.strip-mid .project-strip-fill {
+  background: var(--honey);
+}
+
+.scene-dashboard .project-strip.strip-high .project-strip-fill {
+  background: rgba(96, 158, 109, 0.92);
+}
+
+.scene-dashboard .project-card .project-meta {
+  margin-top: 0;
+  gap: 10px;
+}
+
+/* ── at-risk 项目卡「引导点击」= whisper halo（眼选定稿；strip/edge/badge 候选已删）。
+   无 spread 环的弥散光晕 + 近中性 tinted 边框，6s 慢呼吸。双色微虹：主 tone（amber/
+   coral）下衬一层淡 violet（与 focus 紫同族），给一点 flair 又不脏 calm 纸面。── */
+@keyframes whisper-halo-warning {
+  0%,
+  100% {
+    box-shadow:
+      var(--shadow-soft),
+      0 8px 24px rgba(190, 126, 32, 0.14);
+  }
+
+  50% {
+    /* 双色虹：暖 amber 沉在下缘、violet 浮在上缘——上下错开才看得出两个色相。 */
+    box-shadow:
+      var(--shadow-soft),
+      0 14px 42px rgba(207, 134, 28, 0.4),
+      0 -8px 26px rgba(108, 99, 181, 0.24);
+  }
+}
+
+@keyframes whisper-halo-danger {
+  0%,
+  100% {
+    box-shadow:
+      var(--shadow-soft),
+      0 8px 24px rgba(196, 84, 61, 0.16);
+  }
+
+  50% {
+    box-shadow:
+      var(--shadow-soft),
+      0 14px 44px rgba(208, 82, 56, 0.46),
+      0 -8px 26px rgba(141, 84, 184, 0.26);
+  }
+}
+
+.scene-dashboard .project-card.risk-warning:not(.is-muted) {
+  border-color: rgba(178, 123, 43, 0.3);
+  animation: whisper-halo-warning 6s ease-in-out infinite;
+}
+
+.scene-dashboard .project-card.risk-danger:not(.is-muted) {
+  border-color: rgba(188, 92, 73, 0.36);
+  animation: whisper-halo-danger 6s ease-in-out infinite;
+}
+
+/* avatar 圈：呼吸时保留基础 tone 环 + inset，只脉动外圈光晕。 */
+@keyframes avatar-breathe-danger {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 4px rgba(188, 92, 73, 0.18),
+      0 10px 34px rgba(188, 92, 73, 0.22),
+      inset 0 -6px 12px rgba(52, 48, 40, 0.05);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 9px rgba(188, 92, 73, 0.22),
+      0 12px 44px rgba(188, 92, 73, 0.3),
+      inset 0 -6px 12px rgba(52, 48, 40, 0.05);
+  }
+}
+
+@keyframes avatar-breathe-warning {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 4px rgba(178, 123, 43, 0.14),
+      inset 0 -6px 12px rgba(52, 48, 40, 0.05);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 8px rgba(178, 123, 43, 0.18),
+      0 8px 26px rgba(178, 123, 43, 0.18),
+      inset 0 -6px 12px rgba(52, 48, 40, 0.05);
+  }
+}
+
+/* calm 呼吸（人物侧不变）：危险强而稍快、警告弱而更慢；on-track 完全静止。 */
+.scene-dashboard .person-node.tone-danger:not(.is-muted) .pixel-avatar {
+  animation: avatar-breathe-danger 3s ease-in-out infinite;
+}
+
+.scene-dashboard .person-node.tone-warning:not(.is-muted) .pixel-avatar {
+  animation: avatar-breathe-warning 4.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene-dashboard .project-card,
+  .scene-dashboard .person-node .pixel-avatar {
+    animation: none !important;
+  }
+}
+
+/* ── 项目 focus 态：风险分布图（world 对象，贴被 focus 项目条右侧）。── */
+.scene-dashboard .risk-chart {
+  position: absolute;
+  z-index: 21;
+  width: 332px;
+  padding: 14px 18px 12px;
+  border: 1px solid rgba(82, 123, 145, 0.42);
+  border-radius: var(--radius);
+  background: rgba(255, 253, 248, 0.95);
+  box-shadow: var(--shadow-soft);
+  pointer-events: auto;
+}
+
+.scene-dashboard .risk-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.scene-dashboard .risk-bar {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.scene-dashboard .risk-bar-value {
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.scene-dashboard .risk-bar-col {
+  display: flex;
+  align-items: flex-end;
+  width: 38px;
+  height: 118px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: rgba(52, 48, 40, 0.07);
+}
+
+.scene-dashboard .risk-bar-fill {
+  display: block;
+  width: 100%;
+  border-radius: 8px 8px 0 0;
+}
+
+.scene-dashboard .risk-bar-label {
+  color: var(--ink-faint);
+  font-size: 10.5px;
+  font-weight: 700;
 }
 
 .scene-dashboard .project-status span:last-child {
   overflow-wrap: anywhere;
-}
-
-.scene-dashboard.has-focus .project-card.is-focused .project-detail {
-  display: block;
 }
 
 .scene-dashboard .project-card.is-focused,
@@ -1827,74 +2081,8 @@ h1 {
     box-shadow var(--medium) ease;
 }
 
-.scene-nexus.has-mismatch .canvas-grid {
-  opacity: 0.34;
-  filter: blur(3px);
-}
-
-.scene-nexus.has-mismatch .nexus-brief,
-.scene-nexus.has-mismatch .nexus-inspector {
-  opacity: 0.22;
-  filter: blur(2px);
-}
-
-.scene-nexus.has-mismatch .flow-node {
-  opacity: 0.16;
-  filter: blur(1.6px);
-}
-
-.scene-nexus.has-mismatch .flow-node.is-active {
-  opacity: 0.74;
-  filter: none;
-}
-
-.scene-nexus.has-mismatch .nexus-edge-path:not(.is-collision) {
-  opacity: 0.1;
-}
-
-.scene-nexus.has-timeline .canvas-grid {
-  opacity: 0.38;
-}
-
-.scene-nexus.has-timeline .nexus-brief,
-.scene-nexus.has-timeline .nexus-inspector {
-  opacity: 0.24;
-  transform: translateY(8px);
-}
-
-.scene-nexus.has-timeline .flow-node {
-  opacity: 0.16;
-}
-
-.scene-nexus.has-timeline .flow-node.is-active {
-  opacity: 0.78;
-}
-
-.scene-nexus.has-timeline .nexus-edge-path:not(.is-active) {
-  opacity: 0.1;
-}
-
-.scene-nexus.has-structured-output .canvas-grid {
-  opacity: 0.3;
-}
-
-.scene-nexus.has-structured-output .nexus-brief,
-.scene-nexus.has-structured-output .nexus-inspector {
-  opacity: 0.18;
-  transform: translateY(8px);
-}
-
-.scene-nexus.has-structured-output .flow-node {
-  opacity: 0.14;
-}
-
-.scene-nexus.has-structured-output .flow-node.is-active {
-  opacity: 0.68;
-}
-
-.scene-nexus.has-structured-output .nexus-edge-path:not(.is-active) {
-  opacity: 0.08;
-}
+/* 修订 6：Nexus 无调光不变量——一切元素一旦显形永远全存在感。
+   原 has-mismatch / has-timeline / has-structured-output / has-chat 整组 dim/blur 规则删除。 */
 
 .scene-nexus .flow-node.is-unrevealed {
   opacity: 0;
@@ -1919,12 +2107,78 @@ h1 {
   transform: none;
 }
 
+/* 修订 6：无调光——历史卡与活跃卡同为全存在感，活跃卡只抬 z 序。 */
+.nexus-card-slot.is-active {
+  z-index: 24;
+}
+
+.manifest-label {
+  position: absolute;
+  z-index: 3;
+  transform: translate(-50%, -50%);
+  color: var(--ink-faint);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.nexus-edge-path.manifest-edge {
+  stroke: rgba(108, 99, 181, 0.4);
+  stroke-dasharray: 7 6;
+}
+
+.nexus-edge-path.manifest-edge.is-active {
+  stroke: rgba(108, 99, 181, 0.85);
+  stroke-width: 2;
+}
+
+/* ── 修订 6：活跃指示 = breathe glow 独占（现场眼选定稿；pulse/radar 已删）。── */
+.scene-nexus .flow-node.is-active {
+  animation: fx-breathe 2.2s ease-in-out infinite;
+}
+
+@keyframes fx-breathe {
+  0%,
+  100% {
+    box-shadow: var(--shadow-soft);
+  }
+
+  50% {
+    box-shadow:
+      var(--shadow-soft),
+      0 0 0 14px rgba(108, 99, 181, 0.16),
+      0 0 44px 6px rgba(108, 99, 181, 0.2);
+  }
+}
+
+/* 修订 6：per-artifact 产出圆——产物在此显形的节点渲染为圆形（其余思考节点保持矩形）。 */
+.scene-nexus .flow-node.is-manifest-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 196px;
+  height: 196px;
+  padding: 20px;
+  border-radius: 50%;
+  text-align: center;
+}
+
+.scene-nexus .flow-node.is-manifest-node p {
+  display: none;
+}
+
 .timeline-card {
   position: absolute;
   z-index: 22;
   top: 49%;
   left: 50%;
-  width: 680px;
+  width: 850px;
   padding: 22px;
   border: 1px solid rgba(52, 48, 40, 0.22);
   border-radius: var(--radius);
@@ -2126,8 +2380,8 @@ h1 {
   top: 52%;
   left: 50%;
   display: grid;
-  width: 760px;
-  max-height: 720px;
+  width: 950px;
+  max-height: 880px;
   gap: 12px;
   padding: 18px;
   overflow: auto;
@@ -2327,7 +2581,7 @@ h1 {
   z-index: 22;
   top: 48%;
   left: 50%;
-  width: 600px;
+  width: 760px;
   padding: 22px;
   border: 1px solid rgba(52, 48, 40, 0.22);
   border-radius: var(--radius);
@@ -3178,6 +3432,8 @@ h1 {
 }
 
 /* Delivery milestones — 颜色/标签区分 state */
+/* 时间线视觉强化（co-founder 反馈）：连通主轴 + 方向箭头 + 加粗状态色圆点。
+   骨架不变（竖向 when | dot | body 列表），只加方向与色彩分级。 */
 .milestone-track {
   display: grid;
   gap: 2px;
@@ -3187,11 +3443,36 @@ h1 {
 }
 
 .milestone {
+  position: relative;
   display: grid;
-  grid-template-columns: 76px 16px 1fr;
+  grid-template-columns: 76px 20px 1fr;
   align-items: center;
   gap: 12px;
-  padding: 10px 0;
+  padding: 12px 0;
+}
+
+/* 主轴：从本行圆点延伸到下一行圆点（dot 列中心 x = 76 + 12 + 10 = 98px）。 */
+.milestone:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  left: 97px;
+  top: 50%;
+  height: 100%;
+  width: 2px;
+  background: rgba(52, 48, 40, 0.18);
+}
+
+/* 方向箭头：行与行交界处，指向下一里程碑。 */
+.milestone:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  left: 93px;
+  bottom: -5px;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 7px solid rgba(52, 48, 40, 0.34);
 }
 
 .milestone-when {
@@ -3202,12 +3483,15 @@ h1 {
 }
 
 .milestone-dot {
-  width: 11px;
-  height: 11px;
+  position: relative;
+  z-index: 2;
+  width: 16px;
+  height: 16px;
   justify-self: center;
   border-radius: 50%;
-  border: 2px solid var(--rule-strong);
+  border: 3px solid var(--rule-strong);
   background: var(--paper-strong);
+  box-shadow: 0 0 0 3px var(--paper);
 }
 
 .milestone-body {
@@ -3673,6 +3957,11 @@ h1 {
   }
 
   .milestone-dot {
+    display: none;
+  }
+
+  .milestone:not(:last-child)::before,
+  .milestone:not(:last-child)::after {
     display: none;
   }
 }
@@ -4288,32 +4577,6 @@ h1 {
    B7 human-loop 从 inspector 轻量步毕业为中央卡（ADR-0008），与 timeline/mismatch/output 同级。
    消息逐条渐显 = opacity/transform stagger（守 ADR-0002）；reduced-motion 瞬显。 */
 
-.scene-nexus.has-chat .canvas-grid {
-  opacity: 0.36;
-}
-
-.scene-nexus.has-chat .nexus-brief,
-.scene-nexus.has-chat .nexus-inspector {
-  opacity: 0.22;
-  transform: translateY(8px);
-}
-
-.scene-nexus.has-chat .flow-node {
-  opacity: 0.16;
-}
-
-.scene-nexus.has-chat .flow-node.is-active {
-  opacity: 0.78;
-}
-
-.scene-nexus.has-chat .flow-node.is-unrevealed {
-  opacity: 0;
-}
-
-.scene-nexus.has-chat .nexus-edge-path:not(.is-active) {
-  opacity: 0.1;
-}
-
 .nexus-chat-card {
   position: absolute;
   z-index: 22;
@@ -4321,8 +4584,8 @@ h1 {
   left: 50%;
   display: flex;
   flex-direction: column;
-  width: 560px;
-  max-height: 600px;
+  width: 720px;
+  max-height: 760px;
   padding: 22px;
   border: 1px solid rgba(52, 48, 40, 0.22);
   border-radius: var(--radius);

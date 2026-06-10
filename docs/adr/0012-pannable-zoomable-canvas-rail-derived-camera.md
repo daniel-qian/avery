@@ -65,6 +65,35 @@ Dashboard 与 Nexus 共用一个 pan/zoom 画板基座。六条：
 
 未变：决策 1（选 rzpp）、3（坐标系 viewport-%→board，本修订只是把"什么算 board 对象"扩大）、5（Dashboard 同心放射几何）、6（PixelAvatar）。不扩 `canvasStore` 铁律、replay-safe、rail 可删、CONTEXT.md 不动（world/HUD 同 "canvas"，是视觉机制非领域词）均不变。
 
+## 修订 6（2026-06-10，修订5 落地实跑后 — calm 镜头改「可读帧」、Manifest 主角化、Nexus 无调光）
+
+修订 5 落地实跑（before/after 截图 + 手绘）暴露：**full-fit calm 开局两面都太小，第一次看的人不知道自己在看什么**。Danny 裁决：**静息时可读性压过完整性**——开局不必看全、必须看懂；看不全交给 pan/zoom（这正是本 ADR 的根本主张）。六条，**取代修订 1-3/修订 2-1 的「calm = 全图 fit」通则，并修订修订 5 的 Nexus 层级与单一 manifest node**：
+
+1. **calm 镜头 = fit-width 顶锚可读帧（公式，非手调 scale）。** scale = 安全矩形宽 ÷ 内容包围盒宽（×padding，仍受 maxFitScale 顶），内容**顶边**贴安全矩形顶部，**底部允许出帧**（下方组/链尾靠 pan 到达）。两面同一规则。拒绝"手设一个看着对的 initialScale"——跨屏不可复现，违反 memory `prefer-runtime-navigation-over-handtuned-layout`；fit-width 在任何视口重现 after.png 的取景。step/focus 镜头不变（仍 contain 局部 bbox）。
+2. **Dashboard 两列间距减半**（纯 tuning：`PROJECT_X` 左移），内容变窄 → fit-width 进一步放大，与 1 叠加达到目标可读度。
+3. **Nexus 层级反转：Manifest 为主角。** 链压窄成左侧细带（lane 间距与节点尺寸缩小），Manifest 列左移、结果卡放大 ~25%、左缘对齐。开局帧 = 链顶 + Manifest 列同框（同规则 1）。
+4. **Nexus 无调光不变量。** 渐进 reveal 保留（节点/边/卡仍随 rail 显形，守 ADR-0007 叙事拍），但**一切元素一旦显形，永远全存在感**：删除全部 step 态 dim/blur（has-mismatch / has-timeline / has-chat / has-structured-output 整组规则）与 Manifest 历史卡 52% 淡显。Dashboard 的 focus 调光**不变**（两面分工：观察面靠 dim 表达关联，行动面靠位置与 glow）。
+5. **活跃指示 = breathe glow 独占。** 三套候选现场眼选定 breathe；删 pulse / radar 与 FX 切换按钮，同时删 is-active 的 scale/border 强调——活跃只靠呼吸光晕说话。
+6. **per-artifact 产出圆（取代修订 5 的单一 manifest node 连线源）。** 四个产物各自从**产出节点**显形：Reality Gap ← evidence（信号簇）、human chat ← bill、timeline ← tool、report ← output；产出节点渲染为**圆形**（其余思考节点保持矩形——"圆 = 产物在此显形"的视觉语法），各卡连线源自自己的产出圆。CONTEXT.md「Manifest」词义不动（"经链条显形"未变，只是显形点从单点改为各产出点）。
+
+未变：双列 bipartite 布局（修订 5）、board px-only、坐标公式化、不扩 `canvasStore`、replay-safe、rail 可删。
+
+## 修订 5（2026-06-10，co-founder 实评后 — 两面改结构化双列布局，有机散布退役）
+
+Co-founder 评审结论：pan/zoom world/HUD 基座扎实，但**两面的节点散布仍读作 messy / unorganized**。经 grill 确认：这是方向性裁决——**结构化可读性现在压过"有机天气地图"的气质**；"天气"以节点着色（tone ring / status strip）存续，不再靠空间松散感。Danny 手绘两张草图（Dashboard 双列 / Nexus 链+Manifest）为本修订的根。五条，**取代 修订2 的 Dashboard 几何与节点表征（决策5'），并取代 修订4 对结果卡的簇旁锚点**：
+
+1. **Dashboard = 左名册列 + 右项目列（bipartite）。** 左列：avatar 圆点按 team 分组排紧凑网格，**team 标签 = 组上方的安静小字**（比现 zone label 更小）；圆点 = 像素 avatar + tone 色环（天气存续处）+ "Firstname L." 小名牌，**calm 不再显示 HP/MP/role**。右列：项目 = 统一尺寸横条（名称 + 细 status/进度条），**按 owner 所属 team 的组序排列**（focus 连线短而水平）。条宽不编码语义。
+2. **连线只在 focus 出现。** calm 时 owner→project 边一律隐藏（比修订2 更强的 calm 保证）；focus 时该实体的连线划过两列、关联节点点亮。
+3. **focus = 原位长大（grow-in-place）+ 镜头辅助。** 被 focus 的圆点/横条在自己的格位原地长成详情卡（名/role/HP/MP/tone；项目展开 summary/进度），允许压住邻居；镜头飞向「卡 + 其连线」局部 bbox。这是 **focus 驱动的离散两态（calm 圆点 ↔ focus 卡）**，不是修订2-5 否决的 zoom-reactive LOD（仍无随 scale 重渲；focus 是 replay-safe 的既有状态机）。修订2-5 的"固定表征"据此修订为"两个离散表征"。
+4. **Nexus = 左直链 + 右 Manifest 列（镜像 Dashboard 结构）。** 放射 topology 退役，节点吸附**三条固定竖向 lane**：左 lane = PM 链（pm-agent / project-ops-cap / tool）、中脊 = 共享节点（question → evidence → bill → **manifest node**）、右 lane = HR 链（hr-agent / hr-cap）。**链必须视觉笔直干净**——节点 x 恒等于 lane x，跨链边为短对称斜线。**manifest node = 原 output 节点语义扩展**：agent 经链条创造的一切（图表 / report / human chat / 决策）都经此点显形。右侧 **Manifest 列**：全部 4 张结果卡按 step 顺序**累积堆叠**（不再只显当前卡、不再簇旁锚点），各卡连线源自 manifest node。镜头每拍仍飞「活跃节点 + 该拍卡」局部 bbox。
+5. **Nexus inspector（Current focus 角落 chrome）删除**；顶部居中 HUD brief（修订4）不变。活跃节点加 focus 特效（环形动画 + tone 光晕；2–3 套 CSS 方案现场眼选）。
+
+**两面韵脚**：左 = 实体/过程，右 = 矩形 artifact 列，连线 on focus——"同一产品两面"首次在布局上可见。
+
+被否的替代：温和整理有机聚簇（调 zone 中心/间距）——co-founder 的裁决是结构本身、不是参数；继续簇旁卡锚（修订4）——卡随簇散布正是 messy 感来源之一。
+
+未变：决策 1（rzpp）、3（board px-only）、6（PixelAvatar）、修订3 全幅取景（calm=full-fit / step=局部 bbox）、坐标全公式化（lane x / 行高 / 列锚 = 常量公式，不逐节点手摆，守 memory `prefer-runtime-navigation-over-handtuned-layout`）。不扩 `canvasStore`、replay-safe、rail 可删均不变。CONTEXT.md：新增 **Manifest** 词条（域概念）；Dashboard 仍是 ambient 观察面——"天气"载体从空间形态移到节点着色，词义不动。
+
 ## 修订 4（2026-06-09，修订3 后微调 — 两个 brief 统一为顶部居中 HUD 文字）
 
 纯视觉微调：(1) Dashboard weather/briefing 由左上「卡片」改为**顶部居中的干净文字**（去背景/边框、字更小），仍 HUD。(2) Nexus orchestration brief 由 world 卡改为**顶部居中 HUD**（样式不变），与 Dashboard weather 同位同型。两面 brief 至此统一为顶部居中 HUD 文字。未触及几何 / 镜头 / 数据。

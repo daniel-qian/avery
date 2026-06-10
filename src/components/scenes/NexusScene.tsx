@@ -5,7 +5,6 @@ import {
   HERO_QUESTION,
   HUMAN_LOOP,
   MISMATCH,
-  NEXUS_INSPECTOR_CONTENT,
   PEOPLE,
   SIGNALS,
   TIMELINE,
@@ -13,22 +12,27 @@ import {
   type TaskTemplate,
 } from '../../data/fixtures'
 import {
+  MANIFEST_LABEL_POS,
+  MANIFEST_NODE_ID,
+  MANIFEST_PRODUCERS,
+  MANIFEST_PRODUCER_IDS,
   NEXUS_CARD_ANCHORS,
   NEXUS_EDGES,
   NEXUS_NODES,
   NEXUS_POS,
   type NexusNodeId,
 } from '../../data/nexusLayout'
-import { NEXUS_BOARD, bboxOf, type BoardRect, type Pos } from '../../data/board'
+import { NEXUS_BOARD, bboxOf, type Pos } from '../../data/board'
 import { edgePath } from '../../lib/edges'
 import { deriveNexusEdgeState, deriveNexusNodeStates, NEXUS_STEP_NODES } from '../../lib/nexusFlow'
 import { useCanvas, type ThreadStepKind } from '../../store/canvasStore'
 import { PanZoomCanvas } from '../PanZoomCanvas'
-import { useRailCamera, type SafeInsets } from '../../lib/useRailCamera'
+import { useRailCamera, type CameraTarget, type SafeInsets } from '../../lib/useRailCamera'
 import { PixelAvatar } from '../PixelAvatar'
 
-// Nexus 节点的估算半宽/半高（board px），供镜头算包围盒。
-const NODE_HALF = { w: 110, h: 70 }
+// Nexus 节点的估算半宽/半高（board px），供镜头算包围盒。修订 6：节点压小（矩形 180 宽 /
+// 产出圆 196），取圆的外接一半再留点余量。
+const NODE_HALF = { w: 100, h: 100 }
 
 // Nexus inset（修订 3）：full-bleed——inspector 降级为右上角落 chrome（非实体右面板），
 // 故不再为它留宽 inset；只留薄边清 Topbar / advance-bar。
@@ -53,13 +57,21 @@ function nodeStyle(nodeId: NexusNodeId) {
   return { left: `${pos.x}px`, top: `${pos.y}px` }
 }
 
-// 中央结果卡的 board 锚点容器：定位到该拍 card anchor，居中对齐。
-function CardSlot({ step, children }: { step: ThreadStepKind; children: ReactNode }) {
+// Manifest 列卡槽（修订 5）：定位到该拍的列内堆叠锚点；活跃拍的卡高亮、历史卡留存淡显。
+function CardSlot({
+  step,
+  isActive,
+  children,
+}: {
+  step: ThreadStepKind
+  isActive: boolean
+  children: ReactNode
+}) {
   const anchor = NEXUS_CARD_ANCHORS[step]
   if (!anchor) return <>{children}</>
   return (
     <div
-      className="nexus-card-slot"
+      className={classNames(['nexus-card-slot', isActive && 'is-active'])}
       style={{ left: `${anchor.pos.x}px`, top: `${anchor.pos.y}px` }}
     >
       {children}
@@ -129,6 +141,21 @@ function NexusEdgeLayer({
             key={edge.id}
             className={classNames(['nexus-edge-path', state, isCollision && 'is-collision'])}
             d={edgePath(NEXUS_POS[edge.from], NEXUS_POS[edge.to])}
+            vectorEffect="non-scaling-stroke"
+          />
+        )
+      })}
+      {/* 修订 6：Manifest 连线——已显形的结果卡从各自的产出圆引出，挂到卡左缘。 */}
+      {(Object.keys(NEXUS_CARD_ANCHORS) as ThreadStepKind[]).map((step) => {
+        const anchor = NEXUS_CARD_ANCHORS[step]
+        if (!anchor || !steps.some((s) => s.kind === step)) return null
+        const from = NEXUS_POS[MANIFEST_PRODUCERS[step] ?? MANIFEST_NODE_ID]
+        const to = { x: anchor.pos.x - anchor.half.w, y: anchor.pos.y }
+        return (
+          <path
+            key={`manifest-${step}`}
+            className={classNames(['nexus-edge-path', 'manifest-edge', activeStep === step && 'is-active'])}
+            d={edgePath(from, to)}
             vectorEffect="non-scaling-stroke"
           />
         )
@@ -407,16 +434,13 @@ export function NexusScene() {
   const question = thread.question ?? HERO_QUESTION
   const nodeStates = useMemo(() => deriveNexusNodeStates(thread.steps), [thread.steps])
   const activeStep = thread.steps[thread.steps.length - 1]?.kind
-  const showMismatch = activeStep === 'cross-check'
-  const showTimeline = activeStep === 'timeline'
-  const showStructuredOutput = activeStep === 'structured-output'
-  const showChat = activeStep === 'human-loop'
+  // 修订 5：结果卡在 Manifest 列累积——到过的拍永久留存，活跃拍高亮。
+  const reached = (kind: ThreadStepKind) => thread.steps.some((s) => s.kind === kind)
+  const showMismatch = reached('cross-check')
+  const showTimeline = reached('timeline')
+  const showStructuredOutput = reached('structured-output')
+  const showChat = reached('human-loop')
   const dispatchedTaskKeys = useMemo(() => new Set(tasks.map(taskTemplateKey)), [tasks])
-  const activeNodes = activeStep ? NEXUS_STEP_NODES[activeStep] : ['question']
-  const inspectorContent =
-    activeStep && activeStep in NEXUS_INSPECTOR_CONTENT
-      ? NEXUS_INSPECTOR_CONTENT[activeStep as keyof typeof NEXUS_INSPECTOR_CONTENT]
-      : undefined
   const progressLabel = `${thread.steps.length}/6 steps`
   const advanceLabel =
     thread.steps.length === 0
@@ -431,41 +455,45 @@ export function NexusScene() {
 
   // ── rail 派生镜头（ADR-0012 决策 4 + 修订 4）：calm = 全图 fit；step = 飞向「活跃簇 + 结果卡」局部 bbox。──
   const camRef = useRef<ReactZoomPanPinchRef | null>(null)
-  const cameraTarget = useMemo<BoardRect | null>(() => {
+  const cameraTarget = useMemo<CameraTarget | null>(() => {
     const items: Array<{ pos: Pos; halfW: number; halfH: number }> = []
     if (!activeStep) {
+      // 修订 6：calm = fit-width 顶锚可读帧——链 + Manifest 列同框（宽度），链尾出帧靠 pan。
       NEXUS_NODES.forEach((n) =>
         items.push({ pos: NEXUS_POS[n.id], halfW: NODE_HALF.w, halfH: NODE_HALF.h }),
       )
-      return bboxOf(items)
+      for (const anchor of Object.values(NEXUS_CARD_ANCHORS)) {
+        items.push({
+          pos: { x: anchor.pos.x, y: MANIFEST_LABEL_POS.y },
+          halfW: anchor.half.w,
+          halfH: 0,
+        })
+      }
+      const bbox = bboxOf(items)
+      return bbox ? { bbox, mode: 'width-top' } : null
     }
     NEXUS_STEP_NODES[activeStep].forEach((id) =>
       items.push({ pos: NEXUS_POS[id], halfW: NODE_HALF.w, halfH: NODE_HALF.h }),
     )
     const card = NEXUS_CARD_ANCHORS[activeStep]
     if (card) items.push({ pos: card.pos, halfW: card.half.w, halfH: card.half.h })
-    return bboxOf(items)
+    const bbox = bboxOf(items)
+    return bbox ? { bbox } : null
   }, [activeStep])
 
   useRailCamera(camRef, cameraTarget, NEXUS_INSETS, activeStep ?? 'calm', { maxFitScale: 1.1 })
 
   return (
-    <section
-      className={classNames([
-        'scene scene-nexus is-active',
-        showMismatch && 'has-mismatch',
-        showTimeline && 'has-timeline',
-        showStructuredOutput && 'has-structured-output',
-        showChat && 'has-chat',
-      ])}
-      aria-label="Nexus"
-    >
+    <section className="scene scene-nexus is-active" aria-label="Nexus">
       <PanZoomCanvas ref={camRef} board={NEXUS_BOARD}>
         <div className="canvas-grid board-surface" aria-hidden="true" />
         <div className="nexus-flow-layer" aria-label="Nexus orchestration topology">
         <NexusEdgeLayer steps={thread.steps} activeStep={activeStep} />
         {NEXUS_NODES.map((node) => {
-          const state = nodeStates[node.id]
+          // manifest node（修订 5）恒以 ghost 形态在场——一切产物经此显形，不等末拍才出现。
+          const rawState = nodeStates[node.id]
+          const state =
+            node.id === MANIFEST_NODE_ID && rawState === 'is-unrevealed' ? 'is-future' : rawState
           const isActive = state === 'is-active'
           const isUnrevealed = state === 'is-unrevealed'
           const isSelfReportNode = showMismatch && node.id === 'bill'
@@ -473,7 +501,11 @@ export function NexusScene() {
             <button
               key={node.id}
               type="button"
-              className={classNames(['flow-node', state])}
+              className={classNames([
+                'flow-node',
+                state,
+                MANIFEST_PRODUCER_IDS.has(node.id) && 'is-manifest-node',
+              ])}
               style={nodeStyle(node.id)}
               aria-hidden={isUnrevealed || undefined}
               aria-pressed={isActive}
@@ -493,28 +525,37 @@ export function NexusScene() {
         })}
       </div>
 
+        {/* Manifest 列标题（world 对象，修订 5）。 */}
+        <span
+          className="manifest-label"
+          aria-hidden="true"
+          style={{ left: `${MANIFEST_LABEL_POS.x}px`, top: `${MANIFEST_LABEL_POS.y}px` }}
+        >
+          Manifest
+        </span>
+
         {showMismatch ? (
-          <CardSlot step="cross-check">
+          <CardSlot step="cross-check" isActive={activeStep === 'cross-check'}>
             <MismatchCard />
           </CardSlot>
         ) : null}
+        {showChat ? (
+          <CardSlot step="human-loop" isActive={activeStep === 'human-loop'}>
+            <ChatCard />
+          </CardSlot>
+        ) : null}
         {showTimeline ? (
-          <CardSlot step="timeline">
+          <CardSlot step="timeline" isActive={activeStep === 'timeline'}>
             <TimelineCard />
           </CardSlot>
         ) : null}
         {showStructuredOutput ? (
-          <CardSlot step="structured-output">
+          <CardSlot step="structured-output" isActive={activeStep === 'structured-output'}>
             <StructuredOutputCard
               dispatchedTaskKeys={dispatchedTaskKeys}
               onDispatchTask={dispatchTask}
               onReturnDashboard={returnToDashboard}
             />
-          </CardSlot>
-        ) : null}
-        {showChat ? (
-          <CardSlot step="human-loop">
-            <ChatCard />
           </CardSlot>
         ) : null}
 
@@ -528,33 +569,6 @@ export function NexusScene() {
           <span>{activeStep ? STEP_LABELS[activeStep] : 'Question staged'}</span>
         </div>
       </section>
-
-      <aside className="nexus-inspector" aria-label="Active orchestration step">
-        <p className="eyebrow">Current focus</p>
-        <h3>{inspectorContent?.title ?? (activeStep ? STEP_LABELS[activeStep] : 'Question staged')}</h3>
-        <p>
-          {inspectorContent?.body ??
-            (activeStep
-              ? 'This step is owned by the central result card; the inspector stays quiet.'
-              : 'Start the run to let the PM agent pull the first evidence cluster.')}
-        </p>
-        {inspectorContent ? (
-          <div className="artifact-list">
-            {inspectorContent.artifacts.map((artifact) => (
-              <div key={artifact.label} className="artifact-card">
-                <strong>{artifact.label}</strong>
-                <span>{artifact.detail}</span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="nexus-active-list">
-            {activeNodes.map((nodeId) => (
-              <span key={nodeId}>{NEXUS_NODES.find((node) => node.id === nodeId)?.kind}</span>
-            ))}
-          </div>
-        )}
-      </aside>
 
       <div className="nexus-advance-bar">
         <button type="button" className="nexus-advance" onClick={runAgent}>

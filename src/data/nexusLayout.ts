@@ -95,50 +95,84 @@ export const NEXUS_NODES: NexusNode[] = [
   },
 ]
 
-// P5 ④ (ADR-0012 决策 3 + 修订)：放射 topology 不变（决策 2/ADR-0004 保留），仅把坐标
-// 从「视口百分比」搬进 board 像素。源 topology 仍以 0–100 描述（易读），模块加载时按公式
-// 映射到 board 空间：flow 居中在 board 中轴、向下延申；右侧 board 区留给中央结果卡。
-const NEXUS_POS_PCT: Record<NexusNodeId, Pos> = {
-  question: { x: 50, y: 17 },
-  'pm-agent': { x: 32, y: 34 },
-  'hr-agent': { x: 68, y: 34 },
-  evidence: { x: 50, y: 46 },
-  'project-ops-cap': { x: 22, y: 59 },
-  'hr-cap': { x: 78, y: 59 },
-  bill: { x: 66, y: 71 },
-  tool: { x: 34, y: 72 },
-  output: { x: 50, y: 87 },
-}
+// P5 ⑦ (ADR-0012 修订 5+6)：放射 topology 退役 → 三条固定竖向 lane，链必须视觉笔直：
+// 左 lane = PM 链（pm-agent / project-ops-cap / tool）、中脊 = 共享节点
+// （question → evidence → bill → output）、右 lane = HR 链（hr-agent / hr-cap）。
+// 节点 x 恒等于 lane x、y 按行号等距下行（全公式，不逐节点手摆）；跨链边自然成短对称斜线。
+// 修订 6：Manifest 主角化——链压窄成左侧细带，右侧大头留给 Manifest 列。
+const LANE_X = { pm: 420, spine: 700, hr: 980 } as const
+const FLOW_TOP = 300
+const FLOW_ROW_STEP = 320
 
-// pct → board px。flow 横向居中（board 中轴 ±500），纵向 320→2520 向下铺；右侧 board 留给结果卡。
-function toBoard(pct: Pos): Pos {
-  return {
-    x: 1300 + ((pct.x - 50) / 100) * 1000,
-    y: 320 + (pct.y / 100) * 2200,
-  }
+const NEXUS_LANE: Record<NexusNodeId, { lane: keyof typeof LANE_X; row: number }> = {
+  question: { lane: 'spine', row: 0 },
+  'pm-agent': { lane: 'pm', row: 1 },
+  'hr-agent': { lane: 'hr', row: 1 },
+  evidence: { lane: 'spine', row: 2 },
+  'project-ops-cap': { lane: 'pm', row: 3 },
+  'hr-cap': { lane: 'hr', row: 3 },
+  bill: { lane: 'spine', row: 4 },
+  tool: { lane: 'pm', row: 5 },
+  output: { lane: 'spine', row: 6 },
 }
 
 export const NEXUS_POS: Record<NexusNodeId, Pos> = Object.fromEntries(
-  (Object.keys(NEXUS_POS_PCT) as NexusNodeId[]).map((id) => [id, toBoard(NEXUS_POS_PCT[id])]),
+  (Object.keys(NEXUS_LANE) as NexusNodeId[]).map((id) => [
+    id,
+    {
+      x: LANE_X[NEXUS_LANE[id].lane],
+      y: FLOW_TOP + NEXUS_LANE[id].row * FLOW_ROW_STEP,
+    },
+  ]),
 ) as Record<NexusNodeId, Pos>
 
-// 中央结果卡的 board 锚点（修订 4：结果卡是 world 对象、需真实 board 坐标，锚在各自簇旁的
-// 右侧空带；每拍镜头飞向「活跃簇 ＋ 该卡」的局部包围盒）。half = 估算半宽/半高，仅供镜头算 bbox，
-// 不必精确（padding 兜误差）。pm-agent / hr-root-cause 无中央卡 → 不在此表。
-// nexus-brief（orchestration headline + 进度）的 board 锚点：顶部带，flow question 节点之上。
-// calm 镜头保证开局必见。
-export const NEXUS_BRIEF_POS: Pos = { x: 1300, y: 360 }
+// 修订 6：per-artifact 产出圆——四个产物各自从「产出节点」显形（节点渲染为圆形），
+// 各卡连线源自自己的产出圆（取代修订 5 的单一 manifest node 连线源）。
+export const MANIFEST_PRODUCERS: Partial<Record<ThreadStepKind, NexusNodeId>> = {
+  'cross-check': 'evidence', // Reality Gap ← 信号簇（与自报相撞的证据）
+  'human-loop': 'bill', // human chat ← Bill 入环
+  timeline: 'tool', // 重排时间线 ← Timeline builder
+  'structured-output': 'output', // 决策报告 ← output
+}
+
+export const MANIFEST_PRODUCER_IDS = new Set<NexusNodeId>(
+  Object.values(MANIFEST_PRODUCERS),
+)
+
+// output 节点仍是链终点的「报告产出圆」，calm 起就以 ghost 在场（修订 5 语义保留）。
+export const MANIFEST_NODE_ID: NexusNodeId = 'output'
 
 export interface CardAnchor {
   pos: Pos
   half: { w: number; h: number }
 }
 
-export const NEXUS_CARD_ANCHORS: Partial<Record<ThreadStepKind, CardAnchor>> = {
-  'cross-check': { pos: { x: 2100, y: 1420 }, half: { w: 310, h: 280 } },
-  'human-loop': { pos: { x: 2100, y: 1320 }, half: { w: 280, h: 300 } },
-  timeline: { pos: { x: 2100, y: 1430 }, half: { w: 340, h: 300 } },
-  'structured-output': { pos: { x: 2100, y: 1470 }, half: { w: 380, h: 360 } },
+// Manifest 列（修订 5+6）：结果卡按 step 顺序在右侧累积堆叠；修订 6 列左移、卡放大 ~25%、
+// 左缘对齐（Manifest 是主角，链只是左侧细带）。锚点 y 由 half + 间隙公式推出，不手摆。
+// half = 估算半宽/半高，仅供镜头算 bbox 与堆叠间距，不必精确（padding 兜误差）。
+const MANIFEST_LEFT = 1240 // 所有卡的左缘 x
+const MANIFEST_TOP = 320
+const MANIFEST_GAP = 90
+
+const MANIFEST_STACK: Array<[ThreadStepKind, { w: number; h: number }]> = [
+  ['cross-check', { w: 380, h: 330 }],
+  ['human-loop', { w: 360, h: 380 }],
+  ['timeline', { w: 425, h: 350 }],
+  ['structured-output', { w: 475, h: 460 }],
+]
+
+export const MANIFEST_LABEL_POS: Pos = { x: MANIFEST_LEFT + 400, y: 210 }
+
+export const NEXUS_CARD_ANCHORS: Partial<Record<ThreadStepKind, CardAnchor>> = {}
+{
+  let stackY = MANIFEST_TOP
+  for (const [step, half] of MANIFEST_STACK) {
+    NEXUS_CARD_ANCHORS[step] = {
+      pos: { x: MANIFEST_LEFT + half.w, y: stackY + half.h },
+      half,
+    }
+    stackY += half.h * 2 + MANIFEST_GAP
+  }
 }
 
 export const NEXUS_EDGES: NexusEdge[] = [

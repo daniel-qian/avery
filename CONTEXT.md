@@ -34,6 +34,10 @@ _Avoid_: select、filter（filter 暗示"减项"，focus 是"点亮关联簇"）
 "被相信的状态"与"实时信号"之间被检测出的矛盾（例：owner 报 on-track，但信号显示 PR 卡住、重复 blocker、任务零更新）。系统只**指出矛盾并给低风险下一步**，绝不做人身/人格评价。其中"自报 vs 信号"这一具体子类叫 **report mismatch**。
 _Avoid_: discrepancy、conflict
 
+**Manifest**：
+一次 Nexus 编排中 agent 经思考/工作链**创造出的一切可见产物的集合**——report、图表、human chat、决策记录等。强调"显形"：过程在链上发生，产物在 Manifest 中可见、可回看、可累积。
+_Avoid_: output（output 窄指结构化报告这一种产物）、artifacts（泛指、丢失"经链条显形"的语义）
+
 **Handoff**：
 agent 产出的、落在 Dashboard / 详情页表面上**可直接执行**的单条行动（checklist 形式，可 done / discard，部分可一键飞回 Nexus 深挖）。是"建议"与"已确认派出的 Task"之间的中间态：人确认后才经 dispatchTask 变成 Task。
 _Avoid_: action item、todo（会跟已派出的 Task 混淆）

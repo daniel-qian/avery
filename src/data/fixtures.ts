@@ -23,12 +23,22 @@ export type SignalSource = 'slack' | 'github' | 'task' | 'manual'
 export interface Person {
   id: string
   name: string
+  lastInitial?: string // 名册名牌 "Firstname L."（ADR-0012 修订 5）；You/Wang 真名无姓缩写
   role: string
   team: 'Founders' | 'Eng' | 'Product' | 'Design' | 'GTM' | 'Ops'
   capacityPct?: number // 100 = 满载；>100 = 超载
   moodPct: number // 0..100；calm 卡 MP HUD
   avatarSprite: AvatarSprite
   storyCritical?: boolean
+}
+
+// 项目风险分布（Dashboard focus 态图表的 4 维，0..100）。手工编剧（守 ADR-0003：
+// scripted 内容当 data 存），story-critical 项目按叙事调，其余给平静纹理。
+export interface ProjectRisk {
+  progress: number // 进度风险（落后/依赖拖累）
+  blockers: number // 阻塞风险（卡点/外部依赖）
+  staffing: number // 人力风险（过载/单点）
+  quality: number // 质量风险
 }
 
 export interface Project {
@@ -43,6 +53,7 @@ export interface Project {
   summary?: string
   storyCritical?: boolean
   hotspot?: boolean // Dashboard「Hot spots」tag 手工标记；语义独立于 status
+  risk?: ProjectRisk
 }
 
 export interface Task {
@@ -114,19 +125,19 @@ export interface DashboardTag {
 export const PEOPLE: Person[] = [
   { id: 'u_you', name: 'You', role: 'Founder / CEO', team: 'Founders', capacityPct: 95, moodPct: 72, avatarSprite: AVATAR_SPRITES.paladin, storyCritical: true },
   { id: 'u_wang', name: 'Wang', role: 'Co-founder / Head of Domain', team: 'Founders', capacityPct: 90, moodPct: 80, avatarSprite: AVATAR_SPRITES.cleric, storyCritical: true },
-  { id: 'u_vanessa', name: 'Vanessa', role: 'Product Manager', team: 'Product', capacityPct: 88, moodPct: 62, avatarSprite: AVATAR_SPRITES.archer, storyCritical: true },
-  { id: 'u_bill', name: 'Bill', role: 'Backend Engineer', team: 'Eng', capacityPct: 134, moodPct: 24, avatarSprite: AVATAR_SPRITES.blacksmith, storyCritical: true }, // 超载（被打断）
-  { id: 'u_jason', name: 'Jason', role: 'Backend Engineer', team: 'Eng', capacityPct: 70, moodPct: 76, avatarSprite: AVATAR_SPRITES.swordsman, storyCritical: true }, // 有余量 → 接 Bill 的活
+  { id: 'u_vanessa', name: 'Vanessa', lastInitial: 'B', role: 'Product Manager', team: 'Product', capacityPct: 88, moodPct: 62, avatarSprite: AVATAR_SPRITES.archer, storyCritical: true },
+  { id: 'u_bill', name: 'Bill', lastInitial: 'H', role: 'Backend Engineer', team: 'Eng', capacityPct: 134, moodPct: 24, avatarSprite: AVATAR_SPRITES.blacksmith, storyCritical: true }, // 超载（被打断）
+  { id: 'u_jason', name: 'Jason', lastInitial: 'S', role: 'Backend Engineer', team: 'Eng', capacityPct: 70, moodPct: 76, avatarSprite: AVATAR_SPRITES.swordsman, storyCritical: true }, // 有余量 → 接 Bill 的活
   // ── orbit 纹理（名字可改）──
-  { id: 'u_kristen', name: 'Kristen', role: 'Frontend Engineer', team: 'Eng', capacityPct: 92, moodPct: 68, avatarSprite: AVATAR_SPRITES.mage },
-  { id: 'u_nasim', name: 'Nasim', role: 'ML Engineer', team: 'Eng', capacityPct: 85, moodPct: 74, avatarSprite: AVATAR_SPRITES.alchemist },
-  { id: 'u_andy', name: 'Andy', role: 'Product Designer', team: 'Design', capacityPct: 80, moodPct: 78, avatarSprite: AVATAR_SPRITES.merchant },
-  { id: 'u_kate', name: 'Kate', role: 'Customer Success Lead', team: 'GTM', capacityPct: 108, moodPct: 56, avatarSprite: AVATAR_SPRITES.farmer },
-  { id: 'u_will', name: 'Will', role: 'Account Executive', team: 'GTM', capacityPct: 75, moodPct: 73, avatarSprite: AVATAR_SPRITES.thief },
-  { id: 'u_cecily', name: 'Cecily', role: 'Growth / Marketing', team: 'GTM', capacityPct: 65, moodPct: 82, avatarSprite: AVATAR_SPRITES.kid },
-  { id: 'u_kenan', name: 'Kenan', role: 'Operations', team: 'Ops', capacityPct: 60, moodPct: 79, avatarSprite: AVATAR_SPRITES.demon },
-  { id: 'u_fred', name: 'Fred', role: 'Data Engineer', team: 'Eng', capacityPct: 78, moodPct: 70, avatarSprite: AVATAR_SPRITES.skeletonGeneral },
-  { id: 'u_aidy', name: 'Aidy', role: 'QA Engineer', team: 'Eng', capacityPct: 82, moodPct: 69, avatarSprite: AVATAR_SPRITES.witch },
+  { id: 'u_kristen', name: 'Kristen', lastInitial: 'W', role: 'Frontend Engineer', team: 'Eng', capacityPct: 92, moodPct: 68, avatarSprite: AVATAR_SPRITES.mage },
+  { id: 'u_nasim', name: 'Nasim', lastInitial: 'P', role: 'ML Engineer', team: 'Eng', capacityPct: 85, moodPct: 74, avatarSprite: AVATAR_SPRITES.alchemist },
+  { id: 'u_andy', name: 'Andy', lastInitial: 'S', role: 'Product Designer', team: 'Design', capacityPct: 80, moodPct: 78, avatarSprite: AVATAR_SPRITES.merchant },
+  { id: 'u_kate', name: 'Kate', lastInitial: 'M', role: 'Customer Success Lead', team: 'GTM', capacityPct: 108, moodPct: 56, avatarSprite: AVATAR_SPRITES.farmer },
+  { id: 'u_will', name: 'Will', lastInitial: 'F', role: 'Account Executive', team: 'GTM', capacityPct: 75, moodPct: 73, avatarSprite: AVATAR_SPRITES.thief },
+  { id: 'u_cecily', name: 'Cecily', lastInitial: 'S', role: 'Growth / Marketing', team: 'GTM', capacityPct: 65, moodPct: 82, avatarSprite: AVATAR_SPRITES.kid },
+  { id: 'u_kenan', name: 'Kenan', lastInitial: 'T', role: 'Operations', team: 'Ops', capacityPct: 60, moodPct: 79, avatarSprite: AVATAR_SPRITES.demon },
+  { id: 'u_fred', name: 'Fred', lastInitial: 'A', role: 'Data Engineer', team: 'Eng', capacityPct: 78, moodPct: 70, avatarSprite: AVATAR_SPRITES.skeletonGeneral },
+  { id: 'u_aidy', name: 'Aidy', lastInitial: 'B', role: 'QA Engineer', team: 'Eng', capacityPct: 82, moodPct: 69, avatarSprite: AVATAR_SPRITES.witch },
 ]
 
 // ───────────────────────── Projects（~7）────────────────────────────────────
@@ -142,6 +153,7 @@ export const PROJECTS: Project[] = [
     dependsOn: ['p_connector'], // ← Friday 交付卡在 Connector 上
     summary: 'First design-partner pilot. Ships Friday. Blocked by the Connector dependency.',
     storyCritical: true,
+    risk: { progress: 72, blockers: 64, staffing: 38, quality: 30 }, // 依赖 Connector 拖累进度/阻塞
   },
   {
     id: 'p_connector',
@@ -154,6 +166,7 @@ export const PROJECTS: Project[] = [
     summary: 'Slack + GitHub ingestion. Acme pilot depends on it.',
     storyCritical: true,
     hotspot: true, // briefing「1 hot spot」= 这里（mismatch / Bill 所在）
+    risk: { progress: 62, blockers: 86, staffing: 74, quality: 42 }, // Bill 过载 + rate-limit 卡点
   },
   {
     id: 'p_pitch',
@@ -163,6 +176,7 @@ export const PROJECTS: Project[] = [
     progress: 80,
     dueDate: 'Today',
     summary: 'The very demo Venus is watching. 🙂', // 自指 wink
+    risk: { progress: 22, blockers: 12, staffing: 30, quality: 18 },
   },
   {
     id: 'p_capabilities',
@@ -171,10 +185,11 @@ export const PROJECTS: Project[] = [
     status: 'on-track',
     progress: 55,
     summary: 'Proprietary vertical playbooks (HR / Project Ops / …). Subscription moat.',
+    risk: { progress: 30, blockers: 18, staffing: 26, quality: 20 },
   },
-  { id: 'p_designsys', title: 'Design System', ownerId: 'u_andy', status: 'on-track', progress: 64 },
-  { id: 'p_csonboard', title: 'CS Onboarding Revamp', ownerId: 'u_kate', status: 'on-track', progress: 40 },
-  { id: 'p_billing', title: 'Billing v1', ownerId: 'u_jason', status: 'on-track', progress: 30 },
+  { id: 'p_designsys', title: 'Design System', ownerId: 'u_andy', status: 'on-track', progress: 64, risk: { progress: 24, blockers: 14, staffing: 22, quality: 26 } },
+  { id: 'p_csonboard', title: 'CS Onboarding Revamp', ownerId: 'u_kate', status: 'on-track', progress: 40, risk: { progress: 36, blockers: 24, staffing: 48, quality: 22 } }, // Kate 108% load
+  { id: 'p_billing', title: 'Billing v1', ownerId: 'u_jason', status: 'on-track', progress: 30, risk: { progress: 28, blockers: 18, staffing: 16, quality: 24 } },
 ]
 
 // ───────────────────────── Tasks（聚焦 Acme + Connector）─────────────────────

@@ -22,9 +22,9 @@ export interface BoardRect {
 export const BOARD = { width: 2600, height: 1640 }
 export const BOARD_CENTER: Pos = { x: BOARD.width / 2, y: BOARD.height / 2 }
 
-// Nexus 竖向放射流需要更高的板（topology 向下延申 + 右侧结果卡带）。Dashboard 用宽 BOARD、
-// Nexus 用这块更高的板——PanZoomCanvas 的 board 尺寸按 scene 传入，二者仍同一 rzpp 基座。
-export const NEXUS_BOARD = { width: 2700, height: 2520 }
+// Nexus 竖向链 + 右侧 Manifest 列（修订 5：4 张结果卡累积堆叠）需要更高的板。
+// Dashboard 用宽 BOARD、Nexus 用这块——PanZoomCanvas 的 board 尺寸按 scene 传入，同一 rzpp 基座。
+export const NEXUS_BOARD = { width: 2700, height: 3700 }
 
 const DEG = Math.PI / 180
 

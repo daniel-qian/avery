@@ -11,9 +11,10 @@ import {
   type CapabilityEntry,
   type Person,
   type Project,
+  type ProjectRisk,
 } from '../../data/fixtures'
 import { PERSON_POS, PROJECT_POS, TEAM_ZONES, type Pos } from '../../data/layout'
-import { bboxOf, type BoardRect } from '../../data/board'
+import { bboxOf } from '../../data/board'
 import {
   dashboardPersonCopy,
   dashboardProjectCopy,
@@ -22,13 +23,26 @@ import {
 import { focusEntity, focusSearch, focusTags } from '../../lib/focus'
 import { SvgEdgeLayer } from '../SvgEdgeLayer'
 import { PanZoomCanvas } from '../PanZoomCanvas'
-import { useRailCamera, type SafeInsets } from '../../lib/useRailCamera'
+import { useRailCamera, type CameraTarget, type SafeInsets } from '../../lib/useRailCamera'
 import { PixelAvatar } from '../PixelAvatar'
 import { useCanvas, type Focus } from '../../store/canvasStore'
 
 // world 对象的估算半宽/半高（board px），仅供镜头算包围盒。
-const PERSON_HALF = { w: 95, h: 62 }
-const PROJECT_HALF = { w: 110, h: 86 }
+// 修订 5：person = 名册圆点（avatar 圆 + 名牌），project = 横条（calm 即全卡后更高）。
+const PERSON_HALF = { w: 80, h: 78 }
+const PROJECT_HALF = { w: 360, h: 78 }
+
+// 项目 focus 态的风险分布图（world 对象）：贴在被 focus 项目条右侧，回 calm 即消失。
+const RISK_CHART_LEFT = 1958 // 图左缘 x（条右缘 1920 + 38 间隙）
+const RISK_CHART_CENTER_X = 2128
+const RISK_CHART_HALF = { w: 180, h: 145 }
+
+const RISK_DIMS: Array<{ key: keyof ProjectRisk; label: string; color: string }> = [
+  { key: 'progress', label: 'Progress', color: 'rgba(105, 128, 109, 0.85)' }, // sage
+  { key: 'blockers', label: 'Blockers', color: 'rgba(188, 92, 73, 0.85)' }, // terracotta
+  { key: 'staffing', label: 'Staffing', color: 'rgba(178, 123, 43, 0.85)' }, // honey
+  { key: 'quality', label: 'Quality', color: 'rgba(82, 123, 145, 0.85)' }, // sky
+]
 
 // Dashboard inset（修订 3）：full-bleed——近零 inset 让 glance map 填满整屏；HUD（briefing/alerts/
 // composer）作为可叠放角落 chrome 浮在地图边角之上。只留够清 Topbar/tag 条与 composer 的薄边。
@@ -60,6 +74,21 @@ function statusTone(status: string) {
   if (status === 'blocked') return 'tone-danger'
   if (status === 'at-risk') return 'tone-warning'
   return ''
+}
+
+// 卡根节点专用 tone 类。不能复用 tone-warning/tone-danger——那是给 status-dot 等
+// 小元素的通用类，自带 background: var(--honey/terracotta)，挂到卡根会整卡涂色。
+function riskToneClass(status: string) {
+  if (status === 'blocked') return 'risk-danger'
+  if (status === 'at-risk') return 'risk-warning'
+  return ''
+}
+
+// 进度条按百分比分档着色（与 status 解耦）：<40 低档红、40–69 中档琥珀、≥70 高档绿。
+function progressBand(progress: number) {
+  if (progress < 40) return 'strip-low'
+  if (progress < 70) return 'strip-mid'
+  return 'strip-high'
 }
 
 function clampPct(value: number) {
@@ -176,10 +205,16 @@ export function DashboardScene() {
 
   const focusReference = useMemo(() => focusReferenceOf(focus), [focus])
 
+  // focus 项目 → 风险分布图（world 对象，贴条右侧；回 calm 消失）。
+  const riskProject = useMemo(() => {
+    if (focus?.primary?.kind !== 'project') return null
+    return PROJECTS.find((p) => p.id === focus.primary?.id) ?? null
+  }, [focus])
+
   // ── rail 派生镜头（ADR-0012 决策 4）：calm = 全图 fit；focus = 飞向关联簇局部 bbox。──
   const camRef = useRef<ReactZoomPanPinchRef | null>(null)
 
-  const cameraTarget = useMemo<BoardRect | null>(() => {
+  const cameraTarget = useMemo<CameraTarget | null>(() => {
     const items: Array<{ pos: Pos; halfW: number; halfH: number }> = []
     if (!focus) {
       PEOPLE.forEach((p) => {
@@ -190,7 +225,9 @@ export function DashboardScene() {
         const pos = PROJECT_POS[p.id]
         if (pos) items.push({ pos, halfW: PROJECT_HALF.w, halfH: PROJECT_HALF.h })
       })
-      return bboxOf(items)
+      // 修订 6：calm = fit-width 顶锚可读帧（宽度装满，下方组允许出帧、靠 pan 到达）。
+      const bbox = bboxOf(items)
+      return bbox ? { bbox, mode: 'width-top' } : null
     }
     const personIds = new Set(focus.personIds)
     if (focus.primary?.kind === 'person') personIds.add(focus.primary.id)
@@ -204,7 +241,19 @@ export function DashboardScene() {
       const pos = PROJECT_POS[id]
       if (pos) items.push({ pos, halfW: PROJECT_HALF.w, halfH: PROJECT_HALF.h })
     })
-    return bboxOf(items)
+    // 项目为 primary 时，风险分布图也算进取景 bbox。
+    if (focus.primary?.kind === 'project') {
+      const pos = PROJECT_POS[focus.primary.id]
+      if (pos) {
+        items.push({
+          pos: { x: RISK_CHART_CENTER_X, y: pos.y },
+          halfW: RISK_CHART_HALF.w,
+          halfH: RISK_CHART_HALF.h,
+        })
+      }
+    }
+    const bbox = bboxOf(items)
+    return bbox ? { bbox } : null
   }, [focus])
 
   const cameraKey = useMemo(() => {
@@ -370,9 +419,9 @@ export function DashboardScene() {
                 handleNodeClick('person', person.id)
               }}
             >
-              <PixelAvatar person={person} size={34} className="person-avatar" />
+              <PixelAvatar person={person} size={56} className="person-avatar" />
               <span className="person-body">
-                <h3>{person.name}</h3>
+                <h3>{person.lastInitial ? `${person.name} ${person.lastInitial}.` : person.name}</h3>
                 <p className="person-role">{cardCopy.roleLine}</p>
                 <span className="person-stats person-hud" aria-hidden="true">
                   <span className="hud-meter hud-hp">
@@ -415,6 +464,7 @@ export function DashboardScene() {
               type="button"
               className={classNames([
                 'project-card',
+                riskToneClass(project.status),
                 muted && 'is-muted',
                 related && 'is-related',
                 primary && 'is-focused',
@@ -429,25 +479,73 @@ export function DashboardScene() {
                 handleNodeClick('project', project.id)
               }}
             >
-              <span className="project-status">
-                <span className={`status-dot ${statusTone(project.status)}`} />
-                <span>{cardCopy.statusLabel}</span>
+              <span className="project-bar-row">
+                <h3>{project.title}</h3>
+                <span className="project-status">
+                  <span className={`status-dot ${statusTone(project.status)}`} />
+                  <span>{cardCopy.statusLabel}</span>
+                </span>
               </span>
-              <h3>{project.title}</h3>
-              <div className="project-detail">
-                <p>{cardCopy.summary}</p>
-                <div className="progress-track" aria-label={`${project.progress}% complete`}>
-                  <div className="progress-fill" style={{ width: `${project.progress}%` }} />
-                </div>
-                <div className="project-meta">
-                  <span>{cardCopy.progressLabel}</span>
-                  <span>{ownerName(project)}</span>
-                </div>
+              <p className="project-summary">{cardCopy.summary}</p>
+              <span className="project-progress" aria-label={`${project.progress}% complete`}>
+                <span className="project-progress-label">Progress</span>
+                <span className={`project-strip ${progressBand(project.progress)}`}>
+                  <span
+                    className="project-strip-fill"
+                    style={{ width: `${project.progress}%` }}
+                  />
+                </span>
+                <span className="project-progress-pct">{project.progress}%</span>
+              </span>
+              <div className="project-meta">
+                <span>{ownerName(project)}</span>
+                {project.dueDate ? <span>{project.dueDate}</span> : null}
               </div>
             </motion.button>
           )
         })}
       </div>
+
+        <AnimatePresence>
+          {riskProject?.risk ? (
+            <motion.aside
+              key={riskProject.id}
+              className="risk-chart"
+              style={{
+                left: `${RISK_CHART_LEFT}px`,
+                top: `${PROJECT_POS[riskProject.id]?.y ?? 0}px`,
+              }}
+              initial={{ opacity: 0, x: -16, y: '-50%' }}
+              animate={{ opacity: 1, x: 0, y: '-50%' }}
+              exit={{ opacity: 0, x: -16, y: '-50%' }}
+              transition={transition}
+              aria-label={`${riskProject.title} risk distribution`}
+              onClick={stopPropagation}
+            >
+              <p className="eyebrow">Risk distribution</p>
+              <div className="risk-bars">
+                {RISK_DIMS.map((dim) => {
+                  const value = riskProject.risk?.[dim.key] ?? 0
+                  return (
+                    <div key={dim.key} className="risk-bar">
+                      <span className="risk-bar-value">{value}</span>
+                      <span className="risk-bar-col">
+                        <motion.span
+                          className="risk-bar-fill"
+                          style={{ background: dim.color }}
+                          initial={{ height: 0 }}
+                          animate={{ height: `${value}%` }}
+                          transition={transition}
+                        />
+                      </span>
+                      <span className="risk-bar-label">{dim.label}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </motion.aside>
+          ) : null}
+        </AnimatePresence>
       </PanZoomCanvas>
 
       <div className="dashboard-control-layer" onClick={stopPropagation}>
