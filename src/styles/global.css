@@ -5204,3 +5204,285 @@ h1 {
   color: var(--ink);
   transform: translateY(-1px);
 }
+
+/* ── P6-03 · follow-up 机器：Manifest 点击镜头 + chip + 常驻 composer + alternatives 卡 ──
+   守 ADR-0002：只动 transform/opacity；动画被全局 reduced-motion 毯式规则覆盖。 */
+
+/* 卡可点（镜头飞向局部 bbox）——卡内交互件不触发，cursor 只示意卡面本身。 */
+.nexus-card-slot.is-inspectable {
+  cursor: zoom-in;
+}
+
+/* follow-up chip：world 对象，挂在锚定卡下缘正中。显形 = transform/opacity 入场。 */
+.nexus-followup-chip {
+  position: absolute;
+  z-index: 25;
+  top: 100%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  max-width: 520px;
+  padding: 10px 18px;
+  border: 1px solid rgba(108, 99, 181, 0.45);
+  border-radius: 18px;
+  background: rgba(245, 243, 255, 0.96);
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: left;
+  cursor: pointer;
+  box-shadow:
+    var(--shadow-soft),
+    0 0 0 6px rgba(108, 99, 181, 0.1);
+  transform: translate(-50%, 14px);
+  animation: followup-chip-in 0.45s ease-out both;
+}
+
+.nexus-followup-chip:hover,
+.nexus-followup-chip:focus-visible {
+  outline: none;
+  border-color: rgba(108, 99, 181, 0.85);
+  transform: translate(-50%, 12px);
+}
+
+.nexus-followup-chip-eyebrow {
+  color: rgba(108, 99, 181, 0.95);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+@keyframes followup-chip-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 26px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 14px);
+  }
+}
+
+/* 常驻 follow-up composer：HUD（viewport-fixed within scene）、bottom-left；
+   与中央 Advance / demo-controls 不抢位。不复用 .nexus-empty-composer（空态专属）。 */
+.nexus-followup-composer {
+  position: absolute;
+  z-index: 26;
+  left: 28px;
+  bottom: 28px;
+  display: flex;
+  gap: 8px;
+  width: min(360px, calc(100vw - 56px));
+  padding: 6px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.92);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+}
+
+.nexus-followup-composer input {
+  flex: 1;
+  min-width: 0;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.nexus-followup-composer input::placeholder {
+  color: var(--ink-faint);
+}
+
+.nexus-followup-composer input:focus-visible {
+  outline: none;
+}
+
+.nexus-followup-composer:focus-within {
+  border-color: var(--ink);
+}
+
+.nexus-followup-composer button {
+  min-width: 64px;
+  min-height: 38px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.nexus-followup-composer button:hover,
+.nexus-followup-composer button:focus-visible {
+  outline: none;
+  background: #2b2822;
+}
+
+/* nexus-brief 里的最新 follow-up 提问回显。 */
+.nexus-brief-followup {
+  margin-top: 2px;
+  color: rgba(108, 99, 181, 0.95);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* alternatives Manifest 卡：Jason 替代人选分析（余量 / 技能匹配 / 风险）。
+   宽度对齐 cases.ts 锚点 half {w:400}；slot 内常规块流（同修订 4 其它卡）。 */
+.alternatives-card {
+  width: 800px;
+  padding: 20px;
+  border: 1px solid rgba(108, 99, 181, 0.3);
+  border-radius: var(--radius);
+  background: rgba(255, 253, 248, 0.94);
+  box-shadow: 0 30px 110px rgba(50, 45, 36, 0.22);
+  backdrop-filter: blur(18px);
+  animation: alternatives-card-in 0.5s ease-out both;
+}
+
+@keyframes alternatives-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.alternatives-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.alternatives-header h2 {
+  margin: 0;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1.05;
+}
+
+.alternatives-header > span {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  border: 1px solid rgba(108, 99, 181, 0.4);
+  border-radius: 999px;
+  background: rgba(108, 99, 181, 0.12);
+  color: rgba(108, 99, 181, 0.95);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.alternatives-question {
+  margin-bottom: 14px;
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-style: italic;
+}
+
+.alternatives-list {
+  display: grid;
+  gap: 10px;
+}
+
+.alternatives-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  border-left-width: 3px;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.44);
+}
+
+.alternatives-row.is-risk-low {
+  border-left-color: rgba(105, 128, 109, 0.7);
+}
+
+.alternatives-row.is-risk-medium {
+  border-left-color: rgba(196, 148, 58, 0.7);
+}
+
+.alternatives-row.is-risk-high {
+  border-left-color: rgba(188, 92, 73, 0.7);
+}
+
+.alternatives-person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.alternatives-person strong {
+  display: block;
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.alternatives-person span {
+  display: block;
+  color: var(--ink-faint);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.alternatives-load {
+  align-self: center;
+  padding: 3px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.alternatives-skill,
+.alternatives-risk {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.alternatives-skill {
+  color: var(--ink-soft);
+}
+
+.alternatives-risk {
+  color: var(--ink-faint);
+  font-weight: 600;
+}
+
+.alternatives-verdict {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(105, 128, 109, 0.4);
+  border-radius: var(--radius);
+  background: rgba(105, 128, 109, 0.09);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}

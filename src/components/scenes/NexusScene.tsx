@@ -1,4 +1,12 @@
-import { useMemo, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from 'react'
+import {
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type FormEvent,
+  type MouseEvent,
+  type ReactNode,
+} from 'react'
 import type { ReactZoomPanPinchRef } from 'react-zoom-pan-pinch'
 import {
   AGENT_OUTPUT,
@@ -17,7 +25,7 @@ import { edgePath } from '../../lib/edges'
 import { deriveNexusEdgeState, deriveNexusNodeStates } from '../../lib/nexusFlow'
 import { pristineThread, threadPlan, useCanvas, type ThreadStepKind } from '../../store/canvasStore'
 import { PanZoomCanvas } from '../PanZoomCanvas'
-import { useRailCamera, type CameraTarget, type SafeInsets } from '../../lib/useRailCamera'
+import { flyToTarget, useRailCamera, type CameraTarget, type SafeInsets } from '../../lib/useRailCamera'
 import { PixelAvatar } from '../PixelAvatar'
 
 // Nexus 节点的估算半宽/半高（board px），供镜头算包围盒。修订 6：节点压小（矩形 180 宽 /
@@ -41,22 +49,37 @@ function nodeStyle(pos: Pos) {
 }
 
 // Manifest 列卡槽（修订 5）：定位到该拍的列内堆叠锚点；活跃拍的卡高亮、历史卡留存淡显。
+// P6-03：卡可点——镜头飞向该卡（onInspect = 组件本地镜头命令，不进 store）；卡内
+// 交互件（按钮/输入框等）的点击不触发飞行。chip 槽：锚定的 follow-up chip 挂在卡下缘。
 function CardSlot({
   anchor,
   isActive,
+  onInspect,
+  chip,
   children,
 }: {
   anchor: CardAnchor | undefined
   isActive: boolean
+  onInspect?: () => void
+  chip?: ReactNode
   children: ReactNode
 }) {
   if (!anchor) return <>{children}</>
+  const handleClick = onInspect
+    ? (event: MouseEvent<HTMLDivElement>) => {
+        const target = event.target as HTMLElement
+        if (target.closest('button, input, textarea, select, a, label')) return
+        onInspect()
+      }
+    : undefined
   return (
     <div
-      className={classNames(['nexus-card-slot', isActive && 'is-active'])}
+      className={classNames(['nexus-card-slot', isActive && 'is-active', onInspect && 'is-inspectable'])}
       style={{ left: `${anchor.pos.x}px`, top: `${anchor.pos.y}px` }}
+      onClick={handleClick}
     >
       {children}
+      {chip}
     </div>
   )
 }
@@ -342,6 +365,107 @@ function StructuredOutputCard({
   )
 }
 
+// P6-03 (ADR-0013 决策 5)：bill/acme follow-up 段的 Manifest 卡——Jason 替代人选分析。
+// 候选人与余量实时引用 PEOPLE fixture（capacityPct 取数，不复制数字）；定性 copy 为
+// demo fixture 文案。bill/acme 不加新节点——卡从 output 产出圆显形（cases.ts 已配锚点）。
+const ALTERNATIVE_CANDIDATES: Array<{
+  personId: string
+  skillMatch: string
+  risk: string
+  riskLevel: 'low' | 'medium' | 'high'
+}> = [
+  // ⚠ 待 Danny 审字（skillMatch / risk 整组 copy）
+  {
+    personId: 'u_fred',
+    skillMatch: 'Owns the data ingestion path — closest overlap with the Connector interrupts.',
+    risk: 'Low — clean signal picture this week.',
+    riskLevel: 'low',
+  },
+  {
+    personId: 'u_nasim',
+    skillMatch: 'Comfortable across the backend, but no Slack/GitHub connector context yet.',
+    risk: 'Medium — mid-sprint on model evaluation.',
+    riskLevel: 'medium',
+  },
+  {
+    personId: 'u_aidy',
+    skillMatch: 'Knows the test surface, not the ingestion internals.',
+    risk: 'High — QA load spikes near the Friday ship.',
+    riskLevel: 'high',
+  },
+]
+
+function AlternativesCard({ question }: { question: string }) {
+  return (
+    <section className="alternatives-card" aria-label="Follow-up output: alternatives for Jason">
+      <header className="alternatives-header">
+        <div>
+          <p className="eyebrow">Follow-up · Alternatives {/* ⚠ 待 Danny 审字 */}</p>
+          <h2>Who else can absorb Bill&rsquo;s interrupts? {/* ⚠ 待 Danny 审字 */}</h2>
+        </div>
+        <span>PM agent re-check {/* ⚠ 待 Danny 审字 */}</span>
+      </header>
+
+      <p className="alternatives-question">&ldquo;{question}&rdquo;</p>
+
+      <div className="alternatives-list">
+        {ALTERNATIVE_CANDIDATES.map((candidate) => {
+          const person = PEOPLE.find((p) => p.id === candidate.personId)
+          if (!person) return null
+          return (
+            <article key={candidate.personId} className={`alternatives-row is-risk-${candidate.riskLevel}`}>
+              <div className="alternatives-person">
+                <PixelAvatar person={person} size={26} className="inline-avatar" />
+                <div>
+                  <strong>{person.name}</strong>
+                  <span>{person.role}</span>
+                </div>
+              </div>
+              <span className="alternatives-load">{person.capacityPct}% load {/* ⚠ 待 Danny 审字 */}</span>
+              <p className="alternatives-skill">{candidate.skillMatch}</p>
+              <p className="alternatives-risk">{candidate.risk}</p>
+            </article>
+          )
+        })}
+      </div>
+
+      <p className="alternatives-verdict">
+        {/* ⚠ 待 Danny 审字 */}
+        Fred is the strongest alternative if Jason takes the new job — Jason still carries the
+        cleanest margin. Either way, keep the swap to ≤ 2 days to protect the Friday ship.
+      </p>
+    </section>
+  )
+}
+
+// P6-03：常驻自由文本 follow-up composer（HUD，bottom-left）。任意文本被接受、作为显示的
+// follow-up 问题、走 active case 的脚本段——与 B3 askQuestion 同构（ADR-0001 demo-only 诚实）。
+// 注意：不复用 .nexus-empty-composer（那是空态专用、走 askQuestion 会重置 thread）。
+function FollowUpComposer({ onAsk }: { onAsk: (text: string) => void }) {
+  const [draft, setDraft] = useState('')
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const text = draft.trim()
+    if (!text) return
+    onAsk(text)
+    setDraft('')
+  }
+
+  return (
+    <form className="nexus-followup-composer" aria-label="Ask a follow-up" onSubmit={handleSubmit}>
+      <input
+        type="text"
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        placeholder="Ask a follow-up on this thread..." /* ⚠ 待 Danny 审字 */
+        aria-label="Follow-up question"
+      />
+      <button type="submit">Ask {/* ⚠ 待 Danny 审字 */}</button>
+    </form>
+  )
+}
+
 // 人类发言者的像素头像（agent 发言无 person sprite，返回 null 保持文字 badge）。
 function ChatAvatar({ role, speaker }: { role: string; speaker: string }) {
   if (role !== 'human') return null
@@ -566,6 +690,7 @@ export function NexusScene() {
   const thread = useCanvas((s) => s.threads[activeCaseId]) ?? FALLBACK_THREAD
   const tasks = useCanvas((s) => s.tasks)
   const runAgent = useCanvas((s) => s.runAgent)
+  const askFollowUp = useCanvas((s) => s.askFollowUp)
   const dispatchTask = useCanvas((s) => s.dispatchTask)
   const regenBriefing = useCanvas((s) => s.regenBriefing)
   const goScene = useCanvas((s) => s.goScene)
@@ -581,6 +706,7 @@ export function NexusScene() {
   const showTimeline = reached('timeline')
   const showStructuredOutput = reached('structured-output')
   const showChat = reached('human-loop')
+  const showAlternatives = reached('follow-up-alternatives')
   const dispatchedTaskKeys = useMemo(() => new Set(tasks.map(taskTemplateKey)), [tasks])
   const manifestProducerIds = useMemo(
     () => new Set(Object.values(caseDef.manifestProducers)),
@@ -638,6 +764,62 @@ export function NexusScene() {
     isEmpty ? 'empty' : `${caseDef.id}:${activeStep ?? 'calm'}`,
     { maxFitScale: 1.1 },
   )
+
+  // ── P6-03 (ADR-0013 决策 5)：Manifest 点击 → 镜头飞向该卡 + follow-up chip 显出。──
+  // 镜头/chip 可见性均为组件本地态（store 零额外字段）。inspected 集合按 `${caseId}:${step}`
+  // 键——切 thread 不串台；rail seek 不重置它也无妨（chip 只是建议入口，action 才是事实）。
+  const [inspectedKeys, setInspectedKeys] = useState<ReadonlySet<string>>(() => new Set())
+  const inspectCard = (step: ThreadStepKind) => {
+    const anchor = caseDef.cardAnchors[step]
+    if (!anchor) return
+    const bbox = bboxOf([{ pos: anchor.pos, halfW: anchor.half.w, halfH: anchor.half.h }])
+    if (bbox) flyToTarget(camRef.current, { bbox }, NEXUS_INSETS)
+    const key = `${caseDef.id}:${step}`
+    setInspectedKeys((keys) => {
+      if (keys.has(key)) return keys
+      const next = new Set(keys)
+      next.add(key)
+      return next
+    })
+  }
+
+  // 下一个未消费的 follow-up 段（askFollowUp 第 n 次永远消费第 n 段——确定性）。
+  // chip 只出现在该段锚定的卡上，且该卡被点过（镜头飞向过）后才显出。
+  const nextFollowUp = caseDef.followUps[thread.followUps.length]
+  const chipStep =
+    nextFollowUp &&
+    reached(nextFollowUp.anchorStep) &&
+    inspectedKeys.has(`${caseDef.id}:${nextFollowUp.anchorStep}`)
+      ? nextFollowUp.anchorStep
+      : null
+
+  // chip / composer 共用出口：追加 follow-up 段（确定性 append）后立即推进一步——
+  // 两个都是核心 action，free-click 与 rail 同构（rail P6-07 同序脚本化即可）。
+  const handleFollowUp = (text: string) => {
+    askFollowUp(text)
+    runAgent()
+  }
+
+  const followUpChip =
+    chipStep && nextFollowUp ? (
+      <button
+        type="button"
+        className="nexus-followup-chip"
+        onClick={() => handleFollowUp(nextFollowUp.suggestedQuestion)}
+      >
+        <span className="nexus-followup-chip-eyebrow">Suggested follow-up {/* ⚠ 待 Danny 审字 */}</span>
+        {nextFollowUp.suggestedQuestion}
+      </button>
+    ) : null
+
+  const latestFollowUp = thread.followUps[thread.followUps.length - 1]
+  // alternatives 卡显示「启动它的那次提问」（chip 文本或 composer 自由文本，按 segmentId 回查）。
+  const alternativesQuestion =
+    thread.followUps.find((f) =>
+      caseDef.followUps
+        .find((segment) => segment.id === f.segmentId)
+        ?.steps.includes('follow-up-alternatives'),
+    )?.question ?? ''
 
   return (
     <section className="scene scene-nexus is-active" aria-label="Nexus">
@@ -699,17 +881,32 @@ export function NexusScene() {
         </span>
 
         {showMismatch ? (
-          <CardSlot anchor={caseDef.cardAnchors['cross-check']} isActive={activeStep === 'cross-check'}>
+          <CardSlot
+            anchor={caseDef.cardAnchors['cross-check']}
+            isActive={activeStep === 'cross-check'}
+            onInspect={() => inspectCard('cross-check')}
+            chip={chipStep === 'cross-check' ? followUpChip : undefined}
+          >
             <MismatchCard />
           </CardSlot>
         ) : null}
         {showChat ? (
-          <CardSlot anchor={caseDef.cardAnchors['human-loop']} isActive={activeStep === 'human-loop'}>
+          <CardSlot
+            anchor={caseDef.cardAnchors['human-loop']}
+            isActive={activeStep === 'human-loop'}
+            onInspect={() => inspectCard('human-loop')}
+            chip={chipStep === 'human-loop' ? followUpChip : undefined}
+          >
             <ChatCard />
           </CardSlot>
         ) : null}
         {showTimeline ? (
-          <CardSlot anchor={caseDef.cardAnchors['timeline']} isActive={activeStep === 'timeline'}>
+          <CardSlot
+            anchor={caseDef.cardAnchors['timeline']}
+            isActive={activeStep === 'timeline'}
+            onInspect={() => inspectCard('timeline')}
+            chip={chipStep === 'timeline' ? followUpChip : undefined}
+          >
             <TimelineCard />
           </CardSlot>
         ) : null}
@@ -717,12 +914,25 @@ export function NexusScene() {
           <CardSlot
             anchor={caseDef.cardAnchors['structured-output']}
             isActive={activeStep === 'structured-output'}
+            onInspect={() => inspectCard('structured-output')}
+            chip={chipStep === 'structured-output' ? followUpChip : undefined}
           >
             <StructuredOutputCard
               dispatchedTaskKeys={dispatchedTaskKeys}
               onDispatchTask={dispatchTask}
               onReturnDashboard={returnToDashboard}
             />
+          </CardSlot>
+        ) : null}
+        {/* P6-03：follow-up 段的新 Manifest 卡——落进 Manifest 列底部（cases.ts 堆叠锚点）。 */}
+        {showAlternatives ? (
+          <CardSlot
+            anchor={caseDef.cardAnchors['follow-up-alternatives']}
+            isActive={activeStep === 'follow-up-alternatives'}
+            onInspect={() => inspectCard('follow-up-alternatives')}
+            chip={chipStep === 'follow-up-alternatives' ? followUpChip : undefined}
+          >
+            <AlternativesCard question={alternativesQuestion} />
           </CardSlot>
         ) : null}
           </>
@@ -738,6 +948,12 @@ export function NexusScene() {
           <section className="nexus-brief">
             <p className="eyebrow">Nexus orchestration</p>
             <p>&ldquo;{question}&rdquo;</p>
+            {/* P6-03：已追加的最新 follow-up 提问（chip 文本或 composer 自由文本）。 */}
+            {latestFollowUp ? (
+              <p className="nexus-brief-followup">
+                Follow-up: &ldquo;{latestFollowUp.question}&rdquo; {/* ⚠ 待 Danny 审字（前导词） */}
+              </p>
+            ) : null}
             <div className="nexus-progress-row" aria-label="Nexus progress">
               <span>{progressLabel}</span>
               <span>{activeStep ? caseDef.stepLabels[activeStep] : 'Question staged'}</span>
@@ -749,6 +965,9 @@ export function NexusScene() {
               {advanceLabel}
             </button>
           </div>
+
+          {/* P6-03：常驻自由文本 follow-up composer（HUD，bottom-left；不复用空态 composer）。 */}
+          <FollowUpComposer onAsk={handleFollowUp} />
         </>
       ) : (
         <NexusEmptyState />

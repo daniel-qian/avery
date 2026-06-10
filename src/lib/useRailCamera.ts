@@ -79,6 +79,22 @@ function computeTransform(
   }
 }
 
+// P6-03 (ADR-0013 决策 5)：组件本地镜头命令——点 Manifest 卡飞向其局部 bbox。
+// 与 rail 派生镜头共用同一套 fit 机器；一次性命令式调用，不进 store（ADR-0012）。
+// rail 下一拍 depKey 变化照常收回镜头（useRailCamera 的 effect 不知道也不需要知道这次手动飞行）。
+export function flyToTarget(
+  api: ReactZoomPanPinchRef | null,
+  target: CameraTarget,
+  insets: SafeInsets,
+  options: CameraOptions = {},
+) {
+  const wrapper = api?.instance.wrapperComponent
+  if (!api || !wrapper) return
+  const { maxFitScale = 1.1, padding = 0.86, animationTime = 600 } = options
+  const t = computeTransform(wrapper, target, insets, maxFitScale, padding)
+  api.setTransform(t.x, t.y, t.scale, animationTime, 'easeOut')
+}
+
 export function useRailCamera(
   apiRef: RefObject<ReactZoomPanPinchRef | null>,
   target: CameraTarget | null,
