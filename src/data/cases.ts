@@ -25,6 +25,10 @@ export type ThreadStepKind =
   | 'timeline' // B8 agent 调 tool 造 TIMELINE
   | 'structured-output' // B9 6 段式可信输出（AGENT_OUTPUT）
   | 'follow-up-alternatives' // bill/acme follow-up：Jason 替代人选分析（P6-03 渲染）
+  // web-search errand case（P6-05，ADR-0013 决策 3）——数据扩展，不碰 store 契约：
+  | 'web-search' // agent 调 web tool 查 Apple 政策（浏览器预览卡显形）
+  | 'policy-gist' // agent 的实际回答：guideline 要点引文 + 回链 URL（gist 卡）
+  | 'follow-up-compliance' // follow-up：Acme companion build 合规判定（短 Manifest）
 
 export interface NexusNode {
   id: NexusNodeId
@@ -311,12 +315,137 @@ export const BILL_ACME_CASE: CaseDefinition = {
   ],
 }
 
-// ── case 注册表：P6-05 / P6-06 在此追加 errand case 定义（数据扩展，不碰 store 契约）。──
+// ════════════════════════════════════════════════════════════════════════════
+// web-search errand case（P6-05，ADR-0013 决策 3）：Apple expedited-review 政策查询。
+// 短链证"日常主力"——question → research agent → web tool（产出圆），2 步主段 +
+// 1 步 follow-up 合规判定；context-% 收在 ~15%，与 hero 的 ~71% 在画板上形成可见对比。
+// 浏览器预览卡 = fixture 截图（public/apple-app-review-guidelines.png）+ 真实 URL 栏，
+// 否决 live iframe（Apple 发 X-Frame-Options/CSP + 会场断网风险）；零运行时网络依赖。
+// ════════════════════════════════════════════════════════════════════════════
+
+// 单 spine lane：errand 链笔直向下；Manifest 列紧贴右侧（卡比 hero 的窄）。
+const WEB_SEARCH_LANE_X = { spine: 620 } as const
+const WEB_SEARCH_FLOW_TOP = 360
+const WEB_SEARCH_ROW_STEP = 340
+
+const WEB_SEARCH_MANIFEST_LEFT = 1060
+const WEB_SEARCH_MANIFEST_TOP = 300
+const WEB_SEARCH_MANIFEST_GAP = 90
+
+export const WEB_SEARCH_CASE_ID: CaseId = 'web-search-apple-policy'
+
+// 浏览器预览卡 URL 栏显示的真实地址（可核）；截图资产即该页的高清长图。
+export const APPLE_POLICY_URL = 'https://developer.apple.com/app-store/review/guidelines/'
+export const APPLE_POLICY_URL_DISPLAY = 'developer.apple.com/app-store/review/guidelines/'
+export const APPLE_POLICY_SCREENSHOT = '/apple-app-review-guidelines.png'
+
+export const WEB_SEARCH_CASE: CaseDefinition = {
+  id: WEB_SEARCH_CASE_ID,
+  title: 'Apple review policy', // ⚠ 待 Danny 审字（tab 短名）
+  // ADR-0013 决策 3 原文——resolveCaseForQuestion 精确匹配此文本进本 case 的 thread。
+  question:
+    "We're shipping the Acme companion app — what's Apple's policy on expedited App Review?", // ⚠ 待 Danny 审字
+
+  nodes: [
+    {
+      id: 'question',
+      kind: 'Question',
+      label: 'Apple review policy', // ⚠ 待 Danny 审字
+      detail: 'What does Apple require for an expedited App Review?', // ⚠ 待 Danny 审字
+    },
+    {
+      id: 'research-agent',
+      kind: 'Research agent', // ⚠ 待 Danny 审字
+      label: 'Policy lookup', // ⚠ 待 Danny 审字
+      detail: 'Scopes the question and queries Apple developer documentation.', // ⚠ 待 Danny 审字
+    },
+    {
+      id: 'web-tool',
+      kind: 'Web tool', // ⚠ 待 Danny 审字
+      label: 'developer.apple.com',
+      detail: 'Opens the official App Review guidelines page.', // ⚠ 待 Danny 审字
+    },
+  ],
+
+  nodeOrder: ['question', 'research-agent', 'web-tool'],
+
+  pos: laneRowPositions(WEB_SEARCH_LANE_X, WEB_SEARCH_FLOW_TOP, WEB_SEARCH_ROW_STEP, {
+    question: { lane: 'spine', row: 0 },
+    'research-agent': { lane: 'spine', row: 1 },
+    'web-tool': { lane: 'spine', row: 2 },
+  }),
+
+  edges: [
+    { id: 'question-agent', from: 'question', to: 'research-agent', step: 'web-search' },
+    { id: 'agent-web-tool', from: 'research-agent', to: 'web-tool', step: 'web-search' },
+  ],
+
+  // 短链主段：2 步（errand 深度，ADR-0013 决策 2——否决等重编排）。
+  orchestration: ['web-search', 'policy-gist'],
+
+  stepLabels: {
+    'web-search': 'Agent searches Apple developer docs', // ⚠ 待 Danny 审字
+    'policy-gist': 'Policy gist is ready', // ⚠ 待 Danny 审字
+    'follow-up-compliance': 'Agent checks the Acme build against the guidelines', // ⚠ 待 Danny 审字
+  },
+
+  stepNodes: {
+    'web-search': ['question', 'research-agent', 'web-tool'],
+    'policy-gist': ['research-agent', 'web-tool'],
+    // follow-up 重新点亮既有节点（决策 5）——同一条 thread 把活重新拾起来。
+    'follow-up-compliance': ['research-agent', 'web-tool'],
+  },
+
+  // errand thread 的低 context-%（决策 7）：主段收在 ~15%，follow-up 推到 ~23%——
+  // 与 hero 的 71%/80% 成对比，"thread 是真实会话边界"可被看见。
+  stepContextPct: {
+    'web-search': 8,
+    'policy-gist': 15,
+    'follow-up-compliance': 23,
+  },
+
+  // 产出圆语法（修订 6）：预览卡 ← web tool（搜索引擎给页面）；gist / 合规判定 ←
+  // research agent（agent 的实际回答——是 agent 不是搜索引擎的证据）。
+  manifestProducers: {
+    'web-search': 'web-tool',
+    'policy-gist': 'research-agent',
+    'follow-up-compliance': 'research-agent',
+  },
+
+  // 链终点产出圆 = web tool（calm 起 ghost 在场，修订 5 语义）。
+  manifestNodeId: 'web-tool',
+
+  manifestLabelPos: { x: WEB_SEARCH_MANIFEST_LEFT + 330, y: 210 },
+
+  cardAnchors: buildManifestStack(
+    WEB_SEARCH_MANIFEST_LEFT,
+    WEB_SEARCH_MANIFEST_TOP,
+    WEB_SEARCH_MANIFEST_GAP,
+    [
+      ['web-search', { w: 330, h: 420 }], // 浏览器预览卡（卡内可滚动看长图）
+      ['policy-gist', { w: 330, h: 300 }],
+      ['follow-up-compliance', { w: 330, h: 230 }],
+    ],
+  ),
+
+  // follow-up showcase（决策 5）：chip 锚在 gist 卡。
+  followUps: [
+    {
+      id: 'acme-compliance',
+      anchorStep: 'policy-gist',
+      suggestedQuestion: 'Does our current Acme companion build comply with this?', // ⚠ 待 Danny 审字
+      steps: ['follow-up-compliance'],
+    },
+  ],
+}
+
+// ── case 注册表：P6-06（email errand）在此追加 case 定义（数据扩展，不碰 store 契约）。──
 
 export const DEFAULT_CASE_ID: CaseId = BILL_ACME_CASE_ID
 
 export const CASES: Record<CaseId, CaseDefinition> = {
   [BILL_ACME_CASE_ID]: BILL_ACME_CASE,
+  [WEB_SEARCH_CASE_ID]: WEB_SEARCH_CASE,
 }
 
 // askQuestion 的 case 解析（ADR-0013：askQuestion 变 case-aware）：问题文本精确命中某 case

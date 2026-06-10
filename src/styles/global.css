@@ -5562,3 +5562,305 @@ h1 {
     transition: transform var(--medium) ease;
   }
 }
+
+/* ── P6-05 · web-search errand case：浏览器预览卡 + policy gist 卡 + 合规判定卡 ──
+   守 ADR-0002：入场只动 transform/opacity；动画被全局 reduced-motion 毯式规则覆盖。
+   卡宽 = 2 × cases.ts 锚点 half.w（660px）；slot 内常规块流（同既有 Manifest 卡）。 */
+
+/* ① 浏览器预览卡：迷你浏览器窗。fixture 截图（public/ 资产），零运行时网络依赖。 */
+.browser-preview-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  width: 660px;
+  border: 1px solid rgba(52, 48, 40, 0.26);
+  border-radius: 14px;
+  background: #f3f1ec;
+  box-shadow: 0 30px 110px rgba(50, 45, 36, 0.24);
+  animation: p6-card-in 0.5s ease-out both;
+}
+
+@keyframes p6-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.browser-chrome-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(52, 48, 40, 0.16);
+  background: #e8e5de;
+}
+
+.browser-dots {
+  display: flex;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.browser-dots i {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: rgba(52, 48, 40, 0.22);
+}
+
+.browser-dots i:nth-child(1) {
+  background: rgba(188, 92, 73, 0.75);
+}
+
+.browser-dots i:nth-child(2) {
+  background: rgba(196, 148, 58, 0.75);
+}
+
+.browser-dots i:nth-child(3) {
+  background: rgba(105, 128, 109, 0.75);
+}
+
+/* URL 栏：真实可核的 developer.apple.com 地址 + padlock。 */
+.browser-url-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  flex: 1;
+  min-width: 0;
+  padding: 7px 14px;
+  border: 1px solid rgba(52, 48, 40, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.95);
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.browser-padlock {
+  flex: 0 0 auto;
+  width: 11px;
+  height: 13px;
+  color: rgba(105, 128, 109, 0.95);
+}
+
+/* 卡内视口：可滚动看高清长图（演示时现场滚一把就是"真页面"的证据）。 */
+.browser-viewport {
+  height: 760px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: #fff;
+}
+
+.browser-screenshot {
+  display: block;
+  width: 100%;
+  height: auto;
+  user-select: none;
+}
+
+/* ② policy gist 卡：agent 的实际回答——要点 + 引文 + 回链 URL。 */
+.policy-gist-card {
+  width: 660px;
+  padding: 20px;
+  border: 1px solid rgba(105, 128, 109, 0.34);
+  border-radius: var(--radius);
+  background: rgba(255, 253, 248, 0.94);
+  box-shadow: 0 30px 110px rgba(50, 45, 36, 0.22);
+  backdrop-filter: blur(18px);
+  animation: p6-card-in 0.5s ease-out both;
+}
+
+.policy-gist-header,
+.compliance-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.policy-gist-header h2,
+.compliance-header h2 {
+  margin: 0;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 25px;
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.policy-gist-header > span,
+.compliance-header > span {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  border: 1px solid rgba(105, 128, 109, 0.4);
+  border-radius: 999px;
+  background: rgba(105, 128, 109, 0.1);
+  color: rgba(83, 104, 87, 0.98);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.policy-gist-list {
+  display: grid;
+  gap: 10px;
+}
+
+.policy-gist-row {
+  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  border-left: 3px solid rgba(105, 128, 109, 0.55);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.44);
+}
+
+.policy-gist-row strong {
+  display: block;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.policy-gist-quote {
+  margin: 5px 0 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+/* 回链 URL 引用：agent 给出处（是 agent 不是搜索引擎的证据）。 */
+.policy-gist-ref {
+  display: block;
+  margin-top: 6px;
+  color: rgba(83, 104, 87, 0.92);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  word-break: break-all;
+}
+
+.policy-gist-verdict {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(105, 128, 109, 0.4);
+  border-radius: var(--radius);
+  background: rgba(105, 128, 109, 0.09);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+/* ③ follow-up 合规判定卡：2–3 bullet 结论 + guideline 引用（短 Manifest）。 */
+.compliance-card {
+  width: 660px;
+  padding: 20px;
+  border: 1px solid rgba(108, 99, 181, 0.3);
+  border-radius: var(--radius);
+  background: rgba(255, 253, 248, 0.94);
+  box-shadow: 0 30px 110px rgba(50, 45, 36, 0.22);
+  backdrop-filter: blur(18px);
+  animation: p6-card-in 0.5s ease-out both;
+}
+
+.compliance-header > span {
+  border-color: rgba(108, 99, 181, 0.4);
+  background: rgba(108, 99, 181, 0.12);
+  color: rgba(108, 99, 181, 0.95);
+}
+
+.compliance-question {
+  margin-bottom: 12px;
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-style: italic;
+}
+
+.compliance-list {
+  display: grid;
+  gap: 8px;
+}
+
+.compliance-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 14px;
+  border: 1px solid var(--rule);
+  border-left-width: 3px;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.44);
+}
+
+.compliance-row.is-pass {
+  border-left-color: rgba(105, 128, 109, 0.7);
+}
+
+.compliance-row.is-attention {
+  border-left-color: rgba(196, 148, 58, 0.7);
+}
+
+.compliance-status {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.compliance-row.is-pass .compliance-status {
+  background: rgba(105, 128, 109, 0.16);
+  color: rgba(83, 104, 87, 0.98);
+}
+
+.compliance-row.is-attention .compliance-status {
+  background: rgba(196, 148, 58, 0.18);
+  color: rgba(151, 110, 37, 1);
+}
+
+.compliance-row p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.compliance-guideline {
+  display: block;
+  margin-top: 4px;
+  color: var(--ink-faint);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.compliance-verdict {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(196, 148, 58, 0.42);
+  border-radius: var(--radius);
+  background: rgba(196, 148, 58, 0.09);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}

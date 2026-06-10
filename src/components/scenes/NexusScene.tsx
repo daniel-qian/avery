@@ -19,7 +19,14 @@ import {
   type Signal,
   type TaskTemplate,
 } from '../../data/fixtures'
-import { CASES, DEFAULT_CASE_ID, type CardAnchor, type CaseDefinition } from '../../data/cases'
+import {
+  APPLE_POLICY_SCREENSHOT,
+  APPLE_POLICY_URL_DISPLAY,
+  CASES,
+  DEFAULT_CASE_ID,
+  type CardAnchor,
+  type CaseDefinition,
+} from '../../data/cases'
 import { NEXUS_BOARD, bboxOf, type Pos } from '../../data/board'
 import { edgePath } from '../../lib/edges'
 import { deriveNexusEdgeState, deriveNexusNodeStates } from '../../lib/nexusFlow'
@@ -444,6 +451,163 @@ function AlternativesCard({ question }: { question: string }) {
   )
 }
 
+// ── P6-05 (ADR-0013 决策 3)：web-search errand case 的 Manifest 卡组 ──────────────
+// ① 浏览器预览卡：迷你浏览器窗——URL 栏显示真实 developer.apple.com 地址 + padlock，
+// 卡内可滚动看 Apple App Review guidelines 页高清长图。fixture 截图（public/ 资产），
+// 非 live iframe（Apple 发 X-Frame-Options/CSP 拒绝被框 + 会场断网风险）；零运行时网络依赖。
+function WebPreviewCard() {
+  return (
+    <section className="browser-preview-card" aria-label="Web tool output: page preview">
+      <div className="browser-chrome-bar">
+        <span className="browser-dots" aria-hidden="true">
+          <i />
+          <i />
+          <i />
+        </span>
+        <span className="browser-url-bar">
+          <svg
+            className="browser-padlock"
+            viewBox="0 0 10 12"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <rect x="1" y="5" width="8" height="6" rx="1.4" fill="currentColor" />
+            <path
+              d="M3 5V3.6a2 2 0 1 1 4 0V5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.4"
+            />
+          </svg>
+          {APPLE_POLICY_URL_DISPLAY}
+        </span>
+      </div>
+      <div className="browser-viewport" aria-label="App Review Guidelines page (scrollable capture)">
+        <img
+          className="browser-screenshot"
+          src={APPLE_POLICY_SCREENSHOT}
+          alt="Apple App Review Guidelines — developer.apple.com page capture"
+          loading="lazy"
+          draggable={false}
+        />
+      </div>
+    </section>
+  )
+}
+
+// ② policy gist 卡：agent 的实际回答——guideline 要点引文 + 回链 URL 引用
+//（是 agent 不是搜索引擎的证据）。fixture copy 摘自 Apple 官方口径（演示用转述）。
+const POLICY_GIST_POINTS: Array<{ point: string; quote: string; ref: string }> = [
+  // ⚠ 待 Danny 审字（point / quote 整组 copy）
+  {
+    point: 'Expedited review exists, but only for extenuating circumstances.',
+    quote:
+      'You can request an expedited review to fix a critical bug or to release your app ahead of an event you are directly associated with.',
+    ref: 'developer.apple.com/contact/app-store/?topic=expedite',
+  },
+  {
+    point: 'The standard queue is already fast — plan for it first.',
+    quote: 'On average, 90% of submissions are reviewed in less than 24 hours.',
+    ref: 'developer.apple.com/distribute/app-review/',
+  },
+  {
+    point: 'The build must be complete before any review, expedited or not.',
+    quote:
+      'Submissions should be final versions with all necessary metadata — placeholder content or obvious bugs are rejected under Guideline 2.1.',
+    ref: 'developer.apple.com/app-store/review/guidelines/#app-completeness',
+  },
+]
+
+function PolicyGistCard() {
+  return (
+    <section className="policy-gist-card" aria-label="Agent answer: Apple policy gist">
+      <header className="policy-gist-header">
+        <div>
+          <p className="eyebrow">Agent answer · Policy gist {/* ⚠ 待 Danny 审字 */}</p>
+          <h2>Expedited App Review — the short version {/* ⚠ 待 Danny 审字 */}</h2>
+        </div>
+        <span>Sources cited {/* ⚠ 待 Danny 审字 */}</span>
+      </header>
+
+      <div className="policy-gist-list">
+        {POLICY_GIST_POINTS.map((item) => (
+          <article key={item.ref} className="policy-gist-row">
+            <strong>{item.point}</strong>
+            <p className="policy-gist-quote">&ldquo;{item.quote}&rdquo;</p>
+            <span className="policy-gist-ref">{item.ref}</span>
+          </article>
+        ))}
+      </div>
+
+      <p className="policy-gist-verdict">
+        {/* ⚠ 待 Danny 审字 */}
+        For the Acme companion launch: submit a final build through the normal queue now, and
+        file the expedited request citing the pilot launch date — Apple grants these on a
+        limited, case-by-case basis.
+      </p>
+    </section>
+  )
+}
+
+// ③ follow-up 合规判定卡：2–3 bullet 结论 + guideline 引用（短 Manifest，决策 3）。
+const COMPLIANCE_CHECKS: Array<{
+  verdict: string
+  guideline: string
+  status: 'pass' | 'attention'
+}> = [
+  // ⚠ 待 Danny 审字（verdict 整组 copy）
+  {
+    verdict: 'Release candidate is final — no placeholder content, no known crashes.',
+    guideline: 'Guideline 2.1 — App Completeness',
+    status: 'pass',
+  },
+  {
+    verdict: 'Privacy labels are stale: the new analytics SDK is not declared yet.',
+    guideline: 'Guideline 5.1.1 — Data Collection and Storage',
+    status: 'attention',
+  },
+  {
+    verdict: 'Expedited request is justifiable — the Acme pilot launch is a dated event.',
+    guideline: 'Expedited review criteria',
+    status: 'pass',
+  },
+]
+
+function ComplianceCard({ question }: { question: string }) {
+  return (
+    <section className="compliance-card" aria-label="Follow-up output: compliance check">
+      <header className="compliance-header">
+        <div>
+          <p className="eyebrow">Follow-up · Compliance check {/* ⚠ 待 Danny 审字 */}</p>
+          <h2>Does the Acme companion build comply? {/* ⚠ 待 Danny 审字 */}</h2>
+        </div>
+        <span>Against cited guidelines {/* ⚠ 待 Danny 审字 */}</span>
+      </header>
+
+      {question ? <p className="compliance-question">&ldquo;{question}&rdquo;</p> : null}
+
+      <div className="compliance-list">
+        {COMPLIANCE_CHECKS.map((check) => (
+          <article key={check.guideline} className={`compliance-row is-${check.status}`}>
+            <span className="compliance-status" aria-hidden="true">
+              {check.status === 'pass' ? '✓' : '!'}
+            </span>
+            <div>
+              <p>{check.verdict}</p>
+              <span className="compliance-guideline">{check.guideline}</span>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <p className="compliance-verdict">
+        {/* ⚠ 待 Danny 审字 */}
+        Fix the privacy labels, then submit — everything else is ready for an expedited request.
+      </p>
+    </section>
+  )
+}
+
 // P6-03：常驻自由文本 follow-up composer（HUD，bottom-left）。任意文本被接受、作为显示的
 // follow-up 问题、走 active case 的脚本段——与 B3 askQuestion 同构（ADR-0001 demo-only 诚实）。
 // 注意：不复用 .nexus-empty-composer（那是空态专用、走 askQuestion 会重置 thread）。
@@ -713,6 +877,11 @@ export function NexusScene() {
   const showStructuredOutput = reached('structured-output')
   const showChat = reached('human-loop')
   const showAlternatives = reached('follow-up-alternatives')
+  // P6-05：web-search errand case 的卡显形条件（步骤 kind 只存在于该 case 的 thread——
+  // bill/acme thread 永远 reached() === false，零串扰）。
+  const showWebPreview = reached('web-search')
+  const showPolicyGist = reached('policy-gist')
+  const showCompliance = reached('follow-up-compliance')
   const dispatchedTaskKeys = useMemo(() => new Set(tasks.map(taskTemplateKey)), [tasks])
   const manifestProducerIds = useMemo(
     () => new Set(Object.values(caseDef.manifestProducers)),
@@ -725,12 +894,10 @@ export function NexusScene() {
   const planLength = threadPlan(thread).length
   const contextPct = activeStep ? (caseDef.stepContextPct[activeStep] ?? 0) : 0
   const isNearContextLimit = contextPct >= CONTEXT_SAFE_THRESHOLD_PCT - CONTEXT_NEAR_MARGIN_PCT
+  // P6-05：末态判定泛化为「编排表走完」（原 hard-code structured-output 只对 hero 成立；
+  // errand case 末步不同。askFollowUp 延长 planLength → 标签自动回到 Advance）。
   const advanceLabel =
-    thread.steps.length === 0
-      ? 'Start'
-      : activeStep === 'structured-output'
-        ? 'Hold'
-        : 'Advance'
+    thread.steps.length === 0 ? 'Start' : thread.steps.length >= planLength ? 'Hold' : 'Advance'
   const returnToDashboard = () => {
     regenBriefing()
     goScene('dashboard')
@@ -824,13 +991,13 @@ export function NexusScene() {
     ) : null
 
   const latestFollowUp = thread.followUps[thread.followUps.length - 1]
-  // alternatives 卡显示「启动它的那次提问」（chip 文本或 composer 自由文本，按 segmentId 回查）。
-  const alternativesQuestion =
+  // follow-up 卡显示「启动它的那次提问」（chip 文本或 composer 自由文本，按 segmentId 回查）。
+  const followUpQuestionFor = (step: ThreadStepKind) =>
     thread.followUps.find((f) =>
-      caseDef.followUps
-        .find((segment) => segment.id === f.segmentId)
-        ?.steps.includes('follow-up-alternatives'),
+      caseDef.followUps.find((segment) => segment.id === f.segmentId)?.steps.includes(step),
     )?.question ?? ''
+  const alternativesQuestion = followUpQuestionFor('follow-up-alternatives')
+  const complianceQuestion = followUpQuestionFor('follow-up-compliance')
 
   return (
     <section className="scene scene-nexus is-active" aria-label="Nexus">
@@ -944,6 +1111,37 @@ export function NexusScene() {
             chip={chipStep === 'follow-up-alternatives' ? followUpChip : undefined}
           >
             <AlternativesCard question={alternativesQuestion} />
+          </CardSlot>
+        ) : null}
+        {/* P6-05：web-search errand case 的 Manifest 卡组（CardSlot 接法同上）。 */}
+        {showWebPreview ? (
+          <CardSlot
+            anchor={caseDef.cardAnchors['web-search']}
+            isActive={activeStep === 'web-search'}
+            onInspect={() => inspectCard('web-search')}
+            chip={chipStep === 'web-search' ? followUpChip : undefined}
+          >
+            <WebPreviewCard />
+          </CardSlot>
+        ) : null}
+        {showPolicyGist ? (
+          <CardSlot
+            anchor={caseDef.cardAnchors['policy-gist']}
+            isActive={activeStep === 'policy-gist'}
+            onInspect={() => inspectCard('policy-gist')}
+            chip={chipStep === 'policy-gist' ? followUpChip : undefined}
+          >
+            <PolicyGistCard />
+          </CardSlot>
+        ) : null}
+        {showCompliance ? (
+          <CardSlot
+            anchor={caseDef.cardAnchors['follow-up-compliance']}
+            isActive={activeStep === 'follow-up-compliance'}
+            onInspect={() => inspectCard('follow-up-compliance')}
+            chip={chipStep === 'follow-up-compliance' ? followUpChip : undefined}
+          >
+            <ComplianceCard question={complianceQuestion} />
           </CardSlot>
         ) : null}
           </>
