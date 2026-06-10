@@ -17,6 +17,7 @@ import {
 import { DetailSection, DetailShell, SourceAnchor } from '../DetailShell'
 import { PixelAvatar } from '../PixelAvatar'
 import { useCanvas } from '../../store/canvasStore'
+import { BILL_ACME_CASE_ID } from '../../data/cases'
 
 // P5-03：项目详情页 state-aware。Nexus 完成前只显 raw facts；B9 后智能层长出。
 // 主层级：brief / milestones / team / task board / handoffs / weekly updates。
@@ -62,8 +63,12 @@ type HandoffState = 'open' | 'done' | 'discarded'
 export function ProjectDetailScene() {
   const detail = useCanvas((s) => s.detail)
   const askQuestion = useCanvas((s) => s.askQuestion)
-  const isGrown = useCanvas((s) =>
-    s.thread.steps.some((step) => step.kind === 'structured-output'),
+  // believed→grown 看的是 hero case（bill/acme）的 thread——report 落地与否决定详情页相位
+  //（ADR-0009），与当前 active thread 是哪个 case 无关（P6-01 多 thread 化后语义不变）。
+  const isGrown = useCanvas(
+    (s) =>
+      s.threads[BILL_ACME_CASE_ID]?.steps.some((step) => step.kind === 'structured-output') ??
+      false,
   )
   const project = PROJECTS.find((p) => p.id === detail?.id)
   // handoff checklist = 本地交互（不入 store，符合「不扩 store」铁律）。

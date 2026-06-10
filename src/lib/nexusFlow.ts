@@ -1,20 +1,17 @@
-import type { ThreadStep, ThreadStepKind } from '../store/canvasStore'
-import { NEXUS_NODE_ORDER, type NexusEdge, type NexusNodeId } from '../data/nexusLayout'
+import type { ThreadStep } from '../store/canvasStore'
+import type { CaseDefinition, NexusEdge, NexusNodeId } from '../data/cases'
+
+// P6-01 (ADR-0013)：节点/边状态派生泛化为「吃 case 定义」的纯函数——
+// 每步点亮的节点簇住在 caseDef.stepNodes（原模块常量 NEXUS_STEP_NODES 已迁入 case 定义）。
 
 export type NexusFlowState = 'is-unrevealed' | 'is-future' | 'is-active' | 'is-complete'
 
-export const NEXUS_STEP_NODES: Record<ThreadStepKind, NexusNodeId[]> = {
-  'pm-agent': ['question', 'pm-agent', 'evidence', 'project-ops-cap'],
-  'cross-check': ['pm-agent', 'evidence', 'project-ops-cap', 'bill'],
-  'hr-root-cause': ['hr-agent', 'bill', 'hr-cap', 'evidence'],
-  'human-loop': ['bill', 'pm-agent', 'hr-agent'],
-  timeline: ['tool', 'pm-agent', 'hr-agent', 'bill'],
-  'structured-output': ['output', 'tool', 'evidence', 'pm-agent', 'hr-agent'],
-}
-
-export function deriveNexusNodeStates(steps: ThreadStep[]): Record<NexusNodeId, NexusFlowState> {
+export function deriveNexusNodeStates(
+  caseDef: CaseDefinition,
+  steps: ThreadStep[],
+): Record<NexusNodeId, NexusFlowState> {
   const states = Object.fromEntries(
-    NEXUS_NODE_ORDER.map((id) => [id, 'is-unrevealed']),
+    caseDef.nodeOrder.map((id) => [id, 'is-unrevealed']),
   ) as Record<NexusNodeId, NexusFlowState>
 
   if (steps.length === 0) {
@@ -23,14 +20,14 @@ export function deriveNexusNodeStates(steps: ThreadStep[]): Record<NexusNodeId, 
   }
 
   steps.slice(0, -1).forEach((step) => {
-    NEXUS_STEP_NODES[step.kind].forEach((nodeId) => {
+    ;(caseDef.stepNodes[step.kind] ?? []).forEach((nodeId) => {
       states[nodeId] = 'is-complete'
     })
   })
 
   const current = steps[steps.length - 1]
   if (current) {
-    NEXUS_STEP_NODES[current.kind].forEach((nodeId) => {
+    ;(caseDef.stepNodes[current.kind] ?? []).forEach((nodeId) => {
       states[nodeId] = 'is-active'
     })
   }

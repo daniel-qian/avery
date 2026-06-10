@@ -1,12 +1,27 @@
 import { create } from 'zustand'
 import { BRIEFING_V1, BRIEFING_V2, type Briefing, type TaskTemplate } from '../data/fixtures'
+import {
+  CASES,
+  DEFAULT_CASE_ID,
+  resolveCaseForQuestion,
+  type CaseId,
+  type ThreadStepKind,
+} from '../data/cases'
 
 // 单一事实源（ADR-0003）：一套 state + 一套 action，free-click 与 rail 都只走这套 action。
 // rail = 之上的薄 driver（删 rail = 删 SCRIPT + DemoControls，不删任何行为）。
 //
-// 本文件 = P0.5 contract pass 的产物：state 形状与 action 签名一次性冻结，
-// 三个 build phase（P1 Dashboard / P2 Nexus / P3 详情）都对着这份契约写、互不改 store。
-// action 现按 ADR-0003 返回 fixture / 推进 stub，以后换真逻辑而签名不变。
+// 本文件 = ADR-0013 contract pass 的产物（P6-01，取代 P0.5 冻结形）：
+// 多 thread Nexus——`threads` 按 caseId 键 + `activeCaseId`；编排表/拓扑/Manifest 全部
+// 来自 per-case 定义（src/data/cases.ts），store 零 case 专属常量。
+//
+// ★ 契约重新冻结。锁定的 action 集（P6 wave 后续 issue 不得再扩）：
+//   runAgent / dispatchTask / regenBriefing / askQuestion /
+//   goScene / setFocus / openDetail / back /
+//   openThread / closeThread / askFollowUp / sendEmail
+// ADR-0006 / ADR-0012 的「不扩 canvasStore」自本 pass 后读作「不扩本契约」。
+// 镜头命令仍不进 store（ADR-0012）；rail replay 机器（pristine 快照 + replay-to-target）
+// 原样工作——所有 action 幂等友好 / append 序确定，seek 任意 index 自洽。
 
 export type Scene =
   | 'onboarding'
@@ -31,60 +46,91 @@ export interface Focus {
 
 export type Detail = { kind: 'project' | 'employee'; id: string } | null
 
-// ── Nexus 编排 thread（P2）。每个 step 的内容从 fixtures 按 kind 渲染（dumb 组件）。──
-// step kind 对应 beat sheet B4–B9；P2 定内容/节奏，P4 rail 定自动推进，本文件只定形状。
-export type ThreadStepKind =
-  | 'pm-agent' // B4 PM agent 取证据 + Company RAG + Capabilities
-  | 'cross-check' // B5 戳穿 reality gap（MISMATCH 卡）
-  | 'hr-root-cause' // B6 HR agent 解释根因（bandwidth 打断非低产）
-  | 'human-loop' // B7〔nice-to-have〕拉真人 + agent 背景聆听
-  | 'timeline' // B8 agent 调 tool 造 TIMELINE
-  | 'structured-output' // B9 6 段式可信输出（AGENT_OUTPUT）
+// step kind 全集住在 per-case 定义（src/data/cases.ts）；此处 re-export 维持既有 import 面。
+export type { ThreadStepKind, CaseId }
 
 export interface ThreadStep {
   kind: ThreadStepKind
+  followUpId?: string // 来自 follow-up 段的步骤带段 id（主段步骤不带）
 }
 
 export type ThreadStatus = 'idle' | 'running' | 'complete'
+
+// 已追加的 follow-up：question = 显示的提问文本（chip 文本或 composer 自由文本），
+// segmentId 指向 case 定义里的段——步骤表由此确定性派生（threadPlan）。
+export interface AskedFollowUp {
+  question: string
+  segmentId: string
+}
+
+// Thread（CONTEXT.md）：Nexus 内的一次编排会话，自己的 context 预算；
+// 彼此独立、可关闭、可从历史重开——closeThread 只翻 isOpen，状态全保留（ADR-0013 决策 1/6）。
+export interface Thread {
+  caseId: CaseId
+  question: string | null // 启动该 thread 的问题（askQuestion / openThread 预填）
+  steps: ThreadStep[] // 随 runAgent 累积
+  status: ThreadStatus
+  isOpen: boolean // 关闭 ≠ 删除：tab 收起，history 可重开（P6-02）
+  followUps: AskedFollowUp[] // 已追加的 follow-up 段（askFollowUp 确定性 append）
+  emailSent: boolean // email case 的 Send 已点（sendEmail dedupe guard，P6-06）
+}
 
 export interface DispatchedTask extends TaskTemplate {
   id: string
 }
 
-// 默认编排顺序（stub）。free-click 每调一次 runAgent 推进一步；
-// P2 可改内容、P4 rail 可改节奏——这是 scripted data，不是分支逻辑（零 if(demoMode)）。
-const ORCHESTRATION: ThreadStepKind[] = [
-  'pm-agent',
-  'cross-check',
-  'hr-root-cause',
-  'human-loop',
-  'timeline',
-  'structured-output',
-]
+export function pristineThread(caseId: CaseId): Thread {
+  return {
+    caseId,
+    question: null,
+    steps: [],
+    status: 'idle',
+    isOpen: true,
+    followUps: [],
+    emailSent: false,
+  }
+}
+
+// thread 的有效编排表 = case 主段 + 已追加的 follow-up 段（确定性派生，replay-safe）。
+// runAgent 按 steps.length 取下一步；P6-04 的 Step x/x 分母也从这里来。
+export function threadPlan(thread: Thread): Array<{ kind: ThreadStepKind; followUpId?: string }> {
+  const def = CASES[thread.caseId]
+  if (!def) return []
+  return [
+    ...def.orchestration.map((kind) => ({ kind })),
+    ...thread.followUps.flatMap((f) => {
+      const segment = def.followUps.find((s) => s.id === f.segmentId)
+      return (segment?.steps ?? []).map((kind) => ({ kind, followUpId: f.segmentId }))
+    }),
+  ]
+}
 
 interface CanvasState {
   scene: Scene
   focus: Focus | null // null = calm（点空白 → setFocus(null)）
   detail: Detail
   briefing: Briefing // 当前 Dashboard 上的 Briefing（B1 = V1，B10 regen → V2）
-  thread: {
-    question: string | null // 启动该 thread 的 hero 问题（B3）
-    steps: ThreadStep[] // 随 runAgent 累积
-    status: ThreadStatus
-  }
+  threads: Record<CaseId, Thread> // 按 caseId 键；初始为空——不预置假历史（ADR-0013 决策 6）
+  activeCaseId: CaseId | null // null = 尚无 thread（Nexus 显示 hero case 空态）
   tasks: DispatchedTask[] // B9 经人确认派出的 task
 
-  // ── 导航（P1 / P3 共用）──
+  // ── 导航 ──
   goScene: (scene: Scene) => void
   setFocus: (focus: Focus | null) => void // 三种选择器统一出口；null = 恢复 calm
   openDetail: (kind: 'project' | 'employee', id: string) => void // drill-in
   back: () => void
 
-  // ── 编排 / 内容（P2 行为全走这套；现为 fixture / 推进 stub）──
-  askQuestion: (text: string) => void // B3 composer → 问题飞进 Nexus
-  runAgent: () => void // B4–B9 推进 thread 一步
-  dispatchTask: (template: TaskTemplate) => void // B9 派 task
+  // ── 编排 / 内容 ──
+  askQuestion: (text: string) => void // B3 composer → 问题进对应 case 的 thread（case-aware）
+  runAgent: () => void // 无参：从 active case 的编排表按 steps.length 取下一步
+  dispatchTask: (template: TaskTemplate) => void // B9 派 task（不进 SCRIPT，Danny 现场点）
   regenBriefing: () => void // B10 重生成 Briefing（v1 → v2）
+
+  // ── thread 生命周期 + follow-up（ADR-0013）──
+  openThread: (caseId: CaseId) => void // 开/重开 + 置 active；幂等
+  closeThread: (caseId: CaseId) => void // 只翻 isOpen，状态全保留；幂等
+  askFollowUp: (text: string) => void // 追加 active case 的下一个 follow-up 段；确定性
+  sendEmail: () => void // email case 的 Send；dedupe-guarded（不进 SCRIPT，同 dispatchTask）
 }
 
 export const useCanvas = create<CanvasState>((set, get) => ({
@@ -92,7 +138,8 @@ export const useCanvas = create<CanvasState>((set, get) => ({
   focus: null,
   detail: null,
   briefing: BRIEFING_V1,
-  thread: { question: null, steps: [], status: 'idle' },
+  threads: {},
+  activeCaseId: null,
   tasks: [],
 
   goScene: (scene) => set({ scene }),
@@ -100,25 +147,51 @@ export const useCanvas = create<CanvasState>((set, get) => ({
   openDetail: (kind, id) => set({ scene: kind, detail: { kind, id } }),
   back: () => set({ scene: 'dashboard', detail: null, focus: null }),
 
+  // case-aware（ADR-0013）：文本命中某 case 默认问题 → 该 case；其余落 hero case。
+  // 重复提问重置该 case 的 thread（与冻结前单 thread 行为一致）。
   askQuestion: (text) =>
-    set({ scene: 'nexus', thread: { question: text, steps: [], status: 'running' } }),
+    set((s) => {
+      const caseId = resolveCaseForQuestion(text)
+      return {
+        scene: 'nexus',
+        activeCaseId: caseId,
+        threads: {
+          ...s.threads,
+          [caseId]: { ...pristineThread(caseId), question: text, status: 'running' },
+        },
+      }
+    }),
 
-  runAgent: () => {
-    const { thread } = get()
-    const next = ORCHESTRATION[thread.steps.length]
-    if (!next) {
-      set({ thread: { ...thread, status: 'complete' } })
-      return
-    }
-    const steps = [...thread.steps, { kind: next }]
-    set({
-      thread: {
-        ...thread,
-        steps,
-        status: steps.length === ORCHESTRATION.length ? 'complete' : 'running',
-      },
-    })
-  },
+  // 无参推进：active thread（无则在 hero case 上懒建——保住「直接进 Nexus 点 Start」的
+  // free-click 路径）按其有效编排表取下一步；follow-up 段步骤自动带 followUpId。
+  runAgent: () =>
+    set((s) => {
+      const caseId = s.activeCaseId ?? DEFAULT_CASE_ID
+      const thread = s.threads[caseId] ?? pristineThread(caseId)
+      const plan = threadPlan(thread)
+      const next = plan[thread.steps.length]
+      if (!next) {
+        return {
+          activeCaseId: caseId,
+          threads: { ...s.threads, [caseId]: { ...thread, status: 'complete' } },
+        }
+      }
+      const steps = [
+        ...thread.steps,
+        next.followUpId ? { kind: next.kind, followUpId: next.followUpId } : { kind: next.kind },
+      ]
+      return {
+        activeCaseId: caseId,
+        threads: {
+          ...s.threads,
+          [caseId]: {
+            ...thread,
+            steps,
+            status: steps.length === plan.length ? 'complete' : 'running',
+          },
+        },
+      }
+    }),
 
   dispatchTask: (template) =>
     set((s) => {
@@ -135,4 +208,66 @@ export const useCanvas = create<CanvasState>((set, get) => ({
     }),
 
   regenBriefing: () => set({ briefing: BRIEFING_V2 }),
+
+  // 开/重开 thread：已存在则只翻 isOpen + 置 active（steps/Manifest 原样回来）；
+  // 不存在则以 case 默认问题建新 thread。幂等：重复调用结果相同。
+  openThread: (caseId) =>
+    set((s) => {
+      const def = CASES[caseId]
+      if (!def) return s
+      const existing = s.threads[caseId]
+      const thread = existing
+        ? { ...existing, isOpen: true }
+        : { ...pristineThread(caseId), question: def.question }
+      return { activeCaseId: caseId, threads: { ...s.threads, [caseId]: thread } }
+    }),
+
+  // 关 thread：只翻 isOpen，数据一根不丢（ADR-0013 决策 1）。关的是 active → 切到剩余
+  // open thread 之一（注册表序），全关则 null（Nexus 空态，composer 待命——P6-02）。幂等。
+  closeThread: (caseId) =>
+    set((s) => {
+      const existing = s.threads[caseId]
+      if (!existing || !existing.isOpen) return s
+      const threads = { ...s.threads, [caseId]: { ...existing, isOpen: false } }
+      const activeCaseId =
+        s.activeCaseId === caseId
+          ? (Object.values(threads).find((t) => t.isOpen)?.caseId ?? null)
+          : s.activeCaseId
+      return { threads, activeCaseId }
+    }),
+
+  // follow-up（ADR-0013 决策 5）：把 active case 的下一个未消费 follow-up 段追加进该
+  // thread 的编排表（步骤由 runAgent 继续走），text 作为显示的提问。确定性：第 n 次调用
+  // 永远消费第 n 段；段耗尽则 no-op——同文本重放结果相同（replay-safe）。
+  askFollowUp: (text) =>
+    set((s) => {
+      const caseId = s.activeCaseId ?? DEFAULT_CASE_ID
+      const thread = s.threads[caseId]
+      const def = CASES[caseId]
+      if (!thread || !def) return s
+      const segment = def.followUps[thread.followUps.length]
+      if (!segment) return s
+      return {
+        threads: {
+          ...s.threads,
+          [caseId]: {
+            ...thread,
+            followUps: [...thread.followUps, { question: text, segmentId: segment.id }],
+            status: 'running', // 编排表延长，等 runAgent 继续走
+          },
+        },
+      }
+    }),
+
+  // Send（P6-06）：active thread 的邮件发出。dedupe guard：已发则 no-op。
+  // 与 dispatchTask 同口径（ADR-0006 决策 5）：不进 rail SCRIPT，Danny 现场亲手点；
+  // rail seek 重置已点状态，接受。
+  sendEmail: () =>
+    set((s) => {
+      const caseId = s.activeCaseId
+      if (!caseId) return s
+      const thread = s.threads[caseId]
+      if (!thread || thread.emailSent) return s
+      return { threads: { ...s.threads, [caseId]: { ...thread, emailSent: true } } }
+    }),
 }))
