@@ -412,8 +412,156 @@ function ChatCard() {
 // 「初始单 thread 槽位」行为同构；模块级常量保住 zustand selector 的引用稳定。
 const FALLBACK_THREAD = pristineThread(DEFAULT_CASE_ID)
 
+// P6-02 (ADR-0013 决策 6)：thread chrome——Nexus HUD 的 tab strip + history popover。
+// 只在 Nexus（Dashboard 是平静观察面，thread 管理是行动面家具）；viewport-fixed HUD，
+// 不进画板（ADR-0012 world/HUD 分层）。全部经核心 action（openThread / closeThread）——
+// free-click 可达、rail 可脚本（P6-07）。popover 开合 = 组件本地态，不进 store。
+// 不预置装饰性假历史：tab/列表只显示真实存在的 thread（Record 插入序 = 创建时序）。
+function ThreadChrome() {
+  const threads = useCanvas((s) => s.threads)
+  const activeCaseId = useCanvas((s) => s.activeCaseId)
+  const openThread = useCanvas((s) => s.openThread)
+  const closeThread = useCanvas((s) => s.closeThread)
+  const [historyOpen, setHistoryOpen] = useState(false)
+
+  const threadList = Object.values(threads)
+  if (threadList.length === 0) return null
+  const openThreads = threadList.filter((t) => t.isOpen)
+
+  return (
+    <div className="nexus-thread-chrome" aria-label="Nexus threads">
+      <div className="nexus-tab-strip" role="tablist" aria-label="Open threads">
+        {openThreads.map((t) => {
+          const def = CASES[t.caseId]
+          const isActiveTab = t.caseId === activeCaseId
+          const title = def?.title ?? t.caseId
+          return (
+            <div
+              key={t.caseId}
+              className={classNames(['nexus-thread-tab', isActiveTab && 'is-active'])}
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={isActiveTab}
+                className="nexus-thread-tab-label"
+                onClick={() => openThread(t.caseId)}
+              >
+                {title}
+              </button>
+              <button
+                type="button"
+                className="nexus-thread-tab-close"
+                aria-label={`Close thread: ${title}`}
+                onClick={() => closeThread(t.caseId)}
+              >
+                ×
+              </button>
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="nexus-history">
+        <button
+          type="button"
+          className={classNames(['nexus-history-toggle', historyOpen && 'is-open'])}
+          aria-expanded={historyOpen}
+          aria-haspopup="menu"
+          onClick={() => setHistoryOpen((open) => !open)}
+        >
+          History {/* ⚠ 待 Danny 审字 */}
+        </button>
+        {historyOpen ? (
+          <div className="nexus-history-popover" role="menu" aria-label="Thread history">
+            <p className="eyebrow">Threads {/* ⚠ 待 Danny 审字 */}</p>
+            {threadList.map((t) => {
+              const def = CASES[t.caseId]
+              return (
+                <button
+                  key={t.caseId}
+                  type="button"
+                  role="menuitem"
+                  className={classNames(['nexus-history-item', !t.isOpen && 'is-closed'])}
+                  onClick={() => {
+                    openThread(t.caseId)
+                    setHistoryOpen(false)
+                  }}
+                >
+                  <span className="nexus-history-item-title">{def?.title ?? t.caseId}</span>
+                  {t.question ? (
+                    <span className="nexus-history-item-question">{t.question}</span>
+                  ) : null}
+                  <span className="nexus-history-item-meta">
+                    {/* ⚠ 待 Danny 审字（Open/Closed badge 文案） */}
+                    {t.steps.length}/{threadPlan(t).length} steps · {t.isOpen ? 'Open' : 'Closed'}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
+// P6-02：Nexus 空态（activeCaseId === null——尚无 thread 或全部关闭）。composer 待命：
+// 自由文本走 askQuestion（case-aware，与 B3 同构）；case 建议 chip 走 openThread（已存在
+// 的关闭 thread 经此重开、状态完整恢复——保住「直接进 Nexus 起 hero case」的 free-click 路径）。
+function NexusEmptyState() {
+  const askQuestion = useCanvas((s) => s.askQuestion)
+  const openThread = useCanvas((s) => s.openThread)
+  const [draft, setDraft] = useState('')
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const text = draft.trim()
+    if (!text) return
+    askQuestion(text)
+    setDraft('')
+  }
+
+  return (
+    <section className="nexus-empty" aria-label="Nexus — no open threads">
+      <p className="eyebrow">Nexus</p>
+      <h2>No open threads {/* ⚠ 待 Danny 审字 */}</h2>
+      <p>
+        Ask anything to start a new thread, or reopen one from History.{' '}
+        {/* ⚠ 待 Danny 审字 */}
+      </p>
+      <form className="nexus-empty-composer" aria-label="Start a new thread" onSubmit={handleSubmit}>
+        <input
+          type="text"
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          placeholder="Ask your team anything..." /* ⚠ 待 Danny 审字 */
+          aria-label="New thread question"
+        />
+        <button type="submit">Ask {/* ⚠ 待 Danny 审字 */}</button>
+      </form>
+      <div className="nexus-empty-suggestions" aria-label="Suggested threads">
+        {Object.values(CASES).map((caseDef) => (
+          <button
+            key={caseDef.id}
+            type="button"
+            className="nexus-empty-suggestion"
+            onClick={() => openThread(caseDef.id)}
+          >
+            {caseDef.title}
+          </button>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 export function NexusScene() {
-  const activeCaseId = useCanvas((s) => s.activeCaseId) ?? DEFAULT_CASE_ID
+  // null = 尚无 thread 或全部关闭 → 空态（composer 待命）；非空走 active case 渲染。
+  // caseDef 仍 fallback 到 hero case——保持 hooks 无条件调用，空态下只是不渲染 world 内容。
+  const rawActiveCaseId = useCanvas((s) => s.activeCaseId)
+  const isEmpty = rawActiveCaseId === null
+  const activeCaseId = rawActiveCaseId ?? DEFAULT_CASE_ID
   const caseDef = CASES[activeCaseId]
   const thread = useCanvas((s) => s.threads[activeCaseId]) ?? FALLBACK_THREAD
   const tasks = useCanvas((s) => s.tasks)
@@ -454,6 +602,7 @@ export function NexusScene() {
   // ── rail 派生镜头（ADR-0012 决策 4 + 修订 4）：calm = 全图 fit；step = 飞向「活跃簇 + 结果卡」局部 bbox。──
   const camRef = useRef<ReactZoomPanPinchRef | null>(null)
   const cameraTarget = useMemo<CameraTarget | null>(() => {
+    if (isEmpty) return null // 空态不取景；重开 thread 时 depKey 变化触发重取景
     const items: Array<{ pos: Pos; halfW: number; halfH: number }> = []
     if (!activeStep) {
       // 修订 6：calm = fit-width 顶锚可读帧——链 + Manifest 列同框（宽度），链尾出帧靠 pan。
@@ -478,17 +627,25 @@ export function NexusScene() {
     if (card) items.push({ pos: card.pos, halfW: card.half.w, halfH: card.half.h })
     const bbox = bboxOf(items)
     return bbox ? { bbox } : null
-  }, [caseDef, activeStep])
+  }, [caseDef, activeStep, isEmpty])
 
   // depKey 带 caseId：切 thread（P6-02）即重取景；单 case 时与旧行为逐拍一致。
-  useRailCamera(camRef, cameraTarget, NEXUS_INSETS, `${caseDef.id}:${activeStep ?? 'calm'}`, {
-    maxFitScale: 1.1,
-  })
+  // 空态用独立 key——从空态重开同一 thread 也会重取景（key 必然变化）。
+  useRailCamera(
+    camRef,
+    cameraTarget,
+    NEXUS_INSETS,
+    isEmpty ? 'empty' : `${caseDef.id}:${activeStep ?? 'calm'}`,
+    { maxFitScale: 1.1 },
+  )
 
   return (
     <section className="scene scene-nexus is-active" aria-label="Nexus">
       <PanZoomCanvas ref={camRef} board={NEXUS_BOARD}>
         <div className="canvas-grid board-surface" aria-hidden="true" />
+        {/* P6-02：空态（无 active thread）不渲染 world 内容——只留画板格栅 + HUD 空态面板。 */}
+        {!isEmpty ? (
+          <>
         <div className="nexus-flow-layer" aria-label="Nexus orchestration topology">
         <NexusEdgeLayer caseDef={caseDef} steps={thread.steps} activeStep={activeStep} />
         {caseDef.nodes.map((node) => {
@@ -568,23 +725,34 @@ export function NexusScene() {
             />
           </CardSlot>
         ) : null}
+          </>
+        ) : null}
 
       </PanZoomCanvas>
 
-      <section className="nexus-brief">
-        <p className="eyebrow">Nexus orchestration</p>
-        <p>&ldquo;{question}&rdquo;</p>
-        <div className="nexus-progress-row" aria-label="Nexus progress">
-          <span>{progressLabel}</span>
-          <span>{activeStep ? caseDef.stepLabels[activeStep] : 'Question staged'}</span>
-        </div>
-      </section>
+      {/* P6-02：thread chrome（tab strip + history popover），viewport-fixed HUD。 */}
+      <ThreadChrome />
 
-      <div className="nexus-advance-bar">
-        <button type="button" className="nexus-advance" onClick={runAgent}>
-          {advanceLabel}
-        </button>
-      </div>
+      {!isEmpty ? (
+        <>
+          <section className="nexus-brief">
+            <p className="eyebrow">Nexus orchestration</p>
+            <p>&ldquo;{question}&rdquo;</p>
+            <div className="nexus-progress-row" aria-label="Nexus progress">
+              <span>{progressLabel}</span>
+              <span>{activeStep ? caseDef.stepLabels[activeStep] : 'Question staged'}</span>
+            </div>
+          </section>
+
+          <div className="nexus-advance-bar">
+            <button type="button" className="nexus-advance" onClick={runAgent}>
+              {advanceLabel}
+            </button>
+          </div>
+        </>
+      ) : (
+        <NexusEmptyState />
+      )}
     </section>
   )
 }
