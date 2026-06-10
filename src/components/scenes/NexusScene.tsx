@@ -47,8 +47,8 @@ const NEXUS_INSETS: SafeInsets = { top: 80, right: 28, bottom: 100, left: 28 }
 // P6-04 (ADR-0013 决策 7)：context-window 安全阈值。demo 数据永不越线（hero follow-up
 // 顶到 ~80%）——阈值的存在本身就是叙事（"thread 要守在安全线下"）。进入近阈值带
 //（threshold − margin）数字变调 amber：主段收在 71% 仍是常态色，follow-up 80% 进警示带。
-const CONTEXT_SAFE_THRESHOLD_PCT = 85
-const CONTEXT_NEAR_MARGIN_PCT = 10
+const CONTEXT_WARN_PCT = 40
+const CONTEXT_ALERT_PCT = 70
 
 // P6-01 (ADR-0013)：step labels / 拓扑 / Manifest 锚点全部移入 per-case 定义（data/cases.ts），
 // 本 scene 改读 active case——bill/acme 是第一个 case，errand cases（P6-05/06）零改 scene 接入。
@@ -1038,7 +1038,8 @@ export function NexusScene() {
   //（threadPlan 确定性派生）。每 thread 独立：切 tab（P6-02）thread/caseDef 都换，数字跟着换。
   const planLength = threadPlan(thread).length
   const contextPct = activeStep ? (caseDef.stepContextPct[activeStep] ?? 0) : 0
-  const isNearContextLimit = contextPct >= CONTEXT_SAFE_THRESHOLD_PCT - CONTEXT_NEAR_MARGIN_PCT
+  const contextTier =
+    contextPct > CONTEXT_ALERT_PCT ? 'alert' : contextPct > CONTEXT_WARN_PCT ? 'warn' : 'calm'
   // P6-05：末态判定泛化为「编排表走完」（原 hard-code structured-output 只对 hero 成立；
   // errand case 末步不同。askFollowUp 延长 planLength → 标签自动回到 Advance）。
   const advanceLabel =
@@ -1353,34 +1354,19 @@ export function NexusScene() {
                 Follow-up: &ldquo;{latestFollowUp.question}&rdquo; {/* ⚠ 待 Danny 审字（前导词） */}
               </p>
             ) : null}
-            {/* P6-04：context-window HUD——醒目不低调（讲点不是装饰）。阈值刻度常驻可见、
-                近阈值变 amber。原 "x/x steps" chip 被 Step x/x 取代（同一数据源，免重复）。 */}
-            <div
-              className={classNames(['nexus-context-hud', isNearContextLimit && 'is-near-limit'])}
-              aria-label={`Context window ${contextPct}% used · step ${thread.steps.length} of ${planLength} · safe threshold ${CONTEXT_SAFE_THRESHOLD_PCT}%`}
+            {/* P6-04（修订）：context-window HUD 压成单行 subtle——step 标签并排二级小字，
+                数字带强调色；>40% warn（amber）、>70% alert（rust）两档变色，meter 条移除。 */}
+            <p
+              className="nexus-context-line"
+              aria-label={`Context window ${contextPct}% used · step ${thread.steps.length} of ${planLength}`}
             >
-              <p className="nexus-context-readout">
-                {/* ⚠ 待 Danny 审字（"Context" / "Step" 词形） */}
+              <span className="nexus-context-step-label">
+                {activeStep ? caseDef.stepLabels[activeStep] : 'Question staged'}
+              </span>
+              <span className={`nexus-context-stats is-${contextTier}`}>
                 Context {contextPct}% · Step {thread.steps.length}/{planLength}
-              </p>
-              <div className="nexus-context-meter" aria-hidden="true">
-                <span
-                  className="nexus-context-meter-fill"
-                  style={{ transform: `scaleX(${contextPct / 100})` }}
-                />
-                <span
-                  className="nexus-context-meter-threshold"
-                  style={{ left: `${CONTEXT_SAFE_THRESHOLD_PCT}%` }}
-                >
-                  <span className="nexus-context-threshold-label">
-                    {CONTEXT_SAFE_THRESHOLD_PCT}%
-                  </span>
-                </span>
-              </div>
-            </div>
-            <div className="nexus-progress-row" aria-label="Nexus progress">
-              <span>{activeStep ? caseDef.stepLabels[activeStep] : 'Question staged'}</span>
-            </div>
+              </span>
+            </p>
           </section>
 
           <div className="nexus-advance-bar">
