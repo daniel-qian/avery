@@ -6176,3 +6176,13 @@ h1 {
   line-height: 1.2;
   letter-spacing: -0.01em;
 }
+
+/* ── Onboarding · connect 段：GitHub/Slack 动态事实注入的本地存储承诺（产物永不上云） ── */
+.onboarding-local-note {
+  margin: 10px 0 0;
+  color: var(--ink-soft, rgba(60, 64, 58, 0.62));
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+}

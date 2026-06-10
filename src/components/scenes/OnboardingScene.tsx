@@ -14,13 +14,15 @@ const FILE_KIND_LABEL: Record<string, string> = {
 }
 
 interface Stage {
-  key: 'files' | 'parse' | 'capabilities' | 'ready'
+  key: 'files' | 'connect' | 'parse' | 'capabilities' | 'ready'
   title: string
   cta: string
 }
 
 const STAGES: Stage[] = [
   { key: 'files', title: 'Reading your company files', cta: 'Continue' },
+  // ⚠ 待 Danny 审字（connect 段标题 + 下方 StageBody copy）
+  { key: 'connect', title: 'Connecting GitHub & Slack', cta: 'Continue' },
   { key: 'parse', title: 'Parsing into the company brain', cta: 'Continue' },
   { key: 'capabilities', title: 'Matching Capabilities', cta: 'Continue' },
   { key: 'ready', title: 'Company brain ready', cta: 'Enter dashboard' },
@@ -37,6 +39,31 @@ function StageBody({ stageKey }: { stageKey: Stage['key'] }) {
           </span>
         ))}
       </div>
+    )
+  }
+
+  if (stageKey === 'connect') {
+    // 动态事实记忆注入：连接 GitHub/Slack → 脱敏/清理/安检三道工序 → 产物只落本地。
+    return (
+      <>
+        <p className="onboarding-status">Syncing live company activity…</p>
+        <div className="onboarding-files">
+          {ONBOARDING.connectSources.map((source) => (
+            <span key={source.name} className="file-chip">
+              <span className="file-kind">{source.name}</span>
+              {source.detail}
+            </span>
+          ))}
+        </div>
+        <div className="onboarding-parsed">
+          {ONBOARDING.connectPipeline.map((stepLabel) => (
+            <span key={stepLabel} className="parsed-chip">
+              {stepLabel}
+            </span>
+          ))}
+        </div>
+        <p className="onboarding-local-note">🔒 {ONBOARDING.connectNote}</p>
+      </>
     )
   }
 
@@ -94,6 +121,8 @@ function doneSummary(stageKey: Stage['key']): string {
   switch (stageKey) {
     case 'files':
       return `${ONBOARDING.sampleFiles.length} files read`
+    case 'connect':
+      return 'GitHub & Slack connected · sanitized · stored locally' // ⚠ 待 Danny 审字
     case 'parse':
       return `Company brain built · ${ONBOARDING.parsedInto.length} facets`
     case 'capabilities':

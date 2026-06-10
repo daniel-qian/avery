@@ -432,6 +432,14 @@ export const ONBOARDING = {
     { name: 'Team_Roster.csv', kind: 'csv' },
     { name: 'Q3_Roadmap.md', kind: 'md' },
   ],
+  // 连接动态事实源（GitHub/Slack）——注入公司动态记忆前过三道安全工序，产物只落本地。
+  // ⚠ 待 Danny 审字（connect 段全部英文 copy）
+  connectSources: [
+    { name: 'GitHub', detail: 'Commits · PRs · reviews' },
+    { name: 'Slack', detail: '#eng · #ops · #general' },
+  ],
+  connectPipeline: ['De-identification', 'Cleanup', 'Security scan'],
+  connectNote: 'Sanitized facts are saved as local files only — never uploaded to the cloud.',
   parsedInto: ['Company profile', 'Team roster (14 people)', '7 active projects', 'Recent work signals'],
   capabilitiesMatched: ['Project Ops playbooks', 'HR playbooks'], // 自动优先
   caption: 'TeamMaster reads your files, builds the company brain, and auto-loads the right Capabilities.',
