@@ -6155,3 +6155,60 @@ h1 {
   font-size: 13px;
   line-height: 1.55;
 }
+
+/* ── P6-07 · rail 三幕：case 间隔 title card 浮层（ADR-0013 决策 8–9） ─────────
+   rail chrome——由 SCRIPT step 元数据驱动、渲染在 DemoControls 层，不进 canvasStore；
+   toggleHidden / 删 rail 层即无 title card（ADR-0003 litmus，core 行为零损失）。
+   屏幕居中、低调引导；pointer-events:none——浮层在场也不挡画板 free-click。
+   入场动效只动 transform/opacity（ADR-0002 / P6 铁律）；reduced-motion 全局 1ms 守卫兜底。 */
+
+.rail-title-card {
+  position: fixed;
+  z-index: 70;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  max-width: min(560px, calc(100vw - 48px));
+  padding: 26px 46px;
+  border: 1px solid rgba(40, 35, 29, 0.12);
+  border-radius: var(--radius);
+  background: rgba(255, 253, 248, 0.92);
+  box-shadow: 0 30px 110px rgba(50, 45, 36, 0.22);
+  backdrop-filter: blur(14px);
+  text-align: center;
+  pointer-events: none;
+  animation: rail-title-card-in 0.5s ease-out both;
+}
+
+@keyframes rail-title-card-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) translateY(14px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) translateY(0) scale(1);
+  }
+}
+
+.rail-title-card-eyebrow {
+  margin: 0;
+  color: var(--ink-faint);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.rail-title-card h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 26px;
+  font-weight: 750;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}

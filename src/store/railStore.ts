@@ -1,4 +1,11 @@
 import { create } from 'zustand'
+import {
+  BILL_ACME_CASE,
+  BILL_ACME_CASE_ID,
+  EMAIL_CASE,
+  EMAIL_CASE_ID,
+  WEB_SEARCH_CASE,
+} from '../data/cases'
 import { HERO_QUESTION } from '../data/fixtures'
 import { focusEntity } from '../lib/focus'
 import { useCanvas } from './canvasStore'
@@ -6,11 +13,21 @@ import { useCanvas } from './canvasStore'
 type RailStep = {
   beat: string
   label: string
+  // P6-07 (ADR-0013 决策 9)：title card 浮层文案 = rail chrome。只是 step 元数据——
+  // 渲染住在 DemoControls 层、不进 canvasStore；toggleHidden / 删 rail 即无 title card
+  //（ADR-0003 litmus：core 行为零损失）。文案单源引用 case.title（⚠ 标记在 cases.ts）。
+  titleCard?: string
   run: () => void
 }
 
 const INITIAL = useCanvas.getState()
 
+// P6-07 (ADR-0013 决策 8)：三幕 SCRIPT。Act 1 = bill/acme hero（原样 + 开头 title card +
+// B9 后 follow-up 拍）；Act 2 = "daily driver"（两个 errand case 全程 Nexus 内，
+// title card 间隔 + 收束拍 closeThread/openThread 把 hero report 放回屏幕）；
+// Act 3 = B11 Capabilities 收尾不动（ADR-0007 营收收束）。
+// 每步守 ADR-0006：幂等 / append 序确定——seek 任意 index 从 pristine 重放自洽。
+// Send（sendEmail）与 dispatchTask 同口径：不进 SCRIPT，Danny 现场亲手点（ADR-0006 决策 5）。
 export const SCRIPT: RailStep[] = [
   {
     beat: 'B0',
@@ -20,6 +37,14 @@ export const SCRIPT: RailStep[] = [
   {
     beat: 'B1',
     label: 'Dashboard calm',
+    run: () => useCanvas.getState().goScene('dashboard'),
+  },
+  {
+    // ── Act 1 · bill/acme hero ──。开头 title card（ADR-0013 决策 9：从第一个 case 就
+    // 建立间隔语法）。run 只重申既有场景——状态零变化，浮层全在 rail chrome 层。
+    beat: 'T1',
+    label: 'Use case — Bill & the Acme pilot', // ⚠ 待 Danny 审字（caption）
+    titleCard: BILL_ACME_CASE.title,
     run: () => useCanvas.getState().goScene('dashboard'),
   },
   {
@@ -77,6 +102,19 @@ export const SCRIPT: RailStep[] = [
     run: () => useCanvas.getState().runAgent(),
   },
   {
+    // P6-07：B9 后的 follow-up 拍（issue P6-07 / P6-03 机器）——askFollowUp → runAgent
+    // 两步连发，与 free-click 的 handleFollowUp 同序同构（chip 可见性是组件本地态，
+    // rail 直接调 action，不依赖 chip）。重放幂等：段耗尽 askFollowUp no-op、
+    // 编排表走完 runAgent 只置 complete。
+    beat: 'B9f',
+    label: 'Follow-up — alternatives for Jason', // ⚠ 待 Danny 审字（caption）
+    run: () => {
+      const canvas = useCanvas.getState()
+      canvas.askFollowUp(BILL_ACME_CASE.followUps[0].suggestedQuestion)
+      canvas.runAgent()
+    },
+  },
+  {
     beat: 'B9b',
     label: 'Drill Acme — re-baselined',
     run: () => useCanvas.getState().openDetail('project', 'p_acme'),
@@ -96,7 +134,86 @@ export const SCRIPT: RailStep[] = [
     },
   },
   {
-    // P5-01 (ADR-0007)：Capabilities 移出思考流，作独立收尾 beat（13/13）= 护城河 + 营收收束。
+    // ── Act 2 · daily driver（ADR-0013 决策 8）：errand cases 全程 Nexus 内、不碰
+    // Dashboard briefing。title card 间隔 → 开 thread + 短链推进 → follow-up，×2。──
+    beat: 'T2',
+    label: 'Use case — Apple review policy', // ⚠ 待 Danny 审字（caption）
+    titleCard: WEB_SEARCH_CASE.title,
+    run: () => useCanvas.getState().goScene('dashboard'),
+  },
+  {
+    // askQuestion 是 case-aware（精确命中 case 默认问题）：开 web-search thread +
+    // goScene('nexus') 一步到位；重复重放 = 同样的 pristine thread（确定性）。
+    beat: 'W1',
+    label: 'Ask — Apple review policy', // ⚠ 待 Danny 审字（caption）
+    run: () => useCanvas.getState().askQuestion(WEB_SEARCH_CASE.question),
+  },
+  {
+    beat: 'W2',
+    label: 'Agent searches Apple developer docs', // ⚠ 待 Danny 审字（caption）
+    run: () => useCanvas.getState().runAgent(),
+  },
+  {
+    beat: 'W3',
+    label: 'Policy gist — sources cited', // ⚠ 待 Danny 审字（caption）
+    run: () => useCanvas.getState().runAgent(),
+  },
+  {
+    beat: 'W4',
+    label: 'Follow-up — does the Acme build comply?', // ⚠ 待 Danny 审字（caption）
+    run: () => {
+      const canvas = useCanvas.getState()
+      canvas.askFollowUp(WEB_SEARCH_CASE.followUps[0].suggestedQuestion)
+      canvas.runAgent()
+    },
+  },
+  {
+    // email errand 的 title card。run 重申 nexus 场景（web-search 末态仍在身后）。
+    beat: 'T3',
+    label: 'Use case — Memo → Eng email', // ⚠ 待 Danny 审字（caption）
+    titleCard: EMAIL_CASE.title,
+    run: () => useCanvas.getState().goScene('nexus'),
+  },
+  {
+    beat: 'E1',
+    label: 'Ask — turn the memo into an email', // ⚠ 待 Danny 审字（caption）
+    run: () => useCanvas.getState().askQuestion(EMAIL_CASE.question),
+  },
+  {
+    beat: 'E2',
+    label: 'Agent reads the memo, drafts the email', // ⚠ 待 Danny 审字（caption）
+    run: () => useCanvas.getState().runAgent(),
+  },
+  {
+    // ★ Send 不进 SCRIPT（ADR-0006 决策 5 / ADR-0013 决策 4）：本拍把 email-tool 卡备好，
+    // Danny 现场亲手点 Send——free-click 拍（与 B9 dispatch 同口径）。seek 回到待发态，接受。
+    beat: 'E3',
+    label: 'Email staged — Send is yours', // ⚠ 待 Danny 审字（caption）
+    run: () => useCanvas.getState().runAgent(),
+  },
+  {
+    beat: 'E4',
+    label: 'Follow-up — short version to #eng', // ⚠ 待 Danny 审字（caption）
+    run: () => {
+      const canvas = useCanvas.getState()
+      canvas.askFollowUp(EMAIL_CASE.followUps[0].suggestedQuestion)
+      canvas.runAgent()
+    },
+  },
+  {
+    // 收束拍（ADR-0013 决策 8）：关 email thread、从历史重开 bill/acme——hero report
+    //（含 alternatives follow-up 卡）回屏，给 Act 3 递话。两个 action 都幂等；
+    // history popover 是组件本地态，脚本不开它——重开走的就是 popover 同款 openThread。
+    beat: 'CL',
+    label: 'Close the errand — back to the hero thread', // ⚠ 待 Danny 审字（caption）
+    run: () => {
+      const canvas = useCanvas.getState()
+      canvas.closeThread(EMAIL_CASE_ID)
+      canvas.openThread(BILL_ACME_CASE_ID)
+    },
+  },
+  {
+    // ── Act 3 ──。P5-01 (ADR-0007)：Capabilities 收尾 beat 原样 = 护城河 + 营收收束。
     beat: 'B11',
     label: 'Capabilities — the moat',
     run: () => useCanvas.getState().goScene('capabilities'),

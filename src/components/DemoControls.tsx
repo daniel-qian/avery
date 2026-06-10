@@ -1,7 +1,9 @@
 import { useLayoutEffect } from 'react'
 import { SCRIPT, useRail } from '../store/railStore'
 
-const FREE_CLICK_BEATS = new Set(['B2', 'B9'])
+// P6-07：E3 = email staged 拍——Send 不进 SCRIPT（ADR-0006 决策 5），Danny 现场手点，
+// 与 B2 / B9 同样标 free-click（"→ your turn"）。
+const FREE_CLICK_BEATS = new Set(['B2', 'B9', 'E3'])
 const BEAT_SEQUENCE = SCRIPT.reduce<string[]>((beats, step) => {
   if (beats.includes(step.beat)) return beats
   return [...beats, step.beat]
@@ -19,6 +21,7 @@ function getCaptionParts(index: number) {
     beatProgress: `${beatIndex} / ${BEAT_TOTAL}`,
     subProgress: stepsInBeat > 1 ? `${stepInBeat}/${stepsInBeat}` : null,
     isFreeClick: FREE_CLICK_BEATS.has(step.beat),
+    titleCard: step.titleCard ?? null,
   }
 }
 
@@ -55,24 +58,35 @@ export function DemoControls() {
   if (hidden) return null
 
   return (
-    <aside className="demo-controls rail-controls" aria-label="Demo rail progress">
-      <div className="rail-caption" aria-live="polite">
-        <strong>{caption.label}</strong>
-        <span aria-hidden="true">·</span>
-        <small>{caption.beatProgress}</small>
-        {caption.subProgress ? (
-          <>
-            <span aria-hidden="true">·</span>
-            <small>{caption.subProgress}</small>
-          </>
-        ) : null}
-        {caption.isFreeClick ? (
-          <>
-            <span aria-hidden="true">·</span>
-            <em>→ your turn · free-click</em>
-          </>
-        ) : null}
-      </div>
-    </aside>
+    <>
+      {/* P6-07 (ADR-0013 决策 9)：case 间隔 title card = rail chrome——由 SCRIPT step
+          元数据驱动，渲染在本层、不进 canvasStore；hidden / 删 rail 即无（ADR-0003）。
+          key=index：每张卡独立入场动效（只动 transform/opacity，reduced-motion 全局兜底）。 */}
+      {caption.titleCard ? (
+        <div key={index} className="rail-title-card" role="status">
+          <p className="rail-title-card-eyebrow">Use case {/* ⚠ 待 Danny 审字 */}</p>
+          <h2>{caption.titleCard}</h2>
+        </div>
+      ) : null}
+      <aside className="demo-controls rail-controls" aria-label="Demo rail progress">
+        <div className="rail-caption" aria-live="polite">
+          <strong>{caption.label}</strong>
+          <span aria-hidden="true">·</span>
+          <small>{caption.beatProgress}</small>
+          {caption.subProgress ? (
+            <>
+              <span aria-hidden="true">·</span>
+              <small>{caption.subProgress}</small>
+            </>
+          ) : null}
+          {caption.isFreeClick ? (
+            <>
+              <span aria-hidden="true">·</span>
+              <em>→ your turn · free-click</em>
+            </>
+          ) : null}
+        </div>
+      </aside>
+    </>
   )
 }
