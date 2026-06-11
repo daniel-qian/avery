@@ -24,16 +24,16 @@
 
 ## 切片与依赖
 
-| # | 切片 | 类型 | Blocked by |
-|---|---|---|---|
-| [P6-01](./P6-01-contract-pass-multithread-case-shape.md) | contract pass：多 thread store + per-case 定义数据形（bill/acme 迁移，行为零变） | AFK | — |
-| [P6-02](./P6-02-thread-chrome-tabs-history.md) | thread chrome：Nexus HUD tab strip + history popover | AFK | P6-01 |
-| [P6-03](./P6-03-follow-up-machinery-billacme.md) | follow-up 机器 + bill/acme follow-up 内容 | AFK | P6-01 |
-| [P6-04](./P6-04-context-window-hud.md) | context-window HUD（Context % · Step x/x，每 thread） | AFK | P6-01 |
-| [P6-05](./P6-05-web-search-errand-case.md) | web-search errand case（Apple 政策 + 浏览器预览 + gist） | AFK | P6-01 · P6-03 |
-| [P6-06](./P6-06-email-errand-case.md) | email errand case（memo 照片 → 草稿 → email tool → Send） | AFK | P6-01 · P6-03 |
-| [P6-07](./P6-07-rail-three-acts-title-cards.md) | rail 三幕集成 + title card 浮层 + close→reopen 收束拍 | AFK | P6-02…P6-06 |
-| [P6-08](./P6-08-narrative-copy-review.md) | 叙事 & 审字收口（全部 ⚠ 标记 + 真 memo 照片） | **HITL** | P6-03 · P6-05 · P6-06 |
+| # | 切片 | 类型 | Blocked by | 状态 |
+|---|---|---|---|---|
+| [P6-01](./P6-01-contract-pass-multithread-case-shape.md) | contract pass：多 thread store + per-case 定义数据形（bill/acme 迁移，行为零变） | AFK | — | ✅ e480bdd |
+| [P6-02](./P6-02-thread-chrome-tabs-history.md) | thread chrome：Nexus HUD tab strip + history popover | AFK | P6-01 | ✅ 897c616 |
+| [P6-03](./P6-03-follow-up-machinery-billacme.md) | follow-up 机器 + bill/acme follow-up 内容 | AFK | P6-01 | ✅ 200c3d0 |
+| [P6-04](./P6-04-context-window-hud.md) | context-window HUD（Context % · Step x/x，每 thread） | AFK | P6-01 | ✅ 2e33f80 + 1db6b2f |
+| [P6-05](./P6-05-web-search-errand-case.md) | web-search errand case（Apple 政策 + 浏览器预览 + gist） | AFK | P6-01 · P6-03 | ✅ 61609b9 |
+| [P6-06](./P6-06-email-errand-case.md) | email errand case（memo 照片 → 草稿 → email tool → Send） | AFK | P6-01 · P6-03 | ✅ bf45f09 |
+| [P6-07](./P6-07-rail-three-acts-title-cards.md) | rail 三幕集成 + title card 浮层 + close→reopen 收束拍 | AFK | P6-02…P6-06 | ✅ 449d30f |
+| [P6-08](./P6-08-narrative-copy-review.md) | 叙事 & 审字收口（全部 ⚠ 标记 + 真 memo 照片） | **HITL** | P6-03 · P6-05 · P6-06 | ✅ 待 Danny（交接材料 0914079） |
 
 ## 并行 / 同文件提醒
 
