@@ -1,34 +1,47 @@
-# AGENT.md
+# AGENTS.md
 
 TeamMaster 2.0 —— 面向小公司 manager 的管理平台 **demo 原型**（Vite + React + framer-motion + zustand）。代码只服务 demo 叙事，不按产品工程标准要求（见 ADR-0001）；领域术语表在 `CONTEXT.md`，架构决策在 `docs/adr/`，动手前先读与所改区域相关的条目。
 
-## Startup
+## Startup Workflow
 
-```
-npm install    # 首次
-npm run dev    # Vite dev server —— 没有测试套件，目测是唯一的行为验证手段
-```
+Before writing code:
 
-## Verification — definition of done
+1. 读本文件。
+2. 读 `feature_list.json` —— 当前各 feature 的状态、依赖、证据。
+3. 读 `progress.md` —— 上个 session 停在哪、下一步是什么。
+4. 跑 `./init.sh`（或手动 `npm run typecheck && npm run build`）确认起点是绿的。
 
-一个切片算"完成"必须同时满足：
+首次环境：`npm install`；本地运行：`npm run dev`。
 
-1. `npm run build`（= `tsc -b` 零错 + vite build）通过 —— 硬门槛，提交前必须跑并确认零错。
-2. 当前 wave README 的"铁律"全部满足（store 契约、CSS banner 区、ADR-0002 动效护栏、ADR-0006 replay-safe 等，以 wave README 为准）。
+## Scope
+
+- **One feature at a time**：只做 `feature_list.json` 里你认领的那一个 feature，依赖未完成的不要开。Stay in scope —— 顺手发现的问题记进 `progress.md` 的 Notes，不要顺手修。
+- feature 状态只有三种：`not-started` / `in-progress` / `done`。改状态必须同步改 `evidence` 字段。
+
+## Verification Commands
+
+- `./init.sh` —— 一键跑全部检查（typecheck + build，fail fast）。
+- `npm run typecheck` —— `tsc -b` 零错。
+- `npm run build` —— typecheck + vite build。
+- 没有自动化 test suite：行为验证靠 `npm run dev` 目测，验证了什么写进 evidence。
+
+## Definition of Done
+
+一个 feature 标 `done` only when：
+
+1. `./init.sh` 通过，输出摘要记入 `feature_list.json` 的 `evidence`。
+2. 行为经 `npm run dev` 目测确认（看了什么、结果如何，写进 evidence 或 `progress.md`）。
 3. Venus-facing 的新英文 copy 就地标 `⚠ 待 Danny 审字`，不自行定稿。
-4. commit message 用 `feat(p6-xx): …` 风格，注明对应 ADR / issue。
+4. `progress.md` 已更新。
 
-## State & scope
+## End of Session
 
-- 工作按 wave 组织在 `.to-issues/`：**当前 wave = 编号最大、未进 `archived/` 的 `P*-README.md`**，它是切片索引、依赖表与铁律的权威来源；完结 wave 整体移入 `.to-issues/archived/`。
-- **一次只做一个 issue**，严格按依赖表的 Blocked by 顺序；标 **HITL** 的切片留给人裁断，AFK agent 不要代做。
-- 完成一个切片后，在 wave README 表格的"状态"列打 ✅ 并附 commit 短 hash。
-- bug / PRD 走 GitHub issues（见下方 Issue tracker）。
+Before ending（或 context 快用完时）：
 
-## Session lifecycle
-
-- 跨 session 交接材料在 `.handoff/`。长 session 结束前用 `/handoff` 或手写一份，包含：已完成项 + 证据（build 输出 / 截图）、未决 blocker、下一步、改动文件清单。
-- 冷启动 / 重启路径：当前 wave README → `.handoff/` 里最新交接文档 → `git log --oneline -15`。
+1. 更新 `progress.md`：What's Done / In Progress / Next steps / Blockers / Files Modified。
+2. 更新 `feature_list.json` 状态与 evidence。
+3. 跨 session 的大块交接另写 `session-handoff.md`。
+4. 目标：下个 session 不靠聊天记录、只靠这三个文件就能 restartable。
 
 ## Agent skills
 
