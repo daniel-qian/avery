@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -27,22 +28,24 @@ import {
   DEFAULT_CASE_ID,
   type CardAnchor,
   type CaseDefinition,
+  type StreamLine,
+  type StreamSpeaker,
 } from '../../data/cases'
 import { NEXUS_BOARD, bboxOf, type Pos } from '../../data/board'
-import { edgePath } from '../../lib/edges'
-import { deriveNexusEdgeState, deriveNexusNodeStates } from '../../lib/nexusFlow'
-import { pristineThread, threadPlan, useCanvas, type ThreadStepKind } from '../../store/canvasStore'
+import {
+  pristineThread,
+  threadPlan,
+  useCanvas,
+  type Thread,
+  type ThreadStepKind,
+} from '../../store/canvasStore'
 import { PanZoomCanvas } from '../PanZoomCanvas'
 import { flyToTarget, useRailCamera, type CameraTarget, type SafeInsets } from '../../lib/useRailCamera'
 import { PixelAvatar } from '../PixelAvatar'
 
-// Nexus 节点的估算半宽/半高（board px），供镜头算包围盒。修订 6：节点压小（矩形 180 宽 /
-// 产出圆 196），取圆的外接一半再留点余量。
-const NODE_HALF = { w: 100, h: 100 }
-
-// Nexus inset（修订 3）：full-bleed——inspector 降级为右上角落 chrome（非实体右面板），
-// 故不再为它留宽 inset；只留薄边清 Topbar / advance-bar。
-const NEXUS_INSETS: SafeInsets = { top: 80, right: 28, bottom: 100, left: 28 }
+// feat-004 (ADR-0014 决策 1)：终端 = viewport-fixed 左栏 HUD。镜头只对 Manifest 区取景，
+// insets.left 加宽为终端栏宽（440 + 边距）；其余薄边清 Topbar / advance-bar。
+const NEXUS_INSETS: SafeInsets = { top: 80, right: 28, bottom: 100, left: 496 }
 
 // P6-04 (ADR-0013 决策 7)：context-window 安全阈值。demo 数据永不越线（hero follow-up
 // 顶到 ~80%）——阈值的存在本身就是叙事（"thread 要守在安全线下"）。进入近阈值带
@@ -50,16 +53,11 @@ const NEXUS_INSETS: SafeInsets = { top: 80, right: 28, bottom: 100, left: 28 }
 const CONTEXT_WARN_PCT = 40
 const CONTEXT_ALERT_PCT = 70
 
-// P6-01 (ADR-0013)：step labels / 拓扑 / Manifest 锚点全部移入 per-case 定义（data/cases.ts），
-// 本 scene 改读 active case——bill/acme 是第一个 case，errand cases（P6-05/06）零改 scene 接入。
+// P6-01 (ADR-0013)：step labels / Manifest 锚点全部住在 per-case 定义（data/cases.ts），
+// 本 scene 只读 active case。feat-004 (ADR-0014)：节点链渲染退役，思考过程改终端流。
 
 function classNames(parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(' ')
-}
-
-// board 绝对坐标（修订 2：world 对象 board px only）。.flow-node 基类带 translate(-50%,-50%)。
-function nodeStyle(pos: Pos) {
-  return { left: `${pos.x}px`, top: `${pos.y}px` }
 }
 
 // Manifest 列卡槽（修订 5）：定位到该拍的列内堆叠锚点；活跃拍的卡高亮、历史卡留存淡显。
@@ -139,49 +137,147 @@ function personByName(label: string) {
 
 const BILL_PERSON = PEOPLE.find((person) => person.id === 'u_bill')
 
-function NexusEdgeLayer({
+// ── feat-004 (ADR-0014)：终端流 HUD ──────────────────────────────────────────
+// per-speaker 前缀 + 专色（决策 4）；MANIFEST 行自带前缀与强调色（决策 3）。
+const SPEAKER_META: Record<StreamSpeaker, { label: string; className: string }> = {
+  you: { label: 'YOU', className: 'is-you' },
+  pm: { label: 'PM', className: 'is-pm' },
+  hr: { label: 'HR', className: 'is-hr' },
+  agent: { label: 'AGENT', className: 'is-agent' },
+  tool: { label: 'TOOL', className: 'is-tool' },
+  system: { label: 'SYS', className: 'is-system' },
+  bill: { label: 'BILL', className: 'is-bill' },
+}
+
+interface TerminalLine extends StreamLine {
+  key: string
+  attachment?: { src: string; name: string }
+}
+
+// 行集合 = (caseDef, thread) 纯函数（决策 5）：question 首行（含附件 chip，决策 9）+
+// 每 step 的脚本行；follow-up 段首步前插入该次提问行。replay-safe——seek 任意 index
+// 重算即得，store 零新增。burstStart = 最新一拍行组的起点（行级 stagger 只动这一段）。
+function deriveTerminalLines(
+  caseDef: CaseDefinition,
+  thread: Thread,
+): { lines: TerminalLine[]; burstStart: number } {
+  const lines: TerminalLine[] = []
+  lines.push({
+    speaker: 'you',
+    type: 'thought',
+    text: thread.question ?? caseDef.question,
+    key: 'question',
+    attachment: caseDef.questionAttachment,
+  })
+  let burstStart = 0
+  thread.steps.forEach((step, i) => {
+    burstStart = lines.length
+    const prev = thread.steps[i - 1]
+    if (step.followUpId && step.followUpId !== prev?.followUpId) {
+      const asked = thread.followUps.find((f) => f.segmentId === step.followUpId)
+      if (asked) {
+        lines.push({ speaker: 'you', type: 'thought', text: asked.question, key: `fu-${step.followUpId}` })
+      }
+    }
+    ;(caseDef.stream[step.kind] ?? []).forEach((line, j) => {
+      lines.push({ ...line, key: `${i}:${step.kind}:${j}` })
+    })
+  })
+  return { lines, burstStart }
+}
+
+// 终端栏（viewport-fixed 左栏 HUD，决策 1）：1:1 永远可读、自滚动；等宽小字。
+// MANIFEST 行 = 可点锚（决策 3）→ onInspect 飞向对应卡（不画跨层连线）。
+// 底部「运行中 ▌」光标行仅视觉提示、不可点（决策 8）；Bill 行内联像素头像（决策 9）。
+function NexusTerminal({
   caseDef,
-  steps,
-  activeStep,
+  thread,
+  onInspect,
 }: {
   caseDef: CaseDefinition
-  steps: { kind: ThreadStepKind }[]
-  activeStep?: ThreadStepKind
+  thread: Thread
+  onInspect: (step: ThreadStepKind) => void
 }) {
+  const { lines, burstStart } = useMemo(() => deriveTerminalLines(caseDef, thread), [caseDef, thread])
+  const logRef = useRef<HTMLDivElement | null>(null)
+
+  // 新行落地 / 切 thread → 滚到底（终端语义：永远看最新输出）。
+  useEffect(() => {
+    const log = logRef.current
+    if (log) log.scrollTop = log.scrollHeight
+  }, [lines.length, caseDef.id])
+
   return (
-    <svg
-      className="nexus-edge-layer"
-      viewBox={`0 0 ${NEXUS_BOARD.width} ${NEXUS_BOARD.height}`}
-      aria-hidden="true"
-    >
-      {caseDef.edges.map((edge) => {
-        const state = deriveNexusEdgeState(edge, steps)
-        const isCollision = activeStep === 'cross-check' && edge.id === 'evidence-bill'
-        return (
-          <path
-            key={edge.id}
-            className={classNames(['nexus-edge-path', state, isCollision && 'is-collision'])}
-            d={edgePath(caseDef.pos[edge.from], caseDef.pos[edge.to])}
-            vectorEffect="non-scaling-stroke"
-          />
-        )
-      })}
-      {/* 修订 6：Manifest 连线——已显形的结果卡从各自的产出圆引出，挂到卡左缘。 */}
-      {(Object.keys(caseDef.cardAnchors) as ThreadStepKind[]).map((step) => {
-        const anchor = caseDef.cardAnchors[step]
-        if (!anchor || !steps.some((s) => s.kind === step)) return null
-        const from = caseDef.pos[caseDef.manifestProducers[step] ?? caseDef.manifestNodeId]
-        const to = { x: anchor.pos.x - anchor.half.w, y: anchor.pos.y }
-        return (
-          <path
-            key={`manifest-${step}`}
-            className={classNames(['nexus-edge-path', 'manifest-edge', activeStep === step && 'is-active'])}
-            d={edgePath(from, to)}
-            vectorEffect="non-scaling-stroke"
-          />
-        )
-      })}
-    </svg>
+    <section className="nexus-terminal" aria-label="Agent activity stream">
+      <header className="nexus-terminal-bar" aria-hidden="true">
+        <span className="nexus-terminal-dots">
+          <i />
+          <i />
+          <i />
+        </span>
+        <span className="nexus-terminal-title">teammaster · thread</span>
+      </header>
+      <div className="nexus-terminal-log" ref={logRef}>
+        {lines.map((line, index) => {
+          const meta = SPEAKER_META[line.speaker]
+          const isNew = index >= burstStart
+          const style = isNew ? ({ '--line-i': index - burstStart } as CSSProperties) : undefined
+          const prefix = line.type === 'manifest' ? 'MANIFEST' : meta.label
+          const prefixClass = line.type === 'manifest' ? 'is-manifest' : meta.className
+          const body = (
+            <>
+              <span className={classNames(['terminal-prefix', prefixClass])}>
+                {line.speaker === 'bill' && line.type !== 'manifest' && BILL_PERSON ? (
+                  <PixelAvatar person={BILL_PERSON} size={14} className="terminal-avatar" />
+                ) : null}
+                {prefix}
+              </span>
+              <span className="terminal-text">
+                {line.text}
+                {line.attachment ? (
+                  <span className="terminal-attachment-chip">
+                    <img src={line.attachment.src} alt="Attached memo draft photo" draggable={false} />
+                    {line.attachment.name}
+                  </span>
+                ) : null}
+              </span>
+            </>
+          )
+          if (line.type === 'manifest' && line.ref) {
+            const ref = line.ref
+            return (
+              <button
+                key={line.key}
+                type="button"
+                className={classNames(['terminal-line', `is-${line.type}`, isNew && 'is-new'])}
+                style={style}
+                onClick={() => onInspect(ref)}
+              >
+                {body}
+              </button>
+            )
+          }
+          return (
+            <p
+              key={line.key}
+              className={classNames(['terminal-line', `is-${line.type}`, isNew && 'is-new'])}
+              style={style}
+            >
+              {body}
+            </p>
+          )
+        })}
+        {thread.status !== 'complete' ? (
+          <p className="terminal-line terminal-cursor-line" aria-hidden="true">
+            <span className="terminal-prefix is-system">·</span>
+            <span className="terminal-text">
+              {thread.status === 'running' ? 'running ' : ''}
+              <span className="terminal-cursor">▌</span>
+            </span>
+          </p>
+        ) : null}
+      </div>
+    </section>
   )
 }
 
@@ -1002,10 +1098,6 @@ export function NexusScene() {
   const regenBriefing = useCanvas((s) => s.regenBriefing)
   const goScene = useCanvas((s) => s.goScene)
   const question = thread.question ?? caseDef.question ?? HERO_QUESTION
-  const nodeStates = useMemo(
-    () => deriveNexusNodeStates(caseDef, thread.steps),
-    [caseDef, thread.steps],
-  )
   const activeStep = thread.steps[thread.steps.length - 1]?.kind
   // 修订 5：结果卡在 Manifest 列累积——到过的拍永久留存，活跃拍高亮。
   const reached = (kind: ThreadStepKind) => thread.steps.some((s) => s.kind === kind)
@@ -1028,10 +1120,6 @@ export function NexusScene() {
   const [memoDraftEdit, setMemoDraftEdit] = useState<string | null>(null)
   const emailBody = memoDraftEdit ?? EMAIL_DRAFT_BODY
   const dispatchedTaskKeys = useMemo(() => new Set(tasks.map(taskTemplateKey)), [tasks])
-  const manifestProducerIds = useMemo(
-    () => new Set(Object.values(caseDef.manifestProducers)),
-    [caseDef],
-  )
   // P6-04 (ADR-0013 决策 7)：context-window HUD——数值纯派生自 steps.length × active case
   // 数据，store 零新增字段，seek 任意位置自洽。% = 最新一步的脚本化 stepContextPct
   //（0 步 = 0%，question staged 尚未消耗）；Step 分母 = 主段 + 已追加 follow-up 段总步数
@@ -1049,44 +1137,46 @@ export function NexusScene() {
     goScene('dashboard')
   }
 
-  // ── rail 派生镜头（ADR-0012 决策 4 + 修订 4）：calm = 全图 fit；step = 飞向「活跃簇 + 结果卡」局部 bbox。──
+  // ── feat-004 (ADR-0014 决策 6)：镜头收敛——方程不再含节点簇。
+  // calm = fit Manifest 区宽度顶锚（width-top）；有新卡的拍温和飞向该卡（maxFitScale
+  // 收紧，scale 基本恒定）；纯思考拍镜头不动（depKey 只随「最近显形卡」变化）。──
   const camRef = useRef<ReactZoomPanPinchRef | null>(null)
+  const lastCardStep = useMemo<ThreadStepKind | null>(() => {
+    for (let i = thread.steps.length - 1; i >= 0; i -= 1) {
+      const kind = thread.steps[i].kind
+      if (caseDef.cardAnchors[kind]) return kind
+    }
+    return null
+  }, [caseDef, thread.steps])
+
   const cameraTarget = useMemo<CameraTarget | null>(() => {
     if (isEmpty) return null // 空态不取景；重开 thread 时 depKey 变化触发重取景
-    const items: Array<{ pos: Pos; halfW: number; halfH: number }> = []
-    if (!activeStep) {
-      // 修订 6：calm = fit-width 顶锚可读帧——链 + Manifest 列同框（宽度），链尾出帧靠 pan。
-      caseDef.nodes.forEach((n) =>
-        items.push({ pos: caseDef.pos[n.id], halfW: NODE_HALF.w, halfH: NODE_HALF.h }),
-      )
-      for (const anchor of Object.values(caseDef.cardAnchors)) {
-        if (!anchor) continue
-        items.push({
-          pos: { x: anchor.pos.x, y: caseDef.manifestLabelPos.y },
-          halfW: anchor.half.w,
-          halfH: 0,
-        })
+    if (lastCardStep) {
+      const anchor = caseDef.cardAnchors[lastCardStep]
+      if (anchor) {
+        const bbox = bboxOf([{ pos: anchor.pos, halfW: anchor.half.w, halfH: anchor.half.h }])
+        if (bbox) return { bbox }
       }
-      const bbox = bboxOf(items)
-      return bbox ? { bbox, mode: 'width-top' } : null
     }
-    ;(caseDef.stepNodes[activeStep] ?? []).forEach((id) =>
-      items.push({ pos: caseDef.pos[id], halfW: NODE_HALF.w, halfH: NODE_HALF.h }),
-    )
-    const card = caseDef.cardAnchors[activeStep]
-    if (card) items.push({ pos: card.pos, halfW: card.half.w, halfH: card.half.h })
+    // 尚无卡显形：Manifest 双列瀑布全宽 + 列标题的可读帧。
+    const items: Array<{ pos: Pos; halfW: number; halfH: number }> = [
+      { pos: caseDef.manifestLabelPos, halfW: 0, halfH: 60 },
+    ]
+    for (const anchor of Object.values(caseDef.cardAnchors)) {
+      if (!anchor) continue
+      items.push({ pos: anchor.pos, halfW: anchor.half.w, halfH: anchor.half.h })
+    }
     const bbox = bboxOf(items)
-    return bbox ? { bbox } : null
-  }, [caseDef, activeStep, isEmpty])
+    return bbox ? { bbox, mode: 'width-top' } : null
+  }, [caseDef, lastCardStep, isEmpty])
 
-  // depKey 带 caseId：切 thread（P6-02）即重取景；单 case 时与旧行为逐拍一致。
-  // 空态用独立 key——从空态重开同一 thread 也会重取景（key 必然变化）。
+  // depKey 带 caseId：切 thread 即重取景；纯思考拍 lastCardStep 不变 → 镜头不动。
   useRailCamera(
     camRef,
     cameraTarget,
     NEXUS_INSETS,
-    isEmpty ? 'empty' : `${caseDef.id}:${activeStep ?? 'calm'}`,
-    { maxFitScale: 1.1 },
+    isEmpty ? 'empty' : `${caseDef.id}:${lastCardStep ?? 'calm'}`,
+    { maxFitScale: 0.8 },
   )
 
   // ── P6-03 (ADR-0013 决策 5)：Manifest 点击 → 镜头飞向该卡 + follow-up chip 显出。──
@@ -1150,61 +1240,10 @@ export function NexusScene() {
     <section className="scene scene-nexus is-active" aria-label="Nexus">
       <PanZoomCanvas ref={camRef} board={NEXUS_BOARD}>
         <div className="canvas-grid board-surface" aria-hidden="true" />
-        {/* P6-02：空态（无 active thread）不渲染 world 内容——只留画板格栅 + HUD 空态面板。 */}
+        {/* P6-02：空态（无 active thread）不渲染 world 内容——只留画板格栅 + HUD 空态面板。
+            feat-004 (ADR-0014)：节点链层退役——world 上只剩 Manifest 列；思考过程在左栏终端。 */}
         {!isEmpty ? (
           <>
-        <div className="nexus-flow-layer" aria-label="Nexus orchestration topology">
-        <NexusEdgeLayer caseDef={caseDef} steps={thread.steps} activeStep={activeStep} />
-        {caseDef.nodes.map((node) => {
-          // manifest node（修订 5）恒以 ghost 形态在场——一切产物经此显形，不等末拍才出现。
-          const rawState = nodeStates[node.id]
-          const state =
-            node.id === caseDef.manifestNodeId && rawState === 'is-unrevealed'
-              ? 'is-future'
-              : rawState
-          const isActive = state === 'is-active'
-          const isUnrevealed = state === 'is-unrevealed'
-          const isSelfReportNode = showMismatch && node.id === 'bill'
-          return (
-            <button
-              key={node.id}
-              type="button"
-              className={classNames([
-                'flow-node',
-                state,
-                manifestProducerIds.has(node.id) && 'is-manifest-node',
-              ])}
-              style={nodeStyle(caseDef.pos[node.id])}
-              aria-hidden={isUnrevealed || undefined}
-              aria-pressed={isActive}
-              tabIndex={isUnrevealed ? -1 : undefined}
-              onClick={() => {
-                if (isActive) runAgent()
-              }}
-            >
-              {node.id === 'bill' && BILL_PERSON ? (
-                <PixelAvatar person={BILL_PERSON} size={30} className="flow-node-avatar" />
-              ) : null}
-              <span className="flow-kind">{isSelfReportNode ? 'Self-report' : node.kind}</span>
-              <h3>{isSelfReportNode ? 'Bill standup status' : node.label}</h3>
-              <p>{isSelfReportNode ? MISMATCH.reported : node.detail}</p>
-              {/* P6-06：question 节点的 memo 照片附件 chip（占位资产——Danny 在 P6-08
-                  换真照片；路径集中在 cases.ts 的 MEMO_PHOTO_SRC）。 */}
-              {node.id === 'question' && caseDef.questionAttachment ? (
-                <span className="question-attachment-chip">
-                  <img
-                    src={caseDef.questionAttachment.src}
-                    alt="Attached memo draft photo"
-                    draggable={false}
-                  />
-                  {caseDef.questionAttachment.name}
-                </span>
-              ) : null}
-            </button>
-          )
-        })}
-      </div>
-
         {/* Manifest 列标题（world 对象，修订 5）。 */}
         <span
           className="manifest-label"
@@ -1345,6 +1384,8 @@ export function NexusScene() {
 
       {!isEmpty ? (
         <>
+          {/* feat-004 (ADR-0014)：终端流左栏 HUD——思考过程逐拍打印，MANIFEST 行可点飞卡。 */}
+          <NexusTerminal caseDef={caseDef} thread={thread} onInspect={inspectCard} />
           <section className="nexus-brief">
             <p className="eyebrow">Nexus orchestration</p>
             <p>&ldquo;{question}&rdquo;</p>

@@ -25,6 +25,14 @@
       "evidence": ""
     },
     {
+      "id": "feat-004",
+      "name": "Nexus Terminal-Stream Redesign",
+      "description": "First concrete feat-002 item from pitch feedback: retire the left-side thinking-node chain in Nexus (camera flying wildly, nodes too small as they multiply); replace with a terminal-style streaming log (Claude Code / hermes style: small mono type, per-speaker colors, manifest lines bold/colored as clickable anchors). Right-side Manifest cards stay on the pan/zoom board with a calmer camera. Design via grill: Q1-Q3 settled, Q4-Q10 pending Danny review (see session-handoff.md). Outcome: ADR-0014 superseding ADR-0004 radial canvas + ADR-0012 rev5/6 Nexus parts.",
+      "dependencies": ["feat-001"],
+      "status": "done",
+      "evidence": "2026-06-12 closed. ADR-0014 written (supersedes ADR-0004 radial expression + ADR-0012 rev5/6 Nexus parts). Implementation: CaseDefinition.stream (13 authored steps), node-chain layers/CSS/nexusFlow.ts retired, NexusTerminal HUD (left column, per-speaker colors, line stagger, clickable MANIFEST anchors), camera converged (calm width-top / gentle fly to newest card / no move on thought steps), two-column waterfall cardAnchors, NEXUS_BOARD 2300x2700. ./init.sh green (tsc -b zero errors + vite build ~1.3s). Behavior verified by Danny in npm run dev (full rail + free-click across all 3 cases) and stream copy approved - reported back as quan-bu-tong-guo (all passed), 2026-06-12; this session's review markers cleared."
+    },
+    {
       "id": "feat-003",
       "name": "Build Features for Real",
       "description": "Start building TeamMaster features as a real product (beyond demo-only scripting, supersedes the ADR-0001 demo-only stance when it begins). Scope to be defined - split into separate features before starting.",

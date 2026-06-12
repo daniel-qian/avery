@@ -22,9 +22,10 @@ export interface BoardRect {
 export const BOARD = { width: 2600, height: 1640 }
 export const BOARD_CENTER: Pos = { x: BOARD.width / 2, y: BOARD.height / 2 }
 
-// Nexus 竖向链 + 右侧 Manifest 列（修订 5：4 张结果卡累积堆叠）需要更高的板。
-// Dashboard 用宽 BOARD、Nexus 用这块——PanZoomCanvas 的 board 尺寸按 scene 传入，同一 rzpp 基座。
-export const NEXUS_BOARD = { width: 2700, height: 3700 }
+// feat-004 (ADR-0014 决策 7)：节点链退场后 Nexus board 只装 Manifest 双列瀑布，
+// 相应缩窄。Dashboard 用宽 BOARD、Nexus 用这块——PanZoomCanvas 的 board 尺寸按 scene
+// 传入，同一 rzpp 基座。
+export const NEXUS_BOARD = { width: 2300, height: 2700 }
 
 const DEG = Math.PI / 180
 
