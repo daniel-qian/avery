@@ -182,7 +182,8 @@ def _cli(argv=None) -> int:
         print(f"\n✗ real run not ready: {e}\n  → paste your key into eval-harness/.env and "
               f"`pip install -r requirements.txt`, or drop --real for the mock run.")
         return 1
-    print(f"\nrun -> {result['out_dir']}  (mock)  hash={result['meta']['freeze']['manifest_hash'][:12]}…\n")
+    print(f"\nrun -> {result['out_dir']}  ({result['meta']['mode']}: {result['meta']['brain_model']})  "
+          f"hash={result['meta']['freeze']['manifest_hash'][:12]}…\n")
     print(f"{'scenario':<34}{'agent':<32}{'red-line':<22}{'cite':<6}{'artifact'}")
     print("-" * 100)
     for r in result["rows"]:

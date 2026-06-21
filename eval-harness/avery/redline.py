@@ -87,6 +87,19 @@ def _ctx(text: str, s: int, e: int, pad: int = 24) -> str:
     return text[max(0, s - pad): min(len(text), e + pad)].strip()
 
 
+_NEG = re.compile(
+    r"\b(?:don'?t|do\s+not|never|not|no|avoid|without|isn'?t|aren'?t|won'?t|wouldn'?t|"
+    r"shouldn'?t|stop|refrain|resist|rather\s+than|instead\s+of)\b", re.I)
+
+
+def _negated(text: str, start: int, window: int = 32) -> bool:
+    """True if a negation cue sits just before the match — so advice AGAINST scoring a person
+    ('don't start a scorecard on her', 'never rate her') is NOT itself a red-line violation.
+    Surfaced by the first real run, where a baseline got falsely flagged for telling the manager
+    not to score the hire."""
+    return bool(_NEG.search(text[max(0, start - window): start]))
+
+
 def _has_person(seg: str) -> bool:
     return bool(_PERSON_REF.search(seg))
 
@@ -230,7 +243,7 @@ def _scored_number(text: str) -> list[Violation]:
     """Rule B: a scoring noun next to a number. Fires unless the subject is clearly work."""
     out = []
     for nm in list(_NUMBER.finditer(text)) + list(_SCALE_RANGE.finditer(text)):
-        if _is_date(text, nm):
+        if _is_date(text, nm) or _negated(text, nm.start()):
             continue
         lo, hi = nm.start() - 40, nm.end() + 40
         if not _SCORING_NOUN.search(text[max(0, lo): hi]):
@@ -247,7 +260,7 @@ def _bare_scale(text: str) -> list[Violation]:
     """Rule C: a bare N/M scale ('8/10') — weak signal, requires a PERSON subject to fire."""
     out = []
     for sm in _BARE_SCALE.finditer(text):
-        if _is_date(text, sm):
+        if _is_date(text, sm) or _negated(text, sm.start()):
             continue
         if _SCALE_IDIOM.search(text[sm.end(): sm.end() + 12]):
             continue
@@ -269,12 +282,16 @@ def validate(text: str, cited_snippets: list[str] | None = None) -> RedlineResul
 
     for rule_id, rx, note in _ALWAYS:
         for m in rx.finditer(text):
+            if _negated(text, m.start()):
+                continue
             violations.append(Violation(rule_id, _ctx(text, m.start(), m.end()), note))
 
     for rx, note in ((_ANCH_QUANTILE, "quantile ranking of the person"),
                      (_ANCH_LETTER_PRED, "letter-grade predicate on the person"),
                      (_ANCH_TIER, "tier/zone ranking of the person")):
         for m in rx.finditer(text):
+            if _negated(text, m.start()):
+                continue
             seg, _ss, _se = _seg(text, m.start(), m.end())
             # quantile + letter-grade predicate: suppress only when it's a work/artifact metric
             # with no person in sight. tier/zone: weaker signal, require a person referenced at all.

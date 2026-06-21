@@ -129,9 +129,11 @@ def test_mock_run_is_marked_not_publishable(scored):
     assert "1.0" not in md.split("win-rate")[-1]  # no win number under the win-rate heading
 
 
-def test_real_judges_fail_cleanly_without_key_or_sdk():
-    """Real judges are WIRED (MiniMax/OpenAI-compatible), but with no SDK/key installed they must
-    fail with a clear, explanatory error — never a silent crash or fake data."""
+def test_real_judges_fail_cleanly_without_key(monkeypatch):
+    """Real judges are WIRED (MiniMax/OpenAI-compatible). With NO key they must fail with a clear,
+    explanatory error — never a silent crash or fake data. (Clear the key to test this path,
+    since a real key in .env would otherwise let the judge construct fine.)"""
+    monkeypatch.delenv("MINIMAX_API_KEY", raising=False)
     with pytest.raises((RuntimeError, NotImplementedError),
                        match="(?i)openai|minimax|key|provider"):
         judge.build_judges(["minimax:MiniMax-M3"], real=True)

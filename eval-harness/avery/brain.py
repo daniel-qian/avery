@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
@@ -21,6 +22,17 @@ DEFAULT_MODEL = "claude-opus-4-8"
 # MiniMax OpenAI-compatible endpoint (https://platform.minimaxi.com/docs/api-reference/text-openai-api)
 MINIMAX_BASE_URL = "https://api.minimaxi.com/v1"
 MINIMAX_MODEL = "MiniMax-M3"
+
+_THINK_RE = re.compile(r"<think>.*?</think>", re.S)
+
+
+def strip_reasoning(text: str | None) -> str:
+    """MiniMax-M3 is a reasoning model: without reasoning_split it wraps its private chain-of-
+    thought in <think>...</think> inside `content`. Strip it so the red-line validator scores the
+    ADVICE, not the model's thinking, and so JSON answers parse cleanly."""
+    if not text:
+        return ""
+    return _THINK_RE.sub("", text).strip()
 
 
 @dataclass
@@ -195,7 +207,7 @@ class OpenAICompatBrain:
 
     def __init__(self, name: str = "minimax", model: str | None = None,
                  base_url: str | None = None, api_key: str | None = None,
-                 api_key_env: str = "MINIMAX_API_KEY", max_tokens: int = 2048):
+                 api_key_env: str = "MINIMAX_API_KEY", max_tokens: int = 8192):
         try:
             from openai import OpenAI
         except ImportError as e:  # pragma: no cover - optional dep
@@ -216,9 +228,10 @@ class OpenAICompatBrain:
             model=self._model, max_tokens=self._max_tokens, temperature=0,
             messages=_to_openai_messages(system, conversation), tools=_to_openai_tools(tools))
         msg = resp.choices[0].message
+        text = strip_reasoning(msg.content)  # drop <think>...</think> chain-of-thought
         if getattr(msg, "tool_calls", None):
             calls = [ToolCall(id=tc.id, name=tc.function.name,
                               input=json.loads(tc.function.arguments or "{}"))
                      for tc in msg.tool_calls]
-            return BrainResponse(tool_calls=calls, text=msg.content)
-        return BrainResponse(text=msg.content or "")
+            return BrainResponse(tool_calls=calls, text=text or None)
+        return BrainResponse(text=text)

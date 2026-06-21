@@ -19,9 +19,12 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 from avery import skills  # noqa: E402
-from avery.brain import RealBrain, make_mock_brain  # noqa: E402
+from avery.brain import OpenAICompatBrain, make_mock_brain  # noqa: E402
 from avery.cases import load_case  # noqa: E402
+from avery.env import load_dotenv  # noqa: E402
 from avery.loop import run_loop  # noqa: E402
+
+load_dotenv(Path(__file__).resolve().parent / ".env")
 
 SKILLS_DIR = HERE / "skills"
 MEMORY_DIR = HERE / "memory"
@@ -30,7 +33,7 @@ MEMORY_DIR = HERE / "memory"
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Run one scenario through Avery (011a).")
     ap.add_argument("case", help="path to a case .md file")
-    ap.add_argument("--real", action="store_true", help="use claude-opus-4-8 (needs API key)")
+    ap.add_argument("--real", action="store_true", help="use the real model (MiniMax-M3 via .env)")
     ap.add_argument("--json", action="store_true", help="print the full transcript as JSON")
     args = ap.parse_args(argv)
 
@@ -41,7 +44,7 @@ def main(argv: list[str] | None = None) -> int:
 
     case = load_case(args.case)
     system_prompt = skills.build_system_prompt(SKILLS_DIR, MEMORY_DIR, scaffold="full")
-    brain = RealBrain(name="avery-opus") if args.real else make_mock_brain(case, "avery")
+    brain = OpenAICompatBrain(name="avery-minimax") if args.real else make_mock_brain(case, "avery")
 
     transcript = run_loop(
         brain, case, system_prompt, agent_name=brain.name, scaffold="full",

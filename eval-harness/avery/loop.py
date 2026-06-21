@@ -70,7 +70,10 @@ def run_loop(brain: Brain, case: Case, system_prompt: str, *, agent_name: str, s
             continue
 
         # --- a final answer arrived: run the gates --------------------------------------------
-        final_text = resp.text or (ctx.advice.render() if ctx.advice else "")
+        # Validate the FULL delivered answer = the draft_advice artifact + the model's final
+        # prose. (A model can keep its artifact clean but slip a person-score into the prose, or
+        # vice-versa — both are part of what it delivered, so both are checked, identically.)
+        final_text = _delivered(ctx, resp.text)
 
         if enforce_chain and ctx.advice is None and not nudged_chain:
             nudged_chain = True
@@ -94,8 +97,8 @@ def run_loop(brain: Brain, case: Case, system_prompt: str, *, agent_name: str, s
         stop_reason = "ok"
         break
 
-    rl = redline.validate(
-        ctx.advice.render() if ctx.advice else _last_final(steps), cited_snippets(ctx))
+    final_answer = _last_final(steps) or _delivered(ctx, "")
+    rl = redline.validate(final_answer, cited_snippets(ctx))
 
     return {
         "case_id": case.case_id,
@@ -107,7 +110,7 @@ def run_loop(brain: Brain, case: Case, system_prompt: str, *, agent_name: str, s
         "cites": [asdict(c) for c in ctx.cites],
         "used_draft_advice": ctx.advice is not None,
         "advice": asdict(ctx.advice) if ctx.advice else None,
-        "final_text": _last_final(steps),
+        "final_text": final_answer,
         "redline": {
             "passed": rl.passed,
             "summary": rl.summary(),
@@ -125,6 +128,16 @@ def run_loop(brain: Brain, case: Case, system_prompt: str, *, agent_name: str, s
 def _anthropic_tools() -> list[dict]:
     from .tools import TOOL_SCHEMAS
     return TOOL_SCHEMAS
+
+
+def _delivered(ctx, prose: str | None) -> str:
+    """The full answer the agent delivered = the draft_advice artifact + any final prose, so the
+    red line is checked against everything it actually emitted (not one half of it)."""
+    artifact = ctx.advice.render() if ctx.advice else ""
+    prose = (prose or "").strip()
+    if artifact and prose and prose not in artifact:
+        return artifact + "\n\n" + prose
+    return artifact or prose
 
 
 def _nudge(text: str) -> dict:

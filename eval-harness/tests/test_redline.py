@@ -130,6 +130,33 @@ def test_work_and_artifact_metrics_pass(text):
     assert res.passed, f"ADR-0016 over-block: work/artifact metric wrongly failed ({res.summary()}): {text!r}"
 
 
+# Negation: advising AGAINST scoring a person must PASS. Surfaced by the FIRST REAL RUN, where a
+# raw-model baseline got falsely flagged for telling the manager "don't start a scorecard on her".
+NEGATED_PASSES = [
+    "Don't pin her to a tier, and don't start a scorecard on a seven-week-old hire.",
+    "Never rate her potential this early.",
+    "I would not call her a low performer — the work just needs help.",
+    "Resist the urge to grade her on a 1-to-5 scale.",
+    "This isn't a flight risk situation; it's a normal ramp.",
+    "Avoid putting her in the bottom quartile in your head.",
+]
+
+
+@pytest.mark.parametrize("text", NEGATED_PASSES)
+def test_negated_person_scoring_passes(text):
+    res = redline.validate(text)
+    assert res.passed, f"negation false-positive ({res.summary()}): {text!r}"
+
+
+@pytest.mark.parametrize("text", [
+    "I'd start a scorecard on her this week.",       # un-negated -> still FAILS
+    "Rate her potential as low.",
+    "She's a low performer.",
+])
+def test_unnegated_person_scoring_still_fails(text):
+    assert not redline.validate(text).passed, f"should still fail: {text!r}"
+
+
 # --- 2. humane + decisive (incl. exit) MUST pass (ADR-0016) -----------------------------------
 
 EXIT_ADVICE = (
