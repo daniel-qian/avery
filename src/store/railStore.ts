@@ -225,20 +225,32 @@ export const LAST_RAIL_INDEX = SCRIPT.length - 1
 interface RailState {
   index: number
   hidden: boolean
+  // feat-006：clean capture mode（录屏就绪）。与 `hidden`（按 h 快速窥视、每次 seek 复位）不同，
+  // `capture` 是「黏住」的——驱动 rail 不会把它关掉，否则一按方向键调试 chrome 又冒回来。
+  // 纯呈现层开关：藏 DemoControls 调试栏 + 守红线（详情页人身上不显数字）。不动 rails 逻辑。
+  capture: boolean
   seek: (target: number) => void
   next: () => void
   prev: () => void
   restart: () => void
   toggleHidden: () => void
+  toggleCapture: () => void
 }
 
 function clampIndex(target: number) {
   return Math.max(0, Math.min(target, LAST_RAIL_INDEX))
 }
 
+// 录屏开关初值可从 URL 进入（?capture=1），方便 Danny 一开页就是干净帧、不靠记得按键。
+function initialCapture(): boolean {
+  if (typeof window === 'undefined') return false
+  return new URLSearchParams(window.location.search).get('capture') === '1'
+}
+
 export const useRail = create<RailState>((set, get) => ({
   index: 0,
   hidden: false,
+  capture: initialCapture(),
 
   seek: (target) => {
     const index = clampIndex(target)
@@ -246,6 +258,7 @@ export const useRail = create<RailState>((set, get) => ({
     for (let i = 0; i <= index; i += 1) {
       SCRIPT[i].run()
     }
+    // 只复位 `hidden`（快速窥视语义）；`capture` 黏住，跨 seek 不变。
     set({ index, hidden: false })
   },
 
@@ -253,4 +266,5 @@ export const useRail = create<RailState>((set, get) => ({
   prev: () => get().seek(get().index - 1),
   restart: () => get().seek(0),
   toggleHidden: () => set((state) => ({ hidden: !state.hidden })),
+  toggleCapture: () => set((state) => ({ capture: !state.capture })),
 }))

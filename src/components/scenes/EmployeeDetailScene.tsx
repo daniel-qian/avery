@@ -10,7 +10,16 @@ import {
 import { DetailSection, DetailShell, SourceAnchor } from '../DetailShell'
 import { PixelAvatar } from '../PixelAvatar'
 import { useCanvas } from '../../store/canvasStore'
+import { useRail } from '../../store/railStore'
 import { BILL_ACME_CASE_ID } from '../../data/cases'
+
+// feat-006 红线（ADR-0015/0016）：录屏帧里，人身上不能出现数字/分数。
+// `progressValue` 形如 "48% · core path protected"——48% 是项目完成度，但渲染在 Lin Qing
+// 详情页的 stat 槽里、紧挨她名字，镜头里会被读成「给人打分」。capture 时摘掉前导百分数，
+// 只留护着人的人话（"core path protected"）；若摘完为空则整个 Progress 槽不渲染。
+function stripPersonNumber(value: string): string {
+  return value.replace(/^\s*\d+%\s*(?:·\s*)?/, '').trim()
+}
 
 // P5-03：员工详情页 state-aware。Nexus 完成前只显 raw facts；B9 后智能层长出。
 // 概览卡 / current tasks / weekly summary+sentiment / HR knowledge analysis。
@@ -51,8 +60,11 @@ export function EmployeeDetailScene() {
     )
   }
 
+  const capture = useRail((s) => s.capture)
   const phase: DetailPhase = isGrown ? 'grown' : 'believed'
   const overview = employeeOverviewFor(person, phase)
+  // capture 时把 progress 数字摘成人话；非空才渲染 Progress 槽。
+  const progressDisplay = capture ? stripPersonNumber(overview.progressValue) : overview.progressValue
   const tasks = tasksForPerson(person.id, phase)
   const weekly = weeklySummaryFor(person.id, phase)
   const analysis = hrAnalysisFor(person.id, phase)
@@ -84,10 +96,12 @@ export function EmployeeDetailScene() {
             </strong>
           </div>
 
-          <div className="overview-stat">
-            <span className="overview-label">{overview.progressLabel}</span>
-            <strong>{overview.progressValue}</strong>
-          </div>
+          {progressDisplay ? (
+            <div className="overview-stat">
+              <span className="overview-label">{overview.progressLabel}</span>
+              <strong>{progressDisplay}</strong>
+            </div>
+          ) : null}
 
           <div className="overview-stat">
             <span className="overview-label">HR signal</span>
