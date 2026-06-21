@@ -1,0 +1,13 @@
+{
+  "count": 27,
+  "runnableCount": 24,
+  "algorithm": "sha256",
+  "hashedFields": [
+    "brief",
+    "evidence",
+    "kind",
+    "expectedShape"
+  ],
+  "setDigest": "sha256:d4dbf063a371101a80533507c919085a305a27c8c9a67fc2b185f8b0bcb9c7a9",
+  "note": "Frozen eval scenario set (feat-012). The git commit that lands this file is the freeze hash; setDigest covers every scenario, so a case cannot be quietly dropped or edited without the digest changing. Re-run freeze.mjs to verify (output is byte-identical)."
+}
