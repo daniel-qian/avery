@@ -101,8 +101,8 @@
       "name": "Frozen eval scenario set incl. adversarial 'kind read is wrong'",
       "description": "Addresses the #1 buyer blocker (DECISION-MEMO sec.3, named identically by Dana AND Ray): every asset only shows Avery protecting the person -> reads as a tool that rationalizes avoiding the hard call. Author/curate 25-30 scenarios frozen+git-hashed before any run, incl. >=3 Danny did NOT author and >=1 where the kind read is the WRONG read (genuine underperformance) and Avery must give humane BUT decisive advice incl. the exit. Render that adversarial case as an eval-sheet row + a demo beat. GATED on Danny's values decision (will Avery back a manager INTO a hard call? recommend YES). Feeds feat-008 sheet, feat-011 runner, feat-013 video.",
       "dependencies": ["feat-008"],
-      "status": "not-started",
-      "evidence": ""
+      "status": "in-progress",
+      "evidence": "2026-06-21 claimed in worktree condescending-feistel-185687. Orientation + full design done; prior session crashed before writing deliverables (clean tree). Restart point: docs/strategy/coldstart-deliverables/eval-scenarios/HANDOFF.md — captures issue #6 AC, the SCN-002 adversarial-case evidence+advice design, 27-scenario roster, honest provenance model (founder-authored/agent-composited-public/partner-reserved), freeze+git-hash approach, anonymization+data-handling note, and the Ray/Dana blind-check protocol. NOTHING else on disk yet; next session executes from the handoff."
     },
     {
       "id": "feat-013",
