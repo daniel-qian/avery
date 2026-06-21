@@ -10,6 +10,7 @@ brain translates as needed (MockBrain ignores them and walks its plan).
 """
 from __future__ import annotations
 
+import json
 import os
 from dataclasses import dataclass, field
 from typing import Any, Protocol
@@ -17,6 +18,9 @@ from typing import Any, Protocol
 from .tools import Advice
 
 DEFAULT_MODEL = "claude-opus-4-8"
+# MiniMax OpenAI-compatible endpoint (https://platform.minimaxi.com/docs/api-reference/text-openai-api)
+MINIMAX_BASE_URL = "https://api.minimaxi.com/v1"
+MINIMAX_MODEL = "MiniMax-M3"
 
 
 @dataclass
@@ -146,3 +150,75 @@ class RealBrain:
         if tool_calls:
             return BrainResponse(tool_calls=tool_calls, text=text)
         return BrainResponse(text=text or "")
+
+
+# --- OpenAICompatBrain (MiniMax & any OpenAI-compatible provider) ------------------------------
+
+def _to_openai_tools(tools: list[dict]) -> list[dict]:
+    return [{"type": "function",
+             "function": {"name": t["name"], "description": t["description"],
+                          "parameters": t["input_schema"]}} for t in tools]
+
+
+def _to_openai_messages(system: str, conversation: list[dict]) -> list[dict]:
+    """Translate the loop's neutral (Anthropic-shaped) conversation into OpenAI chat messages."""
+    msgs: list[dict] = [{"role": "system", "content": system}]
+    for turn in conversation:
+        content = turn["content"]
+        if turn["role"] == "user":
+            tool_results = [b for b in content if b.get("type") == "tool_result"]
+            if tool_results:
+                for b in tool_results:
+                    msgs.append({"role": "tool", "tool_call_id": b["tool_use_id"],
+                                 "content": str(b["content"])})
+            else:
+                msgs.append({"role": "user",
+                             "content": "".join(b.get("text", "") for b in content
+                                                 if b.get("type") == "text")})
+        else:  # assistant
+            text = "".join(b.get("text", "") for b in content if b.get("type") == "text")
+            tool_uses = [b for b in content if b.get("type") == "tool_use"]
+            m: dict = {"role": "assistant", "content": text or None}
+            if tool_uses:
+                m["tool_calls"] = [{"id": b["id"], "type": "function",
+                                    "function": {"name": b["name"],
+                                                 "arguments": json.dumps(b["input"])}}
+                                   for b in tool_uses]
+            msgs.append(m)
+    return msgs
+
+
+class OpenAICompatBrain:
+    """Any OpenAI-compatible chat-completions provider with tool calling. Used for a REAL run on
+    MiniMax (MiniMax-M3 supports OpenAI-style `tools`/`tool_calls`). Reads base_url/model/key from
+    env (MINIMAX_*) by default so a pasted .env key just works."""
+
+    def __init__(self, name: str = "minimax", model: str | None = None,
+                 base_url: str | None = None, api_key: str | None = None,
+                 api_key_env: str = "MINIMAX_API_KEY", max_tokens: int = 2048):
+        try:
+            from openai import OpenAI
+        except ImportError as e:  # pragma: no cover - optional dep
+            raise RuntimeError("openai SDK not installed. `pip install openai` for a real run.") from e
+        api_key = api_key or os.environ.get(api_key_env)
+        if not api_key:  # pragma: no cover - needs key
+            raise RuntimeError(
+                f"{api_key_env} not set. Paste your MiniMax key into eval-harness/.env, "
+                f"or run in mock mode (the default).")
+        self.name = name
+        self._model = model or os.environ.get("MINIMAX_MODEL", MINIMAX_MODEL)
+        self._client = OpenAI(base_url=base_url or os.environ.get("MINIMAX_BASE_URL", MINIMAX_BASE_URL),
+                              api_key=api_key)
+        self._max_tokens = max_tokens
+
+    def respond(self, system: str, conversation: list[dict], tools: list[dict]) -> BrainResponse:  # pragma: no cover - needs network
+        resp = self._client.chat.completions.create(
+            model=self._model, max_tokens=self._max_tokens, temperature=0,
+            messages=_to_openai_messages(system, conversation), tools=_to_openai_tools(tools))
+        msg = resp.choices[0].message
+        if getattr(msg, "tool_calls", None):
+            calls = [ToolCall(id=tc.id, name=tc.function.name,
+                              input=json.loads(tc.function.arguments or "{}"))
+                     for tc in msg.tool_calls]
+            return BrainResponse(tool_calls=calls, text=msg.content)
+        return BrainResponse(text=msg.content or "")

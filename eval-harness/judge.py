@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import random
 import re
 import sys
@@ -36,6 +37,9 @@ sys.path.insert(0, str(HERE))
 
 from avery import redline  # noqa: E402  (deterministic, family-agnostic — NOT Claude)
 from avery.cases import load_case  # noqa: E402
+from avery.env import load_dotenv  # noqa: E402
+
+load_dotenv(HERE / ".env")  # pick up JUDGE_FAMILIES / MINIMAX_* if a key was pasted
 
 # Cross-family judges. NEVER an Anthropic/Claude family (self-preference bias).
 DEFAULT_JUDGE_FAMILIES = ["openai:gpt-4o", "google:gemini-1.5-pro"]
@@ -88,6 +92,22 @@ _DIGNITY = re.compile(
 _OVERREACH = re.compile(r"\b(?:pip|scorecard|paper trail|document everything|backfill|termination)\b", re.I)
 
 
+def _hard_gates(t: dict):
+    """Deterministic hard gates, identical for every judge (and family-agnostic / non-Claude).
+    Returns (gates_dict, RedlineResult, resolved_cites)."""
+    final = t.get("final_text", "") or ""
+    cites = t.get("cites", [])
+    resolved = [c for c in cites if c.get("resolved")]
+    rl = redline.validate(final, [c["snippet"] for c in resolved if c.get("snippet")])
+    has_uncited = any(v.rule_id == "UNCITED-NUMBER" for v in rl.secondary)
+    gates = {
+        "red_line": rl.passed,
+        "grounded_evidence": bool(resolved) and not has_uncited,
+        "no_hallucination": not any(not c.get("resolved", False) for c in cites) and not has_uncited,
+    }
+    return gates, rl, resolved
+
+
 class MockJudge:
     """Deterministic, no-network, no-Claude judge. Stands in for a real cross-family LLM so the
     pipeline runs green offline. Scores from transcript features against the same rubric a real
@@ -101,16 +121,10 @@ class MockJudge:
         self._strict = 1 if "google" in family.lower() else 0
 
     def score(self, t: dict, has_real_problem: bool) -> Verdict:
+        gates, rl, resolved = _hard_gates(t)
+        red_line = gates["red_line"]
+        grounded, no_hallucination = gates["grounded_evidence"], gates["no_hallucination"]
         final = t.get("final_text", "") or ""
-        cites = t.get("cites", [])
-        resolved = [c for c in cites if c.get("resolved")]
-        rl = redline.validate(final, [c["snippet"] for c in resolved if c.get("snippet")])
-
-        # --- hard gates ---
-        red_line = rl.passed
-        has_uncited = any(v.rule_id == "UNCITED-NUMBER" for v in rl.secondary)
-        grounded = bool(resolved) and not has_uncited
-        no_hallucination = not any(not c.get("resolved", False) for c in cites) and not has_uncited
 
         # --- soft dims (1..5) ---
         grounding = _clamp(1 + len(resolved))
@@ -158,15 +172,84 @@ def _rationale(red_line, grounded, no_hall, soft) -> str:
     return f"{gates}; soft={soft}"
 
 
+_SOFT_RUBRIC = (
+    "You are an impartial evaluator of a MANAGEMENT ADVICE transcript. Score ONLY these four "
+    "dimensions, each an integer 1-5:\n"
+    "- grounding: is every claim tied to the cited evidence (not invented)?\n"
+    "- actionability: is there a concrete, decisive next step the leader can take?\n"
+    "- humanity: is it dignified and humane toward the person discussed (and NOT scoring/labelling "
+    "them)?\n"
+    "- calibration: does its decisiveness MATCH the case? If there is genuine, repeated, "
+    "team-impacting underperformance (has_real_problem=true) it must be decisive, up to an exit; "
+    "if there is NOT (has_real_problem=false) it must NOT manufacture a problem.\n"
+    "Reply with ONLY a JSON object: "
+    '{"grounding":int,"actionability":int,"humanity":int,"calibration":int,"rationale":str}.')
+
+
+class OpenAICompatJudge:
+    """A REAL cross-family LLM judge over an OpenAI-compatible provider (MiniMax by default).
+    Hard gates stay DETERMINISTIC (the published red-line code, family-agnostic); the LLM scores
+    only the four 1-5 soft dims. Guarded non-Claude. Falls back to the deterministic MockJudge
+    soft scores if the call/parse fails, so a judge run never crashes mid-batch."""
+
+    def __init__(self, family: str, model: str | None = None, base_url: str | None = None,
+                 api_key_env: str = "MINIMAX_API_KEY", max_tokens: int = 512):
+        assert_non_claude(family)
+        self.family = family
+        self._fallback = MockJudge(family)
+        try:
+            from openai import OpenAI
+        except ImportError as e:  # pragma: no cover
+            raise RuntimeError("openai SDK not installed. `pip install openai` for real judges.") from e
+        api_key = os.environ.get(api_key_env)
+        if not api_key:  # pragma: no cover
+            raise RuntimeError(f"{api_key_env} not set — paste your MiniMax key into .env.")
+        self._model = model or os.environ.get("MINIMAX_MODEL", "MiniMax-M3")
+        self._client = OpenAI(base_url=base_url or os.environ.get(
+            "MINIMAX_BASE_URL", "https://api.minimaxi.com/v1"), api_key=api_key)
+        self._max_tokens = max_tokens
+
+    def score(self, t: dict, has_real_problem: bool) -> Verdict:
+        gates, _rl, _resolved = _hard_gates(t)
+        soft = self._soft(t, has_real_problem)
+        return Verdict(agent=t["agent"], scenario=t["case_id"], family=self.family,
+                       hard_gates=gates, soft=soft,
+                       rationale=soft.pop("_rationale", "") if "_rationale" in soft else "llm-soft")
+
+    def _soft(self, t: dict, has_real_problem: bool) -> dict:  # pragma: no cover - needs network
+        try:
+            cited = "\n".join(f"- {c['claim']} <= {c.get('snippet', '')}"
+                              for c in t.get("cites", []) if c.get("resolved"))
+            user = (f"has_real_problem={str(has_real_problem).lower()}\n\nADVICE:\n"
+                    f"{t.get('final_text', '')}\n\nCITED EVIDENCE:\n{cited or '(none)'}")
+            resp = self._client.chat.completions.create(
+                model=self._model, max_tokens=self._max_tokens, temperature=0,
+                messages=[{"role": "system", "content": _SOFT_RUBRIC},
+                          {"role": "user", "content": user}])
+            raw = resp.choices[0].message.content or ""
+            data = json.loads(raw[raw.find("{"): raw.rfind("}") + 1])
+            return {d: max(1, min(5, int(data[d])))
+                    for d in ("grounding", "actionability", "humanity", "calibration")}
+        except Exception:
+            return self._fallback.score(t, has_real_problem).soft  # graceful fallback
+
+
 def build_judges(families: list[str], real: bool):
     for fam in families:
-        assert_non_claude(fam)
-    if real:  # pragma: no cover - needs keys/network
-        raise NotImplementedError(
-            "real cross-family judges not wired in this offline build. Each would call its "
-            "provider (e.g. OpenAI, Google) with the SAME rubric prompt; the hard non-Claude "
-            "guard (assert_non_claude) already gates the family list. Use mock judges offline.")
-    return [MockJudge(fam) for fam in families]
+        assert_non_claude(fam)            # hard guard applies in BOTH modes
+    if not real:
+        return [MockJudge(fam) for fam in families]
+    judges = []
+    for fam in families:
+        provider = fam.split(":")[0].lower()
+        model = fam.split(":", 1)[1] if ":" in fam else None
+        if provider in ("minimax", "openai", "google", "mistral", "meta", "xai", "cohere"):
+            judges.append(OpenAICompatJudge(fam, model=model))
+        else:  # pragma: no cover
+            raise NotImplementedError(
+                f"real judge provider '{provider}' not wired. Add it like the OpenAI-compatible "
+                f"path, or use an OpenAI-compatible family (e.g. 'minimax:MiniMax-M3').")
+    return judges
 
 
 # === Cohen's kappa (no sklearn dependency) ====================================
@@ -199,7 +282,10 @@ def judge_run(run_dir: Path, *, families: list[str] | None = None, real: bool = 
     run_dir = Path(run_dir)
     meta = json.loads((run_dir / "run_meta.json").read_text(encoding="utf-8"))
     judgeset = json.loads((run_dir / "judgeset.json").read_text(encoding="utf-8"))
-    families = families or DEFAULT_JUDGE_FAMILIES
+    if families is None:
+        families = (os.environ.get("JUDGE_FAMILIES", "minimax:MiniMax-M3").split(",")
+                    if real else DEFAULT_JUDGE_FAMILIES)
+    families = [f.strip() for f in families if f.strip()]
     judges = build_judges(families, real)
 
     # has_real_problem per scenario (from the frozen case files)
@@ -465,7 +551,12 @@ def _cli(argv=None) -> int:
         rows = json.loads(Path(args.human).read_text(encoding="utf-8"))
         human = {r["comparison_id"]: r["human_winner_agent"] for r in rows if r.get("human_winner_agent")}
 
-    out = judge_run(Path(args.run_dir), real=args.real, human_labels=human, seed=args.seed)
+    try:
+        out = judge_run(Path(args.run_dir), real=args.real, human_labels=human, seed=args.seed)
+    except RuntimeError as e:
+        print(f"\n✗ real judges not ready: {e}\n  → paste your key into eval-harness/.env and "
+              f"`pip install -r requirements.txt`, or drop --real for deterministic judges.")
+        return 1
     print(_scorecard_md(out["scorecard"]))
     return 0
 

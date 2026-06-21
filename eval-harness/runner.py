@@ -31,9 +31,12 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 from avery import freeze, skills  # noqa: E402
-from avery.brain import RealBrain, make_mock_brain  # noqa: E402
+from avery.brain import OpenAICompatBrain, make_mock_brain  # noqa: E402
 from avery.cases import load_case  # noqa: E402
+from avery.env import load_dotenv  # noqa: E402
 from avery.loop import run_loop  # noqa: E402
+
+load_dotenv(HERE / ".env")  # pick up MINIMAX_* if a key was pasted
 
 SKILLS_DIR = HERE / "skills"
 MEMORY_DIR = HERE / "memory"
@@ -41,22 +44,18 @@ MANIFEST = HERE / "scenarios" / "manifest.json"
 
 
 def make_brain(agent_cfg: dict, case, *, real: bool):
-    """Pick the brain for an agent. Mock is fully offline; real wires Avery to claude-opus-4-8.
+    """Pick the brain for an agent.
 
-    Real baseline brains (codex/GPT for the non-Avery configs) are intentionally NOT stubbed in
-    as if working — the loop is identical, only the provider message-translation differs, and
-    real runs are gated on partner materials anyway. In real mode a baseline raises a clear
-    pointer rather than silently producing fake data. Mock is the supported AFK path.
+    Mock: fully offline, replays each case's scripted MOCK block.
+    Real: every role runs on the SAME real model (MiniMax-M3 by default, OpenAI-compatible). The
+    roles differ only by SCAFFOLD (Avery=full skills+red line; baselines=none / minus-redline), so
+    a real run is a clean experiment — does the raw model self-score a person, and does the same
+    model WITH Avery's scaffold stop doing so? The agent NAMES denote scaffold level, not provider;
+    run_meta/scorecard record the actual model used so nothing pretends to be Codex/Opus.
     """
-    persona = agent_cfg["persona"]
     if not real:
-        return make_mock_brain(case, persona)
-    if persona == "avery":
-        return RealBrain(name=agent_cfg["name"])
-    raise NotImplementedError(
-        f"real baseline brain for '{agent_cfg['name']}' not wired — add an OpenAI/other-family "
-        f"brain mirroring RealBrain (same loop, different message translation). Use mock mode for "
-        f"the offline pipeline; real baselines land with partner materials (feat-012).")
+        return make_mock_brain(case, agent_cfg["persona"])
+    return OpenAICompatBrain(name=agent_cfg["name"])
 
 
 def run(manifest_path: Path = MANIFEST, out_dir: Path | None = None, *, seed: int | None = None,
@@ -97,9 +96,15 @@ def run(manifest_path: Path = MANIFEST, out_dir: Path | None = None, *, seed: in
     judgeset = _build_judgeset(scenarios, agents, transcripts, rng, swap)
     (out_dir / "judgeset.json").write_text(json.dumps(judgeset, indent=2), encoding="utf-8")
 
+    import os
+    brain_model = os.environ.get("MINIMAX_MODEL", "MiniMax-M3") if real else "mock(scripted)"
     meta = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "mode": "real" if real else "mock",
+        "brain_model": brain_model,
+        "brain_note": ("REAL run — every role runs on the same model; agent names denote SCAFFOLD "
+                       "level, not provider." if real else
+                       "MOCK — baseline outputs are scripted, not observed."),
         "seed": seed,
         "swap_and_rerun": swap,
         "manifest_path": Path(manifest_path).name,
@@ -171,7 +176,12 @@ def _cli(argv=None) -> int:
               + f"  (hash {cur['manifest_hash'][:16]}…)")
         return 0 if ok else 2
 
-    result = run(MANIFEST, args.out, seed=args.seed, real=args.real, swap=not args.no_swap)
+    try:
+        result = run(MANIFEST, args.out, seed=args.seed, real=args.real, swap=not args.no_swap)
+    except RuntimeError as e:
+        print(f"\n✗ real run not ready: {e}\n  → paste your key into eval-harness/.env and "
+              f"`pip install -r requirements.txt`, or drop --real for the mock run.")
+        return 1
     print(f"\nrun -> {result['out_dir']}  (mock)  hash={result['meta']['freeze']['manifest_hash'][:12]}…\n")
     print(f"{'scenario':<34}{'agent':<32}{'red-line':<22}{'cite':<6}{'artifact'}")
     print("-" * 100)

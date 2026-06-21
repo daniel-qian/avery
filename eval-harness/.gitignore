@@ -2,6 +2,10 @@
 runs/
 # FROZEN.lock.json is intentionally NOT ignored — it is the pre-registration record.
 
+# Secrets: the real .env (with your pasted MiniMax key) NEVER goes into git. .env.example is the
+# committed template. After merging this branch, copy your local .env into the main checkout.
+.env
+
 __pycache__/
 *.pyc
 .pytest_cache/
