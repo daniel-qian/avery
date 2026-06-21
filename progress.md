@@ -73,3 +73,12 @@
 - ⚠ 待办（HITL）：`adversarial-row.md` / `demo-beat.md` 买家文案的 `⚠ 待 Danny 审字` 未定稿。
 - ⚠ 需 Danny/integrator 决断的重复：main 上另有一份并行设计稿 `docs/strategy/coldstart-deliverables/eval-scenario-set.md`（+ `.issues/feat-012/scenario-set.md`，Marcus/LQ-00 命名体系），与本次交付的 `eval-scenarios/` 实现稿并存——两套 feat-012 设计哲学，建议后续二选一/合并。
 - 跨 feature 续接：真实未删改基线输出 + 买家带来的现场 case 由 feat-011 runner / feat-013 video 产出；partner-reserved 槽位经 feat-011 ingestion 回填。
+
+## Update — 2026-06-22 · feat-011 done + merged (eval-harness 真跑验证)
+
+- **feat-011a/b/c（headless eval-harness BUILD）= DONE，已 merge 进 main**（源 worktree `eager-brattain-adad83`；6 个 commit `6db8a06..4736e90` + 本 merge）。GitHub #3/#4/#5 已留完成 evidence。
+- **交付**：`eval-harness/`（自成一体 Python 仓，**产品 src 一行没碰**，121 pytest 全绿）。011a=~150 行 think→tool-call→observe loop + 4 文件工具 + **红线校验器(护城河)** + cite 不可跳过 + 3 个 skill 文件；011b=冻结+git-hash manifest 跑批（Avery vs raw + scaffolded-minus-redline，防位置偏差 swap）；011c=跨家裁判（**绝不 Claude**，硬门→1-5 软维度→Cohen κ→scorecard，**不吹 outcome/ROI**）。可插拔 brain：mock(离线确定性) / 真(OpenAI 兼容)。
+- **🔴 真跑验证（重要，影响叙事）**：实跑 MiniMax-M3(脑) + DeepSeek-Pro & MiniMax(跨家裁判)。① pipeline 端到端通；② 双层护栏被两家裁判交叉验证（都澄清了正则误伤）；③ **一个能干的 2026 模型 raw 跑、就算被挖坑案(Jordan)引诱也不给人打分** → "我们不贴标签" 这条护城河在 M3 级别**基本不触发**，Avery 卖点须重定位到 **证据引用纪律 / 校准 / 结构化输出**；④ 两家裁判在简单案子上都打满分 → **瓶颈是案子难度,不是裁判**。详见 auto-memory `feat012-partner-scenarios-pending`。
+- **🔑 跨 feature 续接（给 integrator/下个 session）**：现在有两套 feat-012 产物——别的 session 的 `eval-scenarios/`（27 条 SCN markdown 场景，含 reserved 合伙人槽）+ 我的 `eval-harness/`（**可跑的** Python runner + 4 个 case 含 Jordan 挖坑案）。**自然衔接 = 把那 27 条 SCN 场景喂进 eval-harness runner 跑真数**（ingestion 契约见 architecture）；这是把 eval 变可信的下一步工程。
+- **⚠ 头号待办（未变,已存 memory）**：发布前需 **≥3 个合伙人自己写的真案子**（Ray must-have）——下次合伙人会议提出。当前所有 scenario 都是我们写的（`non_danny=0`），scorecard 正确地自标 **NOT PUBLISHABLE**。
+- **⚠ 运维**：`eval-harness/.env`（含 MiniMax+DeepSeek key）已 gitignore，**合并后需手动 copy 到主 checkout**；真跑 4 场景一次 10 分钟跑不完(推理模型)→ 分场景跑或调大 timeout；**key 在本次对话出现过,建议轮换**。
