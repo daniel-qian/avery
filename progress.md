@@ -64,3 +64,12 @@
 - 顺手发现（未修，stay in scope）：global.css 里 `.nexus-inspector` / `.nexus-progress-row` / `.nexus-active-list` / `.flow-kind` 是修订 5 删 inspector 时就死掉的样式，下次 CSS 清理可一并删。
 - 终端观感微调入口（若 demo 现场要调）：`NEXUS_INSETS`（NexusScene 顶部）、`.nexus-terminal` 宽/位（global.css 尾部 feat-004 区）、`maxFitScale 0.8`（useRailCamera 调用处）。
 - ⚠ 标记现状：feat-004 stream copy 的标记已摘；仓库其余 ⚠（errand 卡组、rail caption、tab 短名等）属 P6-08 审字范围，仍待 Danny。
+
+## Update — 2026-06-22 · feat-012 done + merged
+
+- **feat-012（对抗 scenario set）= DONE，已 merge 进 main**（merge commit 77d9272，源 worktree `condescending-feistel-185687`，已 prune）。
+- 交付：`docs/strategy/coldstart-deliverables/eval-scenarios/` — 27 条 git-hashed scenario（`cases/SCN-001..027.md`）、`freeze.mjs`（幂等）+ 生成的 `scenarios.json`/`frozen.lock.json`（`setDigest sha256:d4dbf063…`）、`adversarial-row.md`（SCN-002 渲染）+ `demo-beat.md` + `README.md`。
+- issue #6 已 close。§9 盲检 Ray(ceo)+Dana(dana) 双 PASS。
+- ⚠ 待办（HITL）：`adversarial-row.md` / `demo-beat.md` 买家文案的 `⚠ 待 Danny 审字` 未定稿。
+- ⚠ 需 Danny/integrator 决断的重复：main 上另有一份并行设计稿 `docs/strategy/coldstart-deliverables/eval-scenario-set.md`（+ `.issues/feat-012/scenario-set.md`，Marcus/LQ-00 命名体系），与本次交付的 `eval-scenarios/` 实现稿并存——两套 feat-012 设计哲学，建议后续二选一/合并。
+- 跨 feature 续接：真实未删改基线输出 + 买家带来的现场 case 由 feat-011 runner / feat-013 video 产出；partner-reserved 槽位经 feat-011 ingestion 回填。
