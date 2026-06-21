@@ -1,4 +1,4 @@
-# TeamMaster Static Prototype
+# Avery Static Prototype
 
 This is a standalone angel-presentation prototype. It does not import production
 Next.js code, call backend APIs, or persist state.

@@ -565,7 +565,7 @@ export function DashboardScene() {
       </PanZoomCanvas>
 
       <div className="dashboard-control-layer" onClick={stopPropagation}>
-        <div className="dashboard-tags" aria-label="Dashboard focus tags">
+        <div className="dashboard-tags" aria-label="Focus tags">
           {DASHBOARD_TAGS.map((tag) => {
             const active = selectedTagIds.includes(tag.id)
             return (
@@ -630,7 +630,7 @@ export function DashboardScene() {
         ) : null}
       </motion.div>
 
-      <div className="alert-pill-layer" aria-label="Dashboard alerts" onClick={stopPropagation}>
+      <div className="alert-pill-layer" aria-label="Team alerts" onClick={stopPropagation}>
         {alertPills.map((pill) => (
           <button
             key={pill.id}

@@ -530,7 +530,7 @@ function StructuredOutputCard({
 
       <footer className="report-footer">
         <button type="button" className="return-dashboard-button" onClick={onReturnDashboard}>
-          Return to dashboard
+          Return to your team {/* ⚠ 待 Danny 审字 — surface label per ADR-0015 (dashboard → Your team) */}
         </button>
       </footer>
     </section>
@@ -1088,7 +1088,7 @@ function ThreadChrome() {
   const openThreads = threadList.filter((t) => t.isOpen)
 
   return (
-    <div className="nexus-thread-chrome" aria-label="Nexus threads">
+    <div className="nexus-thread-chrome" aria-label="Threads">
       <div className="nexus-tab-strip" role="tablist" aria-label="Open threads">
         {openThreads.map((t) => {
           const def = CASES[t.caseId]
