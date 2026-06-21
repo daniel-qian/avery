@@ -47,30 +47,30 @@ export interface DashboardProjectCopy {
 const DASHBOARD_PERSON_COPY: Record<DetailPhase, Record<string, DashboardPersonCopy>> = {
   believed: {
     u_bill: {
-      roleLine: 'Overloaded by Acme interrupts',
-      loadLine: '134% load · 9 pulls',
+      roleLine: 'Chasing a moving brief',
+      loadLine: 'A week of changing client feedback',
     },
     u_jason: {
-      roleLine: 'Capacity visible',
-      loadLine: '70% load · available',
+      roleLine: 'Some room to spare',
+      loadLine: 'Could lend a hand if it helps',
     },
     u_vanessa: {
-      roleLine: 'Friday dependency exposed',
-      loadLine: '88% load · carrying Acme',
+      roleLine: 'Carrying the Friday demo',
+      loadLine: 'Leaning on the core guide flow',
     },
   },
   grown: {
     u_bill: {
-      roleLine: 'Protected focus route',
-      loadLine: 'Focus protected · interrupts rerouted',
+      roleLine: 'Core flow, scope frozen',
+      loadLine: 'Scope frozen · clear checklist',
     },
     u_jason: {
-      roleLine: 'Short-term overflow route',
-      loadLine: 'Taking Acme-support overflow',
+      roleLine: 'Lending a hand this week',
+      loadLine: 'Taking a little off Lin Qing’s plate',
     },
     u_vanessa: {
       roleLine: 'Friday scope protected',
-      loadLine: 'Re-baseline in motion',
+      loadLine: 'Feedback triage in motion',
     },
   },
 }
@@ -78,26 +78,26 @@ const DASHBOARD_PERSON_COPY: Record<DetailPhase, Record<string, DashboardPersonC
 const DASHBOARD_PROJECT_COPY: Record<DetailPhase, Record<string, DashboardProjectCopy>> = {
   believed: {
     p_acme: {
-      statusLabel: 'at risk · dependency exposed',
-      summary: 'Friday pilot still depends on a stalled Connector hookup.',
+      statusLabel: 'at risk · core flow exposed',
+      summary: 'Friday demo still leans on a core guide flow that keeps getting reworked.',
       progressLabel: '72% complete · no replan yet',
     },
     p_connector: {
-      statusLabel: 'reported on track · signals at risk',
-      summary: 'Slack rate limits and no-update signals conflict with Monday status.',
-      progressLabel: '48% complete · stalled surface',
+      statusLabel: 'read as slow · signals say churn',
+      summary: 'Unresolved feedback and no clear sign-off conflict with the "just running slow" read.',
+      progressLabel: '48% complete · still being reworked',
     },
   },
   grown: {
     p_acme: {
       statusLabel: 'at risk · diagnosed · Friday held',
-      summary: 'Connector core is re-baselined; Friday ship is protected with Tuesday held as contingency.',
+      summary: 'Scope is frozen and responsibilities split; the core demo is protected with Tuesday held as contingency.',
       progressLabel: '72% complete · actions in flight',
     },
     p_connector: {
-      statusLabel: 'at risk · re-baselined',
-      summary: 'Core Slack + GitHub ship is protected; non-core dedupe moves to next week.',
-      progressLabel: '48% complete · focus route active',
+      statusLabel: 'at risk · scope frozen',
+      summary: 'Lin Qing owns the core guide flow on a clear checklist; non-core feedback moves to next week.',
+      progressLabel: '48% complete · core path protected',
     },
   },
 }
@@ -132,7 +132,7 @@ export function deriveStatus(
   return { label: 'Steady', tone: 'tone-stable' }
 }
 
-// 此人「所拥有项目」的 progress（Bill→Connector 48 / Vanessa→Acme 72 / Jason→Billing 30）。
+// 此人「所拥有项目」的 progress（u_bill→core flow 48 / u_vanessa→demo 72 / u_jason→dashboard 30）。
 // 不拥有项目（多数 texture 人）→ null → 概览卡 Progress 槽走空态、不渲染占位灰条。
 export function ownedProjectProgress(
   personId: string,
@@ -144,12 +144,13 @@ export function ownedProjectProgress(
 
 export function employeeOverviewFor(person: Person, phase: DetailPhase): EmployeeOverviewCopy {
   const owned = ownedProjectProgress(person.id)
-  const status = deriveStatus(person.capacityPct)
+  // 红线（ADR-0015）：texture 人无 override 时，fallback 也绝不把人量化成「N% / Overloaded」。
+  // 走中性、护着人的人话；deriveStatus 仍是内部判据（type 不动），但不外显其量化 label。
   return (
     EMPLOYEE_OVERVIEW_COPY[phase][person.id] ?? {
-      workloadLabel: 'Workload',
-      workloadValue: `${person.capacityPct ?? 100}%`,
-      statusLabel: status?.label ?? 'Steady',
+      workloadLabel: 'This week',
+      workloadValue: 'Going about their work',
+      statusLabel: 'Steady',
       progressLabel: owned ? `Progress · ${owned.project.title}` : 'Progress',
       progressValue: owned ? `${owned.progress}%` : 'No owned project',
       hrSignal: hrSignalFor(person.id, phase),
@@ -157,7 +158,7 @@ export function employeeOverviewFor(person: Person, phase: DetailPhase): Employe
   )
 }
 
-// 挂在某人身上的工作信号（subjectType === 'person'）。Bill = 两条 interrupt 证据；
+// 挂在某人身上的工作信号（subjectType === 'person'）。Lin Qing (u_bill) = 两条 workload 证据；
 // texture 人 = []（HR analysis 模块据此判断是否渲染 evidence 子段）。
 export function signalsFor(personId: string, _phase: DetailPhase = 'grown'): Signal[] {
   return SIGNALS.filter(
@@ -170,9 +171,9 @@ export function signalsFor(personId: string, _phase: DetailPhase = 'grown'): Sig
 // 口径：工作负载 / 路由信号，不是人格评价。
 
 export const HR_SIGNAL: Record<string, string> = {
-  u_bill: 'Needs manager check-in',
-  u_jason: 'Has bandwidth to absorb',
-  u_vanessa: 'Carrying the Acme deadline',
+  u_bill: 'The brief keeps moving on her — a good moment to check in',
+  u_jason: 'Could lend a hand if it helps',
+  u_vanessa: 'Carrying the Friday demo deadline',
 }
 
 // ───────────────────────── Weekly summary + sentiment（按 id 索引）──────────────
@@ -198,52 +199,52 @@ export interface EmployeeOverviewCopy {
 const EMPLOYEE_OVERVIEW_COPY: Record<DetailPhase, Record<string, EmployeeOverviewCopy>> = {
   believed: {
     u_bill: {
-      workloadLabel: 'Observed load',
-      workloadValue: '134% raw load',
-      statusLabel: 'Overload symptoms',
-      progressLabel: 'Connector progress',
-      progressValue: '48% stalled',
-      hrSignal: 'Raw interrupt load: 9 pulls',
+      workloadLabel: 'This week',
+      workloadValue: 'Chasing a moving brief',
+      statusLabel: 'Stretched right now',
+      progressLabel: 'Core flow progress',
+      progressValue: '48% · brief kept moving',
+      hrSignal: 'The brief keeps moving on her — a good moment to check in', // ⚠ 待 Danny 审字
     },
     u_jason: {
-      workloadLabel: 'Observed load',
-      workloadValue: '70% raw load',
-      statusLabel: 'Capacity visible',
-      progressLabel: 'Billing progress',
-      progressValue: '30% steady',
-      hrSignal: 'Raw capacity: 70%',
+      workloadLabel: 'This week',
+      workloadValue: 'Has some room to spare',
+      statusLabel: 'Steady',
+      progressLabel: 'Store dashboard progress',
+      progressValue: '30% · moving along',
+      hrSignal: 'Could lend a hand if it helps',
     },
     u_vanessa: {
-      workloadLabel: 'Observed load',
-      workloadValue: '88% raw load',
-      statusLabel: 'Deadline carrier',
-      progressLabel: 'Acme progress',
-      progressValue: '72% dependency exposed',
-      hrSignal: 'Friday owner: dependency exposed',
+      workloadLabel: 'This week',
+      workloadValue: 'Carrying the Friday demo',
+      statusLabel: 'Holding a deadline',
+      progressLabel: 'Demo progress',
+      progressValue: '72% · leaning on the core flow',
+      hrSignal: 'Owns Friday while the core flow is shaky',
     },
   },
   grown: {
     u_bill: {
-      workloadLabel: 'Protected route',
-      workloadValue: 'Focus blocks reserved',
-      statusLabel: 'Protected focus',
-      progressLabel: 'Connector progress',
-      progressValue: '48% re-baselining',
-      hrSignal: 'Manager check-in + reroute',
+      workloadLabel: 'Scope frozen',
+      workloadValue: 'Core flow + clear checklist',
+      statusLabel: 'Scope protected',
+      progressLabel: 'Core flow progress',
+      progressValue: '48% · core path protected',
+      hrSignal: 'Scope is frozen around her now — still a good moment to check in', // ⚠ 待 Danny 审字
     },
     u_jason: {
-      workloadLabel: 'Overflow route',
-      workloadValue: 'Taking support pulls',
-      statusLabel: 'Absorbing overflow',
-      progressLabel: 'Billing progress',
+      workloadLabel: 'Lending a hand',
+      workloadValue: 'Has a bit of room to take some on',
+      statusLabel: 'Helping out this week',
+      progressLabel: 'Store dashboard progress',
       progressValue: '30% protected',
-      hrSignal: 'Has bandwidth to absorb',
+      hrSignal: 'Lending a hand for a couple of days',
     },
     u_vanessa: {
       workloadLabel: 'Delivery route',
       workloadValue: 'Friday scope protected',
-      statusLabel: 'Re-baseline owner',
-      progressLabel: 'Acme progress',
+      statusLabel: 'Scope steward',
+      progressLabel: 'Demo progress',
       progressValue: '72% actions in flight',
       hrSignal: 'Friday scope protected',
     },
@@ -253,37 +254,37 @@ const EMPLOYEE_OVERVIEW_COPY: Record<DetailPhase, Record<string, EmployeeOvervie
 // ⚠ 待 Danny 审字。believed 态只放可观察症状，不放 agent 诊断 / 建议。
 export const BELIEVED_WEEKLY_SUMMARY: Record<string, WeeklySummary> = {
   u_bill: {
-    text: 'Bill is carrying 134% workload. The visible signals are 9 Acme-support pulls in 3 days, mostly Acme hotfix commits, and stalled Connector work.',
+    text: "Lin Qing's had a rough week — the brief kept moving (around nine client change requests in three days), so she spent it reworking screens rather than finishing the core guide flow. The work stalled because the finish line moved, not for lack of trying.",
     sentiment: 'strained',
-    sentimentNote: 'High interrupt load',
+    sentimentNote: 'Chasing a moving brief',
   },
   u_jason: {
-    text: 'Jason is at 70% workload with no risk signals attached in the current company picture.',
+    text: 'Jason has had a steadier week on the store dashboard and looks like he has a bit of room to spare right now.',
     sentiment: 'positive',
-    sentimentNote: 'Capacity visible',
+    sentimentNote: 'Some room to spare',
   },
   u_vanessa: {
-    text: 'Vanessa owns the Friday Acme pilot while its Connector dependency is still showing stalled work signals.',
+    text: "Sun Xiaomei is holding the Friday demo, and it's leaning on the core guide flow — which is still looking shaky.",
     sentiment: 'steady',
-    sentimentNote: 'Friday dependency exposed',
+    sentimentNote: 'Carrying the Friday demo',
   },
 }
 
 export const WEEKLY_SUMMARY: Record<string, WeeklySummary> = {
   u_bill: {
-    text: "Most of Bill's week went to Acme-support firefighting — 9 urgent pulls in 3 days. Connector work stalled as a result, not from lack of effort.",
+    text: "Most of Lin Qing's week went to chasing changing client feedback — 9 change requests in 3 days. The core guide flow stalled because the target kept moving, not from lack of effort.",
     sentiment: 'strained',
-    sentimentNote: 'Under interrupt pressure',
+    sentimentNote: 'Chasing a moving brief',
   },
   u_jason: {
-    text: 'Steady week on Billing v1 with room to spare. Well placed to pick up short-term overflow from the Connector push.',
+    text: 'Steady week on the store dashboard with room to spare. Well placed to take some of the work split off Lin Qing’s plate.',
     sentiment: 'positive',
     sentimentNote: 'Room to take on more',
   },
   u_vanessa: {
-    text: 'Focused on holding the Acme pilot for Friday — coordinating scope and the Connector dependency end to end.',
+    text: 'Focused on holding the Smart Shopping Guide demo for Friday — coordinating client feedback and the core guide flow end to end.',
     sentiment: 'steady',
-    sentimentNote: 'Locked on the Friday ship',
+    sentimentNote: 'Locked on the Friday demo',
   },
 }
 
@@ -293,9 +294,11 @@ export const WEEKLY_SUMMARY: Record<string, WeeklySummary> = {
 // capabilityId 指回 fixtures.ts 的 CAPABILITIES（护城河被 agent 自动优先引用）。
 
 export interface HrAnalysis {
-  mode: 'symptom' | 'diagnosis'
+  // 'reading' = report 落地前，只复述看得见的处境；'grown' = report 后长出的解读 + 建议。
+  // 避开医学词 diagnosis/symptom（守"永不诊断人"红线，虽不外显也塑造团队心智）。
+  mode: 'reading' | 'grown'
   capabilityId?: string // 引用的 capability（auto-prioritized 护城河）
-  reading: string // agent 对处境的中性解读
+  reading: string // 对处境的中性解读（前辈口吻，不是诊断）
   recommendations?: string[] // 低风险下一步
   framing?: string // 显式的 no-personnel-judgment 护栏
 }
@@ -303,61 +306,62 @@ export interface HrAnalysis {
 // ⚠ 待 Danny 审字。Act1 症状 payload：只并列 raw facts，不解释根因。
 export const BELIEVED_HR_ANALYSIS: Record<string, HrAnalysis> = {
   u_bill: {
-    mode: 'symptom',
+    mode: 'reading',
     reading:
-      'Raw workload symptoms: 134% load, 9 Acme-support mentions in 3 days, Acme hotfix commits, and Connector work still stalled.',
+      "Here's what's showing up: the brief has been moving on Lin Qing all week (about nine client change requests in three days), most of her time went into reworking screens, and the core guide flow has stalled in the meantime.",
   },
   u_jason: {
-    mode: 'symptom',
+    mode: 'reading',
     reading:
-      'Raw capacity symptom: 70% workload and no attached risk signals in the current company picture.',
+      "Jason's week looks steady, and nothing worrying is showing up around him right now — he may have a little room to spare.",
   },
   u_vanessa: {
-    mode: 'symptom',
+    mode: 'reading',
     reading:
-      'Raw project symptom: Vanessa owns a Friday Acme ship while the Connector dependency is still showing stalled signals.',
+      'Sun Xiaomei is carrying the Friday demo, and it depends on the core guide flow — which is still looking shaky.',
   },
 }
 
 export const HR_ANALYSIS: Record<string, HrAnalysis> = {
   u_bill: {
-    mode: 'diagnosis',
+    mode: 'grown',
     capabilityId: 'cap_hr_interrupt',
     reading:
-      'Reduced Connector output lines up with interrupt load, not performance. Bill absorbed 9 Acme-support pulls in 3 days; the stall is a routing problem, not a capability one.',
+      'This isn’t about capability. She never knew what counted as done this week, the brief kept moving, and the client changes she quietly absorbed aren’t visible anywhere in the project — so what looks like "behind" is really a week of invisible work.',
     recommendations: [
-      'Route incoming Acme-support interrupts to someone with capacity for 2 days so Bill can focus the Connector.',
-      'Protect 2 uninterrupted focus blocks this week and confirm the trimmed Connector scope with him.',
-      'Hold a low-key manager check-in to confirm load — frame it as rebalancing, not review.',
+      'Freeze this week’s demo scope first — keep the core guide path, no new client feedback added in.',
+      'Split who owns what: Lin Qing on the core flow only; feedback triage, recommendation data fields, and key visuals each go to someone else.',
+      'Give Lin Qing a short, completable checklist so "done" is finally clear and her contribution becomes visible.',
+      'Hold a low-key 1:1 that leads with what she carried, not what’s missing — frame it as protecting the demo, not a review.',
     ],
-    framing: 'Evidence-based workload routing. No personnel judgment is implied.',
+    framing: 'This is about understanding what wore her down, not grading the person. Not a capability issue — the brief kept shifting, her work stayed invisible, and the boundaries were unclear. No formal HR involvement needed yet; it’s worth a check-in again next week to see how she’s doing.',
   },
   u_jason: {
-    mode: 'diagnosis',
+    mode: 'grown',
     capabilityId: 'cap_hr_interrupt',
     reading:
-      'Jason is running below full load with a clean signal picture — a natural candidate to absorb short-term overflow without risking burnout.',
+      'Jason is running below full load with a clean picture — a natural candidate to take some of the work split off Lin Qing’s plate without risking burnout.',
     recommendations: [
-      'Offer Jason the Acme-support interrupts for 2 days to unblock the Connector.',
-      'Keep the handoff time-boxed so Billing v1 stays on track.',
+      'Offer Jason a couple of the split-off responsibilities for 2 days so Lin Qing can focus the core flow.',
+      'Keep the handoff time-boxed so the store dashboard work stays on track.',
     ],
-    framing: 'Capacity-based routing suggestion. No personnel judgment is implied.',
+    framing: 'Capacity-based suggestion. No personnel judgment is implied.',
   },
   u_vanessa: {
-    mode: 'diagnosis',
+    mode: 'grown',
     capabilityId: 'cap_po_dep',
     reading:
-      'Vanessa is carrying a cross-team dependency close to a ship date. The exposure is coordination load, not delivery quality.',
+      'Sun Xiaomei is best placed to hold the finish line still — the exposure is shifting client requirements close to a ship date, not delivery quality.',
     recommendations: [
-      'Confirm the trimmed Connector scope with Bill today to protect the Friday core ship.',
+      'Triage incoming client feedback into "affects Friday" vs "next iteration" so the scope stays frozen.',
       'Keep the Tuesday slip ready as a stated contingency rather than a silent fallback.',
     ],
-    framing: 'Dependency-routing guidance. No personnel judgment is implied.',
+    framing: 'Scope-stewardship guidance. No personnel judgment is implied.',
   },
 }
 
 // ───────────────────────── 故事人集合 + 空态判定 ──────────────────────────────
-// 故事人 = 有完整 HR analysis 草拟内容的人（Bill / Jason / Vanessa）。
+// 故事人 = 有完整 HR analysis 草拟内容的人（Lin Qing / Jason / Sun Xiaomei）。
 // 用 HR_ANALYSIS 的 key 派生 → 单一真相源：加一个故事人只改上面的内容块。
 export const STORY_PEOPLE = new Set<string>(Object.keys(HR_ANALYSIS))
 
@@ -368,9 +372,9 @@ export function isStoryPerson(personId: string): boolean {
 // 各模块的空态判定（缺数据模块走干净空态，不渲染占位灰条）。
 export function hrSignalFor(personId: string, phase: DetailPhase = 'grown'): string | null {
   if (isBelieved(phase)) {
-    if (personId === 'u_bill') return 'Raw workload: 134%'
-    if (personId === 'u_jason') return 'Raw capacity: 70%'
-    if (personId === 'u_vanessa') return 'Friday owner: dependency exposed'
+    if (personId === 'u_bill') return 'The brief keeps moving on her — a good moment to check in'
+    if (personId === 'u_jason') return 'Could lend a hand if it helps'
+    if (personId === 'u_vanessa') return 'Owns Friday while the core flow is shaky'
     return null
   }
   return HR_SIGNAL[personId] ?? null
@@ -393,37 +397,37 @@ export interface EmployeeTaskView extends Task {
 const EMPLOYEE_TASK_OVERRIDES: Record<DetailPhase, Record<string, Partial<EmployeeTaskView>>> = {
   believed: {
     t_acme_hook: {
-      title: 'Hook up Connector to Acme - stalled under interrupt load',
-      note: 'Raw assignment pressure; no reroute yet.',
+      title: 'Wire the core flow into the demo build - stalled as the brief moved',
+      note: 'Raw assignment pressure; scope still moving.',
     },
     t_con_slack: {
-      title: 'Slack ingest + rate-limit handling - stalled',
-      note: 'Blocked signal visible; still assigned to Bill.',
+      title: 'Home guide entry + recommendation cards - stalled',
+      note: 'No clear "done" yet; still assigned to Lin Qing.',
     },
     t_con_gh: {
-      title: 'GitHub webhook receiver - competing with Acme support',
-      note: 'Moving, but support pulls are fragmenting focus.',
+      title: 'User-profile dialog - reworked against new feedback',
+      note: 'Moving, but changing requirements are fragmenting focus.',
     },
     t_con_dedupe: {
-      title: 'Event dedupe + hashing - waiting',
+      title: 'Extra visual polish pass - waiting',
       note: 'Still on the original scope.',
     },
   },
   grown: {
     t_acme_hook: {
-      title: 'Hook up Connector to Acme - protected core path',
-      note: 'Bill focus protected; scope confirmation routes through Vanessa.',
+      title: 'Wire the core flow into the demo build - on the checklist',
+      note: 'Lin Qing owns the core flow; scope frozen, feedback triage routes through Sun Xiaomei.',
     },
     t_con_slack: {
-      title: 'Slack ingest + rate-limit handling - focus block',
-      note: 'Primary protected task; decides Friday vs Tuesday contingency.',
+      title: 'Home guide entry + recommendation cards - on the checklist',
+      note: 'Core checklist item with a clear "done"; decides Friday vs Tuesday contingency.',
     },
     t_con_gh: {
-      title: 'GitHub webhook receiver - core Friday scope',
-      note: 'Kept in the Friday core ship.',
+      title: 'User-profile dialog - core Friday scope',
+      note: 'Kept in the Friday core demo.',
     },
     t_con_dedupe: {
-      title: 'Event dedupe + hashing - deferred out of Friday',
+      title: 'Extra visual polish pass - deferred out of Friday',
       status: 'todo',
       note: 'Non-core work moved to next week.',
     },
@@ -445,8 +449,8 @@ export function tasksForPerson(personId: string, phase: DetailPhase = 'grown'): 
 // ════════════════════════════════════════════════════════════════════════════
 
 // ───────────────────────── Delivery milestones ────────────────────────────────
-// Acme 直接渲染 fixtures.ts 的 TIMELINE.milestones（6 阶段，已带 state）。
-// Connector 在此草拟（≥5 阶段）；其余项目无数据 → 模块走空态。
+// demo（p_acme）直接渲染 fixtures.ts 的 TIMELINE.milestones（6 阶段，已带 state）。
+// core flow（p_connector）在此草拟（≥5 阶段）；其余项目无数据 → 模块走空态。
 // state 与 TIMELINE 同口径：planned / replanned / held / deferred / conditional。
 
 export interface Milestone {
@@ -466,58 +470,58 @@ const PROJECT_BRIEF_COPY: Record<DetailPhase, Record<string, ProjectBriefCopy>> 
   believed: {
     p_acme: {
       summary:
-        'Observed state: Friday is still the target, but the Connector dependency is exposed and no diagnosis has been generated.',
-      statusLabel: 'at risk · dependency symptom',
+        'Observed state: Friday is still the target, but the demo leans on a core guide flow that keeps getting reworked, and no read has been generated.',
+      statusLabel: 'at risk · leaning on the core flow',
       progressLabel: '72% complete · original plan',
-      dependencyLabel: 'Depends on Connector - unresolved',
+      dependencyLabel: 'Depends on the core guide flow - unresolved',
     },
     p_connector: {
       summary:
-        'Observed state: Monday says on track, but Slack rate-limit and no-update signals say the Connector is at risk.',
-      statusLabel: 'reported on track · signals at risk',
-      progressLabel: '48% complete · stalled signals',
+        'Observed state: the manager reads it as "just slow," but unresolved feedback and no sign-off say the core flow is at risk.',
+      statusLabel: 'read as slow · signals say churn',
+      progressLabel: '48% complete · still being reworked',
     },
   },
   grown: {
     p_acme: {
       summary:
-        'Diagnosed state: Acme remains at risk, but the blocker is owned, Friday core ship is held, and actions are in flight.',
-      statusLabel: 'at risk · diagnosed · Friday held',
-      progressLabel: '72% complete · re-baselined',
-      dependencyLabel: 'Depends on Connector - core scope protected',
+        'Read: the dip was a moving finish line, not a delivery slip. Scope is frozen, responsibilities are split, and the Friday core demo is held.',
+      statusLabel: 'at risk · read in · Friday held',
+      progressLabel: '72% complete · scope frozen',
+      dependencyLabel: 'Depends on the core guide flow - core scope protected',
     },
     p_connector: {
       summary:
-        'Diagnosed state: Bill gets protected focus, Acme-support interrupts route to Jason, and non-core work leaves Friday scope.',
-      statusLabel: 'at risk · diagnosed · actions in flight',
-      progressLabel: '48% complete · focus route active',
+        'Read: scope is frozen, Lin Qing owns the core guide flow on a clear checklist, and non-core feedback leaves Friday scope.',
+      statusLabel: 'at risk · read in · actions in flight',
+      progressLabel: '48% complete · core path protected',
     },
   },
 }
 
-// ⚠ 待 Danny 审字。Act1 原始计划：展示 stall，不展示 B8 后的 re-baseline。
+// ⚠ 待 Danny 审字。Act1 原始计划：展示 stall，不展示 B8 后的 freeze。
 const ACME_BELIEVED_MILESTONES: Milestone[] = [
-  { label: 'Integration test suite', when: 'Wed', state: 'in-progress' },
-  { label: 'Connector hookup for Acme', when: 'Thu', state: 'stalled' },
-  { label: 'Acme UAT', when: 'Fri am', state: 'waiting' },
-  { label: 'Pilot ship target', when: 'Fri', state: 'at-risk' },
+  { label: 'Recommendation data fields', when: 'Wed', state: 'in-progress' },
+  { label: 'Wire the core flow into the demo', when: 'Thu', state: 'stalled' },
+  { label: 'Demo walkthrough rehearsal', when: 'Fri am', state: 'waiting' },
+  { label: 'Demo ship target', when: 'Fri', state: 'at-risk' },
 ]
 
 const CONNECTOR_BELIEVED_MILESTONES: Milestone[] = [
-  { label: 'GitHub webhook receiver', when: 'Wed', state: 'in-progress' },
-  { label: 'Slack ingest + rate-limit handling', when: 'Thu', state: 'stalled' },
-  { label: 'Connector ↔ Acme hookup', when: 'Thu pm', state: 'stalled' },
-  { label: 'Event dedupe + hashing', when: 'Fri', state: 'waiting' },
+  { label: 'Home guide entry + recommendation cards', when: 'Wed', state: 'in-progress' },
+  { label: 'User-profile dialog', when: 'Thu', state: 'stalled' },
+  { label: 'Core flow wired into the demo', when: 'Thu pm', state: 'stalled' },
+  { label: 'Extra visual polish pass', when: 'Fri', state: 'waiting' },
 ]
 
-// ⚠ 待 Danny 审字。Connector 的 re-baseline 计划（保住周五核心 ship）。
+// ⚠ 待 Danny 审字。核心导购 flow 的冻结范围 + checklist 计划（保住周五核心 demo）。
 const CONNECTOR_MILESTONES: Milestone[] = [
-  { label: 'GitHub webhook receiver', when: 'Wed', state: 'planned' },
-  { label: 'Slack ingest + rate-limit handling', when: 'Thu', state: 'replanned' },
-  { label: 'Connector ↔ Acme hookup', when: 'Thu pm', state: 'replanned' },
-  { label: 'Core ingest ships (Slack + GitHub)', when: 'Fri', state: 'held' },
-  { label: 'Event dedupe + hashing', when: 'Next week', state: 'deferred' },
-  { label: 'Rate-limit contingency slip', when: 'Tue', state: 'conditional' },
+  { label: 'Freeze scope · checklist agreed', when: 'Wed', state: 'planned' },
+  { label: 'Lin Qing — core flow on the checklist', when: 'Thu', state: 'replanned' },
+  { label: 'Core flow running end to end', when: 'Thu pm', state: 'replanned' },
+  { label: 'Core demo path ships', when: 'Fri', state: 'held' },
+  { label: 'Non-core feedback', when: 'Next week', state: 'deferred' },
+  { label: 'Contingency slip', when: 'Tue', state: 'conditional' },
 ]
 
 // 渲染用：state → 标签 + 视觉 tone class（held / conditional / deferred 视觉可辨）。
@@ -582,24 +586,24 @@ export interface TeamMember {
 const PROJECT_TEAM_NOTES: Record<DetailPhase, Record<string, Record<string, string>>> = {
   believed: {
     p_acme: {
-      u_vanessa: 'Owner · holding Friday target',
-      u_kristen: 'Contributor · integration waits on Connector',
-      u_bill: 'Contributor · still owns blocked hookup',
-      u_aidy: 'Contributor · UAT waiting',
+      u_vanessa: 'Owner · holding the Friday demo target',
+      u_kristen: 'Contributor · data fields wait on the core flow',
+      u_bill: 'Contributor · still owns the stalled core flow',
+      u_aidy: 'Contributor · walkthrough waiting',
     },
     p_connector: {
-      u_bill: 'Owner · still carrying Connector and Acme interrupts',
+      u_bill: 'Owner · still chasing a moving brief',
     },
   },
   grown: {
     p_acme: {
-      u_vanessa: 'Owner · confirms trimmed Friday scope',
-      u_kristen: 'Contributor · protects core UAT path',
-      u_bill: 'Contributor · protected Connector focus',
-      u_aidy: 'Contributor · UAT runs after core hookup',
+      u_vanessa: 'Owner · freezes scope + triages feedback',
+      u_kristen: 'Contributor · confirms the recommendation data fields',
+      u_bill: 'Contributor · owns the core guide flow only',
+      u_aidy: 'Contributor · walkthrough after core flow',
     },
     p_connector: {
-      u_bill: 'Owner · protected focus on rate-limit blocker',
+      u_bill: 'Owner · core guide flow on a clear checklist',
     },
   },
 }
@@ -653,61 +657,61 @@ export interface ProjectTaskView extends Task {
 const PROJECT_TASK_OVERRIDES: Record<DetailPhase, Record<string, Partial<ProjectTaskView>>> = {
   believed: {
     t_acme_int: {
-      title: 'Integration test suite - blocked paths still pending',
-      note: 'Raw progress; Connector-dependent coverage cannot close.',
+      title: 'Recommendation data fields - blocked paths still pending',
+      note: 'Raw progress; fields that depend on the core flow cannot close.',
     },
     t_acme_data: {
-      title: 'Seed pilot demo data - original Friday prep',
-      note: 'Current assignment; no scope trim yet.',
+      title: 'Sort & prioritize client feedback - original Friday prep',
+      note: 'Current assignment; no scope freeze yet.',
     },
     t_acme_hook: {
-      title: 'Hook up Connector to Acme - stalled',
-      note: 'Visible blocker; no replan generated.',
+      title: 'Wire the core flow into the demo - stalled',
+      note: 'Visible blocker; no plan generated.',
     },
     t_acme_uat: {
-      title: 'UAT with Acme - waiting on hookup',
-      note: 'Friday run exposed to Connector stall.',
+      title: 'Demo walkthrough rehearsal - waiting on the core flow',
+      note: 'Friday run exposed to the core-flow stall.',
     },
     t_con_slack: {
-      title: 'Slack ingest + rate-limit handling - stalled',
-      note: 'Repeated blocker still unresolved.',
+      title: 'Home guide entry + recommendation cards - stalled',
+      note: 'Open feedback still unresolved.',
     },
     t_con_gh: {
-      title: 'GitHub webhook receiver - partial progress',
-      note: 'Moving while Bill is interrupted.',
+      title: 'User-profile dialog - partial progress',
+      note: 'Moving while the brief keeps changing on Lin Qing.',
     },
     t_con_dedupe: {
-      title: 'Event dedupe + hashing - original scope waiting',
+      title: 'Extra visual polish pass - original scope waiting',
       note: 'Still included in the visible plan.',
     },
   },
   grown: {
     t_acme_int: {
-      title: 'Integration test suite - core path guarded',
-      note: 'Tests aim at the trimmed Friday scope.',
+      title: 'Recommendation data fields - core path guarded',
+      note: 'Fields aim at the frozen Friday scope.',
     },
     t_acme_data: {
-      title: 'Seed pilot demo data - Friday core only',
-      note: 'Non-core Connector assumptions removed.',
+      title: 'Sort & prioritize client feedback - Friday core only',
+      note: 'Non-core feedback parked for next iteration.',
     },
     t_acme_hook: {
-      title: 'Hook up Connector to Acme - protected focus',
-      note: 'Bill focus blocks assigned; Vanessa confirms scope.',
+      title: 'Wire the core flow into the demo - protected focus',
+      note: 'Lin Qing focus blocks assigned; Sun Xiaomei confirms scope.',
     },
     t_acme_uat: {
-      title: 'UAT with Acme - queued after core hookup',
-      note: 'Run waits for protected core ship, not original full scope.',
+      title: 'Demo walkthrough rehearsal - queued after the core flow',
+      note: 'Run waits for the protected core path, not the original full scope.',
     },
     t_con_slack: {
-      title: 'Slack ingest + rate-limit handling - action in flight',
+      title: 'Home guide entry + recommendation cards - action in flight',
       note: 'Protected focus task; decides contingency.',
     },
     t_con_gh: {
-      title: 'GitHub webhook receiver - held in core ship',
+      title: 'User-profile dialog - held in core demo',
       note: 'Kept as Friday core scope.',
     },
     t_con_dedupe: {
-      title: 'Event dedupe + hashing - deferred',
+      title: 'Extra visual polish pass - deferred',
       status: 'todo',
       note: 'Moved out of Friday scope.',
     },
@@ -740,36 +744,42 @@ export const HANDOFFS: Record<string, Handoff[]> = {
   p_acme: [
     {
       id: 'h_acme_scope',
-      text: 'Confirm the trimmed Connector scope with Bill today',
-      detail: 'Ship Slack + GitHub core Friday; defer event-dedupe to next week.',
+      text: 'Freeze this week’s demo scope with the team today',
+      detail: 'Keep only the core guide path for Friday; no new client feedback gets added in.',
+    },
+    {
+      id: 'h_acme_split',
+      text: 'Split who owns what so the work leaves Lin Qing’s plate',
+      detail: 'Lin Qing = core flow · Sun Xiaomei = feedback triage · Chen Mingyuan = recommendation data fields · Zheng Zixuan = key visuals only.',
     },
     {
       id: 'h_acme_stakeholder',
-      text: 'Pre-warn the Acme stakeholder that Tuesday is the held contingency',
-      detail: 'Only triggers if the Slack rate-limit blocker is not cracked by Thursday.',
+      text: 'Pre-warn the client that Tuesday is the held contingency',
+      detail: 'Only triggers if the core guide flow isn’t running by Thursday.',
     },
     {
       id: 'h_acme_legal',
-      text: 'Have Legal clear the trimmed-scope change against the Acme SOW',
-      detail: 'Scope cut may touch the signed statement of work — route to a legal agent.',
-      flyToNexus: 'Does the trimmed Connector scope for Friday stay within the Acme SOW?',
+      text: 'Check the frozen scope against what the client was promised',
+      detail: 'A scope freeze may touch the signed engagement — have a legal agent confirm.',
+      flyToNexus: 'Does the frozen Friday demo scope stay within what the client was promised?',
     },
   ],
   p_connector: [
     {
-      id: 'h_con_offload',
-      text: "Offload Bill's Acme-support interrupts to Jason for 2 days",
-      detail: 'Jason is at 70% load and can absorb the support pulls short-term.',
+      id: 'h_con_checklist',
+      text: 'Give Lin Qing a short, completable checklist for the core flow',
+      detail: 'Home guide entry · recommendation cards · user-profile dialog · the path running end to end.',
     },
     {
-      id: 'h_con_focus',
-      text: 'Protect 2 uninterrupted focus blocks for Bill on the Connector',
+      id: 'h_con_defer',
+      text: 'Push every non-core piece of feedback to the next iteration',
+      detail: 'So "done" is finally clear and the finish line stops moving this week.',
     },
     {
-      id: 'h_con_ratelimit',
-      text: 'Spin up an agent to crack the Slack rate-limit blocker',
-      detail: 'This single point decides Friday core ship vs the Tuesday slip.',
-      flyToNexus: "What's the fastest path to crack the Slack API rate-limit blocker by Thursday?",
+      id: 'h_con_oneonone',
+      text: 'Have a low-key 1:1 that leads with what Lin Qing carried',
+      detail: 'Ask which feedback affects Friday and which can wait — not "why isn’t it done."',
+      flyToNexus: 'How should the manager open the 1:1 with Lin Qing about the moving brief?',
     },
   ],
 }
@@ -789,26 +799,26 @@ export interface WeeklyUpdate {
 
 export const WEEKLY_UPDATES: Record<string, WeeklyUpdate[]> = {
   p_acme: [
-    { personId: 'u_vanessa', update: 'Locked the Friday scope and re-confirmed the Connector dependency end to end.' },
-    { personId: 'u_kristen', update: 'Integration suite is green except the Connector-dependent paths.' },
-    { personId: 'u_aidy', update: 'UAT plan is ready; waiting on the Connector hookup to start the run.' },
+    { personId: 'u_vanessa', update: 'Froze the Friday demo scope and is triaging incoming client feedback into "affects Friday" vs "next iteration."' },
+    { personId: 'u_kristen', update: 'Confirming the recommendation data fields the core flow needs so nothing blocks Lin Qing.' },
+    { personId: 'u_aidy', update: 'Walkthrough plan is ready; waiting on the core flow to run before the demo.' },
   ],
   p_connector: [
-    { personId: 'u_bill', update: 'GitHub webhook receiver landed; Slack ingest is still blocked on rate limits.' },
-    { personId: 'u_jason', update: 'Free to take the Acme-support load so the Connector can move again.' },
+    { personId: 'u_bill', update: 'On the core guide flow with a clear checklist now that the scope is frozen; non-core feedback parked for next week.' },
+    { personId: 'u_jason', update: 'Free to pick up the work split off Lin Qing’s plate so the core flow can move.' },
   ],
 }
 
-// ⚠ 待 Danny 审字。believed 态项目周更只陈列现场事实，不写 re-baseline / offload 决策。
+// ⚠ 待 Danny 审字。believed 态项目周更只陈列现场事实，不写 freeze / split 决策。
 export const BELIEVED_WEEKLY_UPDATES: Record<string, WeeklyUpdate[]> = {
   p_acme: [
-    { personId: 'u_vanessa', update: 'Friday pilot scope is still the target; Connector hookup remains the exposed dependency.' },
-    { personId: 'u_kristen', update: 'Integration suite is moving, but Connector-dependent paths cannot finish yet.' },
-    { personId: 'u_aidy', update: 'UAT is waiting on the Connector hookup before the run can start.' },
+    { personId: 'u_vanessa', update: 'Friday demo scope is still the target; the core guide flow remains the exposed dependency.' },
+    { personId: 'u_kristen', update: 'Recommendation data fields are moving, but the parts that depend on the core flow cannot finish yet.' },
+    { personId: 'u_aidy', update: 'The walkthrough rehearsal is waiting on the core flow before it can start.' },
   ],
   p_connector: [
-    { personId: 'u_bill', update: 'GitHub webhook receiver is moving; Slack rate-limit handling is still stalled.' },
-    { personId: 'u_jason', update: 'Billing v1 is steady at 30% progress; Jason is at 70% workload.' },
+    { personId: 'u_bill', update: 'The user-profile dialog is moving; the home guide entry is still being reworked against new feedback.' },
+    { personId: 'u_jason', update: 'The store dashboard is steady, and Jason has a bit of room to spare right now.' },
   ],
 }
 
@@ -819,7 +829,7 @@ export function weeklyUpdatesForProject(projectId: string, phase: DetailPhase = 
 
 // ───────────────────────── 次层级：Risk & evidence（过滤 SIGNALS）──────────────
 // 下沉到主层级下方（护 B9b 之前的 reveal）。项目自身 + 其依赖项目的信号都纳入，
-// 这样 Acme（依赖 Connector）也能看到完整证据链。texture 项目无信号 → 空态。
+// 这样 demo（依赖 core flow）也能看到完整证据链。texture 项目无信号 → 空态。
 
 export function signalsForProject(projectId: string, phase: DetailPhase = 'grown'): Signal[] {
   const project = PROJECTS.find((p) => p.id === projectId)
@@ -828,7 +838,7 @@ export function signalsForProject(projectId: string, phase: DetailPhase = 'grown
   const taskIds = new Set(
     TASKS.filter((task) => projectIds.has(task.projectId)).map((task) => task.id),
   )
-  // owner(s) 的 person-signal 也纳入 → "HR signal" 那半（Connector/Acme 都能追到 Bill 的 interrupt）。
+  // owner(s) 的 person-signal 也纳入 → "HR signal" 那半（core flow/demo 都能追到 Lin Qing 的 workload）。
   const ownerIds = new Set<string>(
     [...projectIds]
       .map((id) => PROJECTS.find((p) => p.id === id)?.ownerId)
@@ -857,22 +867,23 @@ export function reportMismatchForProject(projectId: string): {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// P3-04 · Capabilities sell 页（register B · 产品页 + moat banner）
+// P3-04 · Playbooks 页（register B · 产品页 + 「为什么值得信」横条）
 // 吃既有 CAPABILITIES fixture（按 domain 分组）；此处只加页面框架文案 + 分组 helper。
-// ⚠ 待 Danny 审字。呼应 CONTEXT 的 Capabilities「第二条腿」/ 护城河定义。
+// ⚠ 待 Danny 审字。呼应 CONTEXT 的 playbooks「第二条腿」。
 // ════════════════════════════════════════════════════════════════════════════
 
 export const CAPABILITIES_PAGE = {
-  eyebrow: 'Capabilities · the moat',
-  title: 'The vertical playbooks behind every recommendation.',
-  // moat banner 三点（proprietary / subscription / auto-cited）。
-  moatPoints: [
-    'Proprietary vertical playbooks',
-    'Subscription',
-    'Auto-cited in every recommendation',
+  eyebrow: 'Playbooks',
+  title: 'The hard-won judgment behind every recommendation.',
+  // 横条三点：为什么这些 playbooks 值得信（对用户说话，VC 腔已去）。
+  whyPoints: [
+    'Built from how good managers actually decide',
+    'Grows as your team does',
+    'Always shows its reasoning',
   ],
-  // 接回 pitch 命题的一句 framing（公司事实 vs Capabilities 的分工）。
-  framing: 'Company facts say what happened; Capabilities say how to judge it.',
+  // 接回命题的一句 framing（公司事实 vs playbooks 的分工，带上前辈口吻）。
+  framing:
+    "Your team's facts tell you what's happening. The playbooks help you decide what to do about it — the way a seasoned head would.",
 }
 
 // CAPABILITIES 的 domain → 展示名（CONTEXT：库横跨 HR / Legal / PM / Finance / Ops / Sales）。
@@ -905,37 +916,37 @@ export interface CapabilityPackage {
 // ⚠ 待 Danny 审字：P4-03 新增 Venus-facing catalog / subscription copy。
 // 订阅包不带 status 字段；默认 subscribed 由 loadedCapabilityDomains() 派生，保持 loaded ⇔ subscribed。
 export const CAPABILITY_SUBSCRIPTION_COPY = {
-  coverageEyebrow: 'Subscribed domains',
-  coverageTitle: 'Your coverage',
-  expandEyebrow: 'Available domains',
-  expandTitle: 'Expand your coverage',
-  subscribedBadge: 'Subscribed',
+  coverageEyebrow: 'Guiding your team now',
+  coverageTitle: "What's guiding your team now",
+  expandEyebrow: 'More you can add',
+  expandTitle: 'More playbooks you can add',
+  subscribedBadge: 'On',
   availableBadge: 'Available',
-  previewLabel: 'Preview playbooks',
-  subscribeAction: 'Subscribe',
-  unsubscribeAction: 'Unsubscribe',
-  emptyCoverage: 'No domains subscribed in this local view.',
-  emptyExpansion: 'All curated domains are subscribed.',
+  previewLabel: 'A look inside',
+  subscribeAction: 'Turn on',
+  unsubscribeAction: 'Turn off',
+  emptyCoverage: 'Nothing turned on in this local view yet.',
+  emptyExpansion: 'Every playbook is already turned on.',
 }
 
 export const CAPABILITY_PACKAGES: CapabilityPackage[] = [
   {
     domain: 'hr',
     title: 'HR',
-    gist: 'Workload, capacity, and manager-loop playbooks for neutral people-routing decisions.',
+    gist: 'Motivation, workload, and manager-loop playbooks for reading people fairly before judging output.',
     previewPlaybooks: [
-      'Low output vs. interrupt overload',
-      'Capacity-aware overflow routing',
+      'Reading motivation, not output — Maslow’s ladder',
+      'Making invisible contribution visible',
       'Manager check-in framing',
     ],
   },
   {
     domain: 'project-ops',
     title: 'PM',
-    gist: 'Delivery-risk playbooks for dependencies, scope changes, and deadline tradeoffs.',
+    gist: 'Delivery-risk playbooks for shifting requirements, scope freezes, and deadline tradeoffs.',
     previewPlaybooks: [
-      'Cross-team dependency at risk near a deadline',
-      'Scope trim near customer ship',
+      'Shifting requirements near a ship date',
+      'Freeze scope and split responsibilities',
       'Contingency date framing',
     ],
   },

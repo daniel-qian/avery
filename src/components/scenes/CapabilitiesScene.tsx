@@ -10,7 +10,7 @@ import {
 } from '../../data/fixtures.p3'
 import { DetailShell } from '../DetailShell'
 
-// P3-04：Capabilities sell 页 = 产品页 + moat banner（register B）。
+// P3-04：Playbooks 页 = 产品页 + 「为什么值得信」横条（register B）。
 // 静态恒显（ADR-0005，零 thread 耦合，不按"agent 刚引用了哪条"高亮）。
 // 视觉沿用其余 scene 语汇（复用 DetailShell），让"agent 自动引用"的产品内因果不断。
 export function CapabilitiesScene() {
@@ -50,7 +50,7 @@ export function CapabilitiesScene() {
     >
       <div className="capability-package-head">
         <div>
-          <span className="capability-domain-kicker">Capability pack</span>
+          <span className="capability-domain-kicker">Playbook set</span>
           <h4>{pack.title}</h4>
         </div>
         <span className={`cap-badge ${isSubscribed ? 'is-subscribed' : 'is-available'}`}>
@@ -85,16 +85,16 @@ export function CapabilitiesScene() {
 
   return (
     <DetailShell
-      ariaLabel="Capabilities"
+      ariaLabel="Playbooks"
       sceneClass="scene-capabilities"
       eyebrow={CAPABILITIES_PAGE.eyebrow}
       title={CAPABILITIES_PAGE.title}
       subtitle={CAPABILITIES_PAGE.framing}
     >
-      {/* moat banner：proprietary · subscription · auto-cited */}
-      <section className="moat-banner" aria-label="Why Capabilities are the moat">
-        {CAPABILITIES_PAGE.moatPoints.map((point) => (
-          <span key={point} className="moat-point">
+      {/* 为什么这些 playbooks 值得信：从好经理的真实判断里长出来、随团队成长、永远给得出依据 */}
+      <section className="playbook-why" aria-label="Why the playbooks matter">
+        {CAPABILITIES_PAGE.whyPoints.map((point) => (
+          <span key={point} className="playbook-why-point">
             {point}
           </span>
         ))}

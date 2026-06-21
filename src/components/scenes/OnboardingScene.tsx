@@ -6,13 +6,6 @@ import { useCanvas } from '../../store/canvasStore'
 // 步进是纯 UI → 全在本地 useState，零 store 改动。不 auto-play（节奏交给 rail，动效留 P5）。
 // scene 卸载/重挂即重置（AmbientCanvasShell 条件渲染）→ goScene('onboarding') 天然可重入。
 
-const FILE_KIND_LABEL: Record<string, string> = {
-  pdf: 'PDF',
-  docx: 'DOCX',
-  csv: 'CSV',
-  md: 'MD',
-}
-
 interface Stage {
   key: 'files' | 'connect' | 'parse' | 'capabilities' | 'ready'
   title: string
@@ -20,12 +13,11 @@ interface Stage {
 }
 
 const STAGES: Stage[] = [
-  { key: 'files', title: 'Reading your company files', cta: 'Continue' },
-  // ⚠ 待 Danny 审字（connect 段标题 + 下方 StageBody copy）
-  { key: 'connect', title: 'Connecting GitHub & Slack', cta: 'Continue' },
-  { key: 'parse', title: 'Parsing into the company brain', cta: 'Continue' },
-  { key: 'capabilities', title: 'Matching Capabilities', cta: 'Continue' },
-  { key: 'ready', title: 'Company brain ready', cta: 'Enter dashboard' },
+  { key: 'files', title: 'Reading what you already have', cta: 'Continue' },
+  { key: 'connect', title: 'Following the work where it happens', cta: 'Continue' },
+  { key: 'parse', title: 'Learning how your team works', cta: 'Continue' },
+  { key: 'capabilities', title: 'Picking up the playbooks that fit you', cta: 'Continue' },
+  { key: 'ready', title: 'Ready when you are', cta: 'Enter dashboard' },
 ]
 
 function StageBody({ stageKey }: { stageKey: Stage['key'] }) {
@@ -34,7 +26,6 @@ function StageBody({ stageKey }: { stageKey: Stage['key'] }) {
       <div className="onboarding-files">
         {ONBOARDING.sampleFiles.map((file) => (
           <span key={file.name} className="file-chip">
-            <span className="file-kind">{FILE_KIND_LABEL[file.kind] ?? file.kind}</span>
             {file.name}
           </span>
         ))}
@@ -43,10 +34,10 @@ function StageBody({ stageKey }: { stageKey: Stage['key'] }) {
   }
 
   if (stageKey === 'connect') {
-    // 动态事实记忆注入：连接 GitHub/Slack → 脱敏/清理/安检三道工序 → 产物只落本地。
+    // 连接 GitHub/Slack 听取团队动态 → 名字保密/整理/安检三道工序 → 产物只落本地。
     return (
       <>
-        <p className="onboarding-status">Syncing live company activity…</p>
+        <p className="onboarding-status">Catching up on what's happening lately…</p>
         <div className="onboarding-files">
           {ONBOARDING.connectSources.map((source) => (
             <span key={source.name} className="file-chip">
@@ -70,7 +61,7 @@ function StageBody({ stageKey }: { stageKey: Stage['key'] }) {
   if (stageKey === 'parse') {
     return (
       <>
-        <p className="onboarding-status">Parsing…</p>
+        <p className="onboarding-status">Getting the picture…</p>
         <div className="onboarding-parsed">
           {ONBOARDING.parsedInto.map((item) => (
             <span key={item} className="parsed-chip">
@@ -85,11 +76,11 @@ function StageBody({ stageKey }: { stageKey: Stage['key'] }) {
   if (stageKey === 'capabilities') {
     return (
       <>
-        <p className="onboarding-status">Matching Capabilities…</p>
+        <p className="onboarding-status">Finding the playbooks that fit…</p>
         <div className="onboarding-capabilities">
           {ONBOARDING.capabilitiesMatched.map((capability) => (
             <span key={capability} className="capability-match">
-              <span className="match-badge">Auto-prioritized</span>
+              <span className="match-badge">Loaded for you</span>
               {capability}
             </span>
           ))}
@@ -101,7 +92,7 @@ function StageBody({ stageKey }: { stageKey: Stage['key'] }) {
   // ready
   return (
     <>
-      <p className="onboarding-status">Jumping to the steady state…</p>
+      <p className="onboarding-status">Taking you in…</p>
       <div className="onboarding-ready-metrics">
         <span>
           <strong>{PEOPLE.length}</strong> people
@@ -110,7 +101,7 @@ function StageBody({ stageKey }: { stageKey: Stage['key'] }) {
           <strong>{PROJECTS.length}</strong> projects
         </span>
         <span>
-          <strong>{ONBOARDING.capabilitiesMatched.length}</strong> Capability sets
+          <strong>{ONBOARDING.capabilitiesMatched.length}</strong> playbook sets
         </span>
       </div>
     </>
@@ -122,11 +113,11 @@ function doneSummary(stageKey: Stage['key']): string {
     case 'files':
       return `${ONBOARDING.sampleFiles.length} files read`
     case 'connect':
-      return 'GitHub & Slack connected · sanitized · stored locally' // ⚠ 待 Danny 审字
+      return `${ONBOARDING.connectSources.map((s) => s.name).join(' & ')} · learned · kept on your machine`
     case 'parse':
-      return `Company brain built · ${ONBOARDING.parsedInto.length} facets`
+      return `Got the picture · ${ONBOARDING.parsedInto.length} areas`
     case 'capabilities':
-      return `${ONBOARDING.capabilitiesMatched.length} Capability sets auto-loaded`
+      return `${ONBOARDING.capabilitiesMatched.length} playbook sets loaded for you`
     default:
       return ''
   }
@@ -150,7 +141,7 @@ export function OnboardingScene() {
       <div className="onboarding-card">
         <header className="onboarding-head">
           <p className="eyebrow">Onboarding · prologue</p>
-          <h2>Building the company brain</h2>
+          <h2>Getting to know your team</h2>
           <p>{ONBOARDING.caption}</p>
         </header>
 
@@ -175,7 +166,7 @@ export function OnboardingScene() {
             return (
               <li key={stage.key} className={`onboarding-stage is-${state}`}>
                 <div className="stage-marker" aria-hidden="true">
-                  {state === 'done' ? '✓' : index + 1}
+                  {state === 'done' ? '✓' : state === 'active' ? '◉' : '○'}
                 </div>
                 <div className="stage-content">
                   <h3>{stage.title}</h3>

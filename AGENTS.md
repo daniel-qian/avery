@@ -1,6 +1,6 @@
 # AGENTS.md
 
-TeamMaster 2.0 —— 面向小公司 manager 的管理平台 **demo 原型**（Vite + React + framer-motion + zustand）。代码只服务 demo 叙事，不按产品工程标准要求（见 ADR-0001）；领域术语表在 `CONTEXT.md`，架构决策在 `docs/adr/`，动手前先读与所改区域相关的条目。
+Avery（旧称 TeamMaster 2.0）—— 面向小公司 manager 的管理平台 **demo 原型**（Vite + React + framer-motion + zustand）。品牌已锁定 Avery（ADR-0015）；老字眼清理见 `.to-issues/P7-01`。代码只服务 demo 叙事，不按产品工程标准要求（见 ADR-0001）；领域术语表在 `CONTEXT.md`，架构决策在 `docs/adr/`，动手前先读与所改区域相关的条目。
 
 ## Startup Workflow
 
@@ -35,6 +35,8 @@ Before writing code:
 4. `progress.md` 已更新。
 
 ## End of Session
+
+Worktree note: if this session is running inside a git worktree, do not rewrite global harness narrative files. Update only the active feature’s entry in `feature_list.json`, `.issues/<feature>/*`, and in-scope code/docs. Leave `progress.md`, `session-handoff.md`, and `mind-map.md` to the main-checkout integrator/merge-manager unless the user explicitly says this is the only active line.
 
 Before ending（或 context 快用完时）：
 

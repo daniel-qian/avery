@@ -43,31 +43,31 @@ export const SCRIPT: RailStep[] = [
     // ── Act 1 · bill/acme hero ──。开头 title card（ADR-0013 决策 9：从第一个 case 就
     // 建立间隔语法）。run 只重申既有场景——状态零变化，浮层全在 rail chrome 层。
     beat: 'T1',
-    label: 'Use case — Bill & the Acme pilot', // ⚠ 待 Danny 审字（caption）
+    label: 'Use case — Lin Qing & the Shopping Guide demo', // ⚠ 待 Danny 审字（caption）
     titleCard: BILL_ACME_CASE.title,
     run: () => useCanvas.getState().goScene('dashboard'),
   },
   {
     beat: 'B2',
-    label: 'Focus Acme risk cluster',
+    label: 'Focus the demo risk cluster',
     run: () => useCanvas.getState().setFocus(focusEntity('project', 'p_acme')),
   },
   // P5-04 Act1（ADR-0009）：Nexus 前 drill「看现状」。thread.steps 空 → 详情页派生 believed 态（零剧透）。
-  // 顺序参 demo-brief：focus → drill Acme → drill Bill → ask；不用 back()，下一步 askQuestion 自带 goScene('nexus') 飞进 Nexus。
+  // 顺序参 demo-brief：focus → drill demo → drill Lin Qing → ask；不用 back()，下一步 askQuestion 自带 goScene('nexus') 飞进 Nexus。
   // ⚠ 待 Danny 审字：两条 drill 的 caption label。
   {
     beat: 'B2',
-    label: 'Drill Acme — current state',
+    label: 'Drill the demo — current state',
     run: () => useCanvas.getState().openDetail('project', 'p_acme'),
   },
   {
     beat: 'B2',
-    label: 'Drill Bill — current state',
+    label: 'Drill Lin Qing — current state',
     run: () => useCanvas.getState().openDetail('employee', 'u_bill'),
   },
   {
     beat: 'B3',
-    label: 'Ask Nexus',
+    label: 'Ask about the team',
     run: () => useCanvas.getState().askQuestion(HERO_QUESTION),
   },
   {
@@ -81,7 +81,7 @@ export const SCRIPT: RailStep[] = [
     run: () => useCanvas.getState().runAgent(),
   },
   {
-    // P5-04 (ADR-0007)：思考流 B4–B9 零整页 drill-in。B6 塌成单步；Bill 的 drill 已搬到 Act1（B2 前戏段）。
+    // P5-04 (ADR-0007)：思考流 B4–B9 零整页 drill-in。B6 塌成单步；Lin Qing 的 drill 已搬到 Act1（B2 前戏段）。
     beat: 'B6',
     label: 'HR root-cause check',
     run: () => useCanvas.getState().runAgent(),
@@ -116,12 +116,12 @@ export const SCRIPT: RailStep[] = [
   },
   {
     beat: 'B9b',
-    label: 'Drill Acme — re-baselined',
+    label: 'Drill the demo — scope frozen',
     run: () => useCanvas.getState().openDetail('project', 'p_acme'),
   },
   {
     beat: 'B9b',
-    label: 'Drill Bill — protected focus',
+    label: 'Drill Lin Qing — scope protected',
     run: () => useCanvas.getState().openDetail('employee', 'u_bill'),
   },
   {
@@ -160,7 +160,7 @@ export const SCRIPT: RailStep[] = [
   },
   {
     beat: 'W4',
-    label: 'Follow-up — does the Acme build comply?', // ⚠ 待 Danny 审字（caption）
+    label: 'Follow-up — does the companion-app build comply?', // ⚠ 待 Danny 审字（caption）
     run: () => {
       const canvas = useCanvas.getState()
       canvas.askFollowUp(WEB_SEARCH_CASE.followUps[0].suggestedQuestion)
@@ -193,7 +193,7 @@ export const SCRIPT: RailStep[] = [
   },
   {
     beat: 'E4',
-    label: 'Follow-up — short version to #eng', // ⚠ 待 Danny 审字（caption）
+    label: 'Follow-up — short version to #team', // ⚠ 待 Danny 审字（caption）
     run: () => {
       const canvas = useCanvas.getState()
       canvas.askFollowUp(EMAIL_CASE.followUps[0].suggestedQuestion)
@@ -215,7 +215,7 @@ export const SCRIPT: RailStep[] = [
   {
     // ── Act 3 ──。P5-01 (ADR-0007)：Capabilities 收尾 beat 原样 = 护城河 + 营收收束。
     beat: 'B11',
-    label: 'Capabilities — the moat',
+    label: 'The playbooks behind the call',
     run: () => useCanvas.getState().goScene('capabilities'),
   },
 ]

@@ -62,7 +62,7 @@ const REFERENCE_FILTERS: Array<{ id: ReferenceFilter; label: string }> = [
   { id: 'all', label: 'All' },
   { id: 'person', label: 'People' },
   { id: 'project', label: 'Projects' },
-  { id: 'capability', label: 'Capabilities' },
+  { id: 'capability', label: 'Playbooks' },
 ]
 
 // board 绝对坐标（修订 2：world 对象 board px only，禁 clamp/vw）。
@@ -91,23 +91,35 @@ function progressBand(progress: number) {
   return 'strip-high'
 }
 
-function clampPct(value: number) {
-  return Math.min(100, Math.max(0, Math.round(value)))
-}
-
-function personHud(person: Person) {
-  const loadPct = person.capacityPct ?? 100
-  return {
-    loadPct,
-    hpPct: clampPct(100 - loadPct),
-    mpPct: clampPct(person.moodPct),
-  }
-}
-
-function personTone(hud: ReturnType<typeof personHud>) {
-  if (hud.hpPct <= 0) return 'tone-danger'
-  if (hud.hpPct <= 12) return 'tone-warning'
+// 个人节点 tone（修订：不再给单人贴血条/数值）。只保留一个安静的定性强调——
+// 谁这周值得搭把手——绝不显示 HP/MP/load 数字。capacityPct 仍是内部判据，但不外显。
+function personTone(person: Person) {
+  const load = person.capacityPct ?? 100
+  if (load >= 120) return 'tone-warning'
   return 'tone-stable'
+}
+
+// ── 团队级柔性信号（创始人拍板：不量化个人，改集体、人味的读数）──────────────
+// 一个团队整体这周的节奏，由该组所有人的负载/心气聚合而来。措辞像前辈在描述
+// 一个组的处境，而不是给谁打分；不并列任何单人数值。
+function teamPace(team: string): { read: string; tone: string } | null {
+  const members = PEOPLE.filter((p) => p.team === team)
+  if (members.length === 0) return null
+  const avgLoad =
+    members.reduce((sum, p) => sum + (p.capacityPct ?? 100), 0) / members.length
+  const avgMood = members.reduce((sum, p) => sum + p.moodPct, 0) / members.length
+  const stretched = members.filter((p) => (p.capacityPct ?? 100) >= 120).length
+
+  if (avgLoad >= 110 || stretched >= 2) {
+    return { read: 'Stretched thin this week', tone: 'tone-warning' }
+  }
+  if (avgLoad >= 95 || avgMood < 60) {
+    return { read: 'Carrying a full load', tone: 'tone-stable' }
+  }
+  if (avgLoad < 78) {
+    return { read: 'Room to take more on', tone: 'tone-stable' }
+  }
+  return { read: 'Finding a steady rhythm', tone: 'tone-stable' }
 }
 
 function ownerName(project: Project) {
@@ -175,6 +187,20 @@ export function DashboardScene() {
   const [referenceFilter, setReferenceFilter] = useState<ReferenceFilter>('all')
   const [referenceQuery, setReferenceQuery] = useState('')
   const [references, setReferences] = useState<ComposerReference[]>([])
+  // 决定 2（Danny）：天气摘要行常驻可见，详情卡只靠「点击」展开/收起——去掉 hover 触发
+  //（Dana 是只扫一眼型用户，hover 弹卡会被忽略且鼠标划过误弹）。
+  const [briefingOpen, setBriefingOpen] = useState(false)
+
+  // 大横幅压成一行摘要：headline 首句（到第一个 em-dash / 句号）+ 关键读数并排。
+  // 单复数修正：value 恰为 "1" 时把复数 label 去掉结尾 's"（"1 hot spots" → "1 hot spot"）。
+  const briefingSummary = useMemo(() => {
+    const lead = briefing.headline.split(/\s*[—.]\s*/)[0].trim()
+    const reads = briefing.metrics.map((m) => {
+      const label = m.value.trim() === '1' && m.label.endsWith('s') ? m.label.slice(0, -1) : m.label
+      return `${m.value} ${label}`
+    })
+    return [lead, ...reads].join(' · ')
+  }, [briefing])
 
   const dashboardPhase: DetailPhase = briefing.version === 2 ? 'grown' : 'believed'
   const hasFocus = Boolean(focus)
@@ -188,16 +214,16 @@ export function DashboardScene() {
     return [
       {
         id: 'connector-hotspot',
-        label: 'Hot spot',
-        title: 'Connector signals disagree with Monday status',
-        detail: `${hotspotSignals.length} live signals`,
+        label: 'Worth a look',
+        title: 'The core guide flow has more churn than the status let on', // ⚠ 待 Danny 审字
+        detail: `${hotspotSignals.length} things worth checking`,
         projectId: 'p_connector',
       },
       {
         id: 'acme-risk',
-        label: 'At risk',
-        title: 'Acme Pilot depends on Connector',
-        detail: 'Friday ship pressure',
+        label: 'Keep an eye on',
+        title: 'The demo is leaning on the core guide flow to make Friday', // ⚠ 待 Danny 审字
+        detail: 'Friday is getting tight',
         projectId: 'p_acme',
       },
     ]
@@ -351,7 +377,7 @@ export function DashboardScene() {
       {
         id: `file-${current.filter((ref) => ref.kind === 'file').length + 1}`,
         kind: 'file',
-        label: 'Acme_Pilot_SOW.docx',
+        label: 'Smart_Shopping_Guide_Brief.docx', // ⚠ 待 Danny 审字
         meta: 'Attachment',
       },
     ])
@@ -369,30 +395,42 @@ export function DashboardScene() {
         'scene scene-dashboard is-active',
         hasFocus && 'has-focus',
       ])}
-      aria-label="Dashboard"
+      aria-label="Your team"
       onClick={clearFocus}
     >
       <PanZoomCanvas ref={camRef}>
         <div className="canvas-grid board-surface" aria-hidden="true" />
         <SvgEdgeLayer />
 
-        <div className="zone-label-layer" aria-hidden="true">
-          {TEAM_ZONES.map((zone) => (
-            <span
-              key={zone.team}
-              className="team-zone-label"
-              style={{ left: `${zone.labelPos.x}px`, top: `${zone.labelPos.y}px` }}
-            >
-              {zone.label}
-            </span>
-          ))}
+        <div className="zone-label-layer">
+          {TEAM_ZONES.map((zone) => {
+            const pace = teamPace(zone.team)
+            return (
+              <span
+                key={zone.team}
+                className="team-zone-label"
+                style={{ left: `${zone.labelPos.x}px`, top: `${zone.labelPos.y}px` }}
+              >
+                <span className="team-zone-name" aria-hidden="true">
+                  {zone.label}
+                </span>
+                {pace ? (
+                  <span
+                    className={classNames(['team-zone-pace', pace.tone])}
+                    aria-label={`${zone.label} — ${pace.read}`}
+                  >
+                    {pace.read}
+                  </span>
+                ) : null}
+              </span>
+            )
+          })}
         </div>
 
       <div className="people-layer" aria-label="People orbit">
         {PEOPLE.map((person) => {
           const pos = PERSON_POS[person.id]
           if (!pos) return null
-          const hud = personHud(person)
           const cardCopy = dashboardPersonCopy(person, dashboardPhase)
           const related = isRelated(focus, 'person', person.id)
           const primary = isPrimary(focus, 'person', person.id)
@@ -403,8 +441,7 @@ export function DashboardScene() {
               type="button"
               className={classNames([
                 'person-node',
-                personTone(hud),
-                hud.mpPct < 40 && 'has-low-mp',
+                personTone(person),
                 muted && 'is-muted',
                 related && 'is-related',
                 primary && 'is-focused',
@@ -412,7 +449,7 @@ export function DashboardScene() {
               style={nodeStyle(pos)}
               animate={{ opacity: muted ? 0.24 : 1, scale: primary ? 1.08 : related ? 1.02 : 1 }}
               transition={transition}
-              aria-label={`${primary ? 'Open' : 'Focus'} ${person.name}. HP ${hud.hpPct}. MP ${hud.mpPct}. ${hud.loadPct}% load.`}
+              aria-label={`${primary ? 'Open' : 'Focus'} ${person.name} — ${cardCopy.roleLine}`}
               aria-pressed={primary}
               onClick={(event) => {
                 event.stopPropagation()
@@ -423,27 +460,6 @@ export function DashboardScene() {
               <span className="person-body">
                 <h3>{person.lastInitial ? `${person.name} ${person.lastInitial}.` : person.name}</h3>
                 <p className="person-role">{cardCopy.roleLine}</p>
-                <span className="person-stats person-hud" aria-hidden="true">
-                  <span className="hud-meter hud-hp">
-                    <span className="hud-label">
-                      <strong>HP</strong>
-                      <em>{hud.hpPct}</em>
-                    </span>
-                    <span className="hud-track">
-                      <span className="hud-fill" style={{ width: `${hud.hpPct}%` }} />
-                    </span>
-                  </span>
-                  <span className="hud-meter hud-mp">
-                    <span className="hud-label">
-                      <strong>MP</strong>
-                      <em>{hud.mpPct}</em>
-                    </span>
-                    <span className="hud-track">
-                      <span className="hud-fill" style={{ width: `${hud.mpPct}%` }} />
-                    </span>
-                  </span>
-                  <span className="hud-load">{cardCopy.loadLine}</span>
-                </span>
               </span>
             </motion.button>
           )
@@ -576,24 +592,43 @@ export function DashboardScene() {
         </label>
       </div>
 
-      <motion.section
-        className="briefing-layer"
-        aria-label="Executive briefing"
+      <motion.div
+        className={classNames(['briefing-hud', briefingOpen && 'is-open'])}
+        aria-label="How the team's doing"
         onClick={stopPropagation}
-        animate={{ opacity: hasFocus ? 0.5 : 1 }}
+        animate={{ opacity: hasFocus ? 0.6 : 1 }}
         transition={transition}
       >
-        <p className="eyebrow">Live organization weather</p>
-        <h2>{briefing.headline}</h2>
-        <p>{briefing.subhead}</p>
-        <div className="metric-row" aria-label="Key metrics">
-          {briefing.metrics.map((m) => (
-            <span key={m.label}>
-              <strong>{m.value}</strong> {m.label}
-            </span>
-          ))}
-        </div>
-      </motion.section>
+        <button
+          type="button"
+          className="briefing-pill"
+          aria-expanded={briefingOpen}
+          onClick={() => setBriefingOpen((open) => !open)}
+        >
+          <span className="briefing-pill-dot" aria-hidden="true" />
+          <span className="briefing-pill-text">{briefingSummary}</span>
+          <span className="briefing-pill-caret" aria-hidden="true">
+            {briefingOpen ? '▴' : '▾'}
+          </span>
+        </button>
+
+        {/* 决定 2：仅点击展开/收起。用条件渲染 + CSS 入场动画（p6-popover-in，与 Nexus
+            brief 卡同口径）——收起即刻 unmount，不留 framer 退场残影。 */}
+        {briefingOpen ? (
+          <section className="briefing-card" aria-label="The longer read">
+            <p className="eyebrow">How the team's doing right now</p>
+            <h2>{briefing.headline}</h2>
+            <p>{briefing.subhead}</p>
+            <div className="metric-row" aria-label="Key metrics">
+              {briefing.metrics.map((m) => (
+                <span key={m.label}>
+                  <strong>{m.value}</strong> {m.label}
+                </span>
+              ))}
+            </div>
+          </section>
+        ) : null}
+      </motion.div>
 
       <div className="alert-pill-layer" aria-label="Dashboard alerts" onClick={stopPropagation}>
         {alertPills.map((pill) => (
@@ -631,7 +666,7 @@ export function DashboardScene() {
               onClick={() => setComposerOpen(true)}
               onFocus={() => setComposerOpen(true)}
               onChange={(event) => setQuestion(event.currentTarget.value)}
-              aria-label="Ask Nexus"
+              aria-label="Ask about your team"
             />
             <button type="submit" className="icon-button">
               Ask

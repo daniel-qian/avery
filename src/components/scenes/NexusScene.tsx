@@ -13,8 +13,10 @@ import {
   AGENT_OUTPUT,
   HERO_QUESTION,
   HUMAN_LOOP,
+  LIN_QING_CHECKLIST,
   MISMATCH,
   PEOPLE,
+  SCOPE_SPLIT,
   SIGNALS,
   TIMELINE,
   type Person,
@@ -46,12 +48,6 @@ import { PixelAvatar } from '../PixelAvatar'
 // feat-004 (ADR-0014 决策 1)：终端 = viewport-fixed 左栏 HUD。镜头只对 Manifest 区取景，
 // insets.left 加宽为终端栏宽（440 + 边距）；其余薄边清 Topbar / advance-bar。
 const NEXUS_INSETS: SafeInsets = { top: 80, right: 28, bottom: 100, left: 496 }
-
-// P6-04 (ADR-0013 决策 7)：context-window 安全阈值。demo 数据永不越线（hero follow-up
-// 顶到 ~80%）——阈值的存在本身就是叙事（"thread 要守在安全线下"）。进入近阈值带
-//（threshold − margin）数字变调 amber：主段收在 71% 仍是常态色，follow-up 80% 进警示带。
-const CONTEXT_WARN_PCT = 40
-const CONTEXT_ALERT_PCT = 70
 
 // P6-01 (ADR-0013)：step labels / Manifest 锚点全部住在 per-case 定义（data/cases.ts），
 // 本 scene 只读 active case。feat-004 (ADR-0014)：节点链渲染退役，思考过程改终端流。
@@ -116,7 +112,7 @@ const TIMELINE_STATE_COPY: Record<string, { label: string; detail: string }> = {
   deferred: { label: 'Deferred', detail: 'Cut from core scope to protect Friday.' },
   conditional: {
     label: 'Conditional',
-    detail: 'Contingency only if Slack rate-limit is not cracked by Thursday.',
+    detail: 'Contingency only if the core guide flow is not running by Thursday.',
   },
 }
 
@@ -128,8 +124,8 @@ function nameOf(personId: string) {
   return PEOPLE.find((person) => person.id === personId)?.name ?? personId
 }
 
-// 人名标签 → Person。chat speaker 用精确名（"Bill" / "You"）；report confirmation 用前导词
-// （"Vanessa — Acme scope cut" → "Vanessa"）。agent 名（"PM agent"）取不到 person → 返回 undefined。
+// 人名标签 → Person。chat speaker 用精确名（"Lin Qing" / "You"）；report confirmation 用前导词
+// （"Sun Xiaomei — the responsibility split" → "Sun Xiaomei"）。agent 名（"PM agent"）取不到 person → 返回 undefined。
 function personByName(label: string) {
   const token = label.split(/\s[—(–-]/)[0].trim()
   return PEOPLE.find((person) => person.name === token)
@@ -142,11 +138,19 @@ const BILL_PERSON = PEOPLE.find((person) => person.id === 'u_bill')
 const SPEAKER_META: Record<StreamSpeaker, { label: string; className: string }> = {
   you: { label: 'YOU', className: 'is-you' },
   pm: { label: 'PM', className: 'is-pm' },
-  hr: { label: 'HR', className: 'is-hr' },
-  agent: { label: 'AGENT', className: 'is-agent' },
+  hr: { label: 'PEOPLE', className: 'is-hr' },
+  agent: { label: 'AVERY', className: 'is-agent' },
   tool: { label: 'TOOL', className: 'is-tool' },
-  system: { label: 'SYS', className: 'is-system' },
-  bill: { label: 'BILL', className: 'is-bill' },
+  system: { label: '·', className: 'is-system' },
+  bill: { label: 'LIN QING', className: 'is-bill' }, // token 'bill' = 内部 StreamSpeaker，display 改 Lin Qing
+}
+
+// 决定 3（Danny）：去掉机器人腔的 "agent" 字与 "AIDE" 名，保留「多专家协同」实质。
+// chat 里的专家 badge：内部 agentKind（'pm'|'hr'，type 不动）→ 人味专业身份标签。
+// HR 用 "People" 更有人味；不再拼 "… agent"。
+const SPECIALIST_BADGE: Record<'pm' | 'hr', string> = {
+  pm: 'PM',
+  hr: 'People',
 }
 
 interface TerminalLine extends StreamLine {
@@ -188,7 +192,7 @@ function deriveTerminalLines(
 
 // 终端栏（viewport-fixed 左栏 HUD，决策 1）：1:1 永远可读、自滚动；等宽小字。
 // MANIFEST 行 = 可点锚（决策 3）→ onInspect 飞向对应卡（不画跨层连线）。
-// 底部「运行中 ▌」光标行仅视觉提示、不可点（决策 8）；Bill 行内联像素头像（决策 9）。
+// 底部「运行中 ▌」光标行仅视觉提示、不可点（决策 8）；Lin Qing 行内联像素头像（决策 9）。
 function NexusTerminal({
   caseDef,
   thread,
@@ -208,14 +212,14 @@ function NexusTerminal({
   }, [lines.length, caseDef.id])
 
   return (
-    <section className="nexus-terminal" aria-label="Agent activity stream">
+    <section className="nexus-terminal" aria-label="How it's thinking it through">
       <header className="nexus-terminal-bar" aria-hidden="true">
         <span className="nexus-terminal-dots">
           <i />
           <i />
           <i />
         </span>
-        <span className="nexus-terminal-title">teammaster · thread</span>
+        <span className="nexus-terminal-title">thinking it through</span>
       </header>
       <div className="nexus-terminal-log" ref={logRef}>
         {lines.map((line, index) => {
@@ -286,17 +290,24 @@ function TimelineCard() {
     (a, b) => TIMELINE_WHEN_ORDER[a.when] - TIMELINE_WHEN_ORDER[b.when],
   )
 
+  // checklist = 本地交互（check/uncheck），不入 store——与 ChatCard 的 draft 同口径。
+  const [checked, setChecked] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(LIN_QING_CHECKLIST.map((item) => [item.id, item.done])),
+  )
+  const toggle = (id: string) => setChecked((prev) => ({ ...prev, [id]: !prev[id] }))
+  const linQing = PEOPLE.find((person) => person.id === 'u_bill')
+
   return (
-    <section className="timeline-card" aria-label="Tool output: re-baselined timeline">
+    <section className="timeline-card" aria-label="Scope frozen — the plan for Friday">
       <div className="timeline-card-header">
         <div>
-          <p className="eyebrow">Tool output</p>
+          <p className="eyebrow">Scope frozen for Friday</p>
           <h2>{TIMELINE.title}</h2>
         </div>
         <span>Friday protected</span>
       </div>
 
-      <div className="timeline-track" aria-label="Re-baselined milestones">
+      <div className="timeline-track" aria-label="The plan once scope is frozen">
         {milestones.map((milestone) => {
           const stateCopy = TIMELINE_STATE_COPY[milestone.state]
           return (
@@ -321,23 +332,74 @@ function TimelineCard() {
           )
         })}
       </div>
+
+      {/* 责任拆分：把活儿从 Lin Qing 一个人手里拆给团队 ⚠ 待 Danny 审字 */}
+      <div className="scope-split" aria-label="Who owns what once scope is frozen">
+        <p className="scope-split-label">Who owns what</p>
+        <div className="scope-split-list">
+          {SCOPE_SPLIT.map((row) => {
+            const person = PEOPLE.find((p) => p.id === row.ownerId)
+            return (
+              <div key={row.ownerId} className="scope-split-row">
+                <span className="scope-split-owner">
+                  {person ? (
+                    <PixelAvatar person={person} size={20} className="inline-avatar" />
+                  ) : null}
+                  {nameOf(row.ownerId)}
+                </span>
+                <span className="scope-split-scope">{row.scope}</span>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Lin Qing 的可完成 checklist：清楚的交付边界 + "什么算做完" ⚠ 待 Danny 审字 */}
+      <div className="lin-checklist" aria-label="A completable checklist for Lin Qing">
+        <p className="lin-checklist-label">
+          {linQing ? (
+            <PixelAvatar person={linQing} size={20} className="inline-avatar" />
+          ) : null}
+          A clear, completable checklist for Lin Qing
+        </p>
+        <ul className="lin-checklist-items">
+          {LIN_QING_CHECKLIST.map((item) => {
+            const isDone = checked[item.id]
+            return (
+              <li key={item.id} className={classNames(['lin-checklist-item', isDone && 'is-done'])}>
+                <button
+                  type="button"
+                  className="lin-checklist-toggle"
+                  aria-pressed={isDone}
+                  onClick={() => toggle(item.id)}
+                >
+                  <span className="lin-checklist-box" aria-hidden="true">
+                    {isDone ? '✓' : ''}
+                  </span>
+                  <span className="lin-checklist-text">{item.label}</span>
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      </div>
     </section>
   )
 }
 
 function MismatchCard() {
   return (
-    <section className="mismatch-card" aria-label="Reality gap: report mismatch">
+    <section className="mismatch-card" aria-label="Worth a closer look">
       <div className="mismatch-card-header">
-        <p className="eyebrow">Reality gap</p>
+        <p className="eyebrow">Worth a closer look</p>
         <h2>{MISMATCH.gapType}</h2>
       </div>
 
       <div className="mismatch-collision" aria-label="Reported status compared with work signals">
         <article className="mismatch-side">
-          <span className="mismatch-label">Reported</span>
+          <span className="mismatch-label">Manager sees</span>
           <strong>{MISMATCH.reported}</strong>
-          <p>Self-report from Monday standup.</p>
+          <p>How it reads from the outside.</p>
         </article>
 
         <div className="mismatch-versus" aria-hidden="true">
@@ -345,9 +407,9 @@ function MismatchCard() {
         </div>
 
         <article className="mismatch-side is-signal">
-          <span className="mismatch-label">Signals say</span>
+          <span className="mismatch-label">What she’s carrying</span>
           <strong>{MISMATCH.signalsSay}</strong>
-          <p>Evidence from GitHub, Slack, and tasks.</p>
+          <p>Evidence from the design files and feedback rounds.</p>
         </article>
       </div>
 
@@ -375,13 +437,13 @@ function StructuredOutputCard({
   onReturnDashboard: () => void
 }) {
   return (
-    <section className="structured-output-card" aria-label="Structured trusted output report">
+    <section className="structured-output-card" aria-label="What it found — the read">
       <header className="structured-output-header">
         <div>
-          <p className="eyebrow">Trusted output</p>
-          <h2>Decision report</h2>
+          <p className="eyebrow">What it found</p>
+          <h2>The read</h2>
         </div>
-        <span>Human review ready</span>
+        <span>Yours to sign off</span>
       </header>
 
       <section className="report-section report-conclusion" aria-label="Conclusion">
@@ -390,8 +452,8 @@ function StructuredOutputCard({
       </section>
 
       <div className="report-grid">
-        <section className="report-section" aria-label="Evidence">
-          <p className="report-section-label">Evidence</p>
+        <section className="report-section" aria-label="Why I'm saying this">
+          <p className="report-section-label">Why I&rsquo;m saying this</p>
           <ol className="report-list">
             {AGENT_OUTPUT.evidence.map((item) => (
               <li key={item}>{item}</li>
@@ -399,8 +461,8 @@ function StructuredOutputCard({
           </ol>
         </section>
 
-        <section className="report-section" aria-label="Uncertainties">
-          <p className="report-section-label">Uncertainties</p>
+        <section className="report-section" aria-label="Still not sure about">
+          <p className="report-section-label">Still not sure about</p>
           <ul className="report-list">
             {AGENT_OUTPUT.uncertainties.map((item) => (
               <li key={item}>{item}</li>
@@ -419,8 +481,8 @@ function StructuredOutputCard({
       </section>
 
       <div className="report-grid report-bottom-grid">
-        <section className="report-section" aria-label="Needs confirmation from">
-          <p className="report-section-label">Needs confirmation from</p>
+        <section className="report-section" aria-label="Who needs to weigh in">
+          <p className="report-section-label">Who needs to weigh in</p>
           <div className="confirmation-list">
             {AGENT_OUTPUT.needsConfirmationFrom.map((label) => {
               const person = personByName(label)
@@ -457,7 +519,7 @@ function StructuredOutputCard({
                     disabled={dispatched}
                     onClick={() => onDispatchTask(task)}
                   >
-                    {dispatched ? 'Dispatched' : 'Dispatch'}
+                    {dispatched ? 'Sent' : 'Send to the team'}
                   </button>
                 </article>
               )
@@ -475,55 +537,54 @@ function StructuredOutputCard({
   )
 }
 
-// P6-03 (ADR-0013 决策 5)：bill/acme follow-up 段的 Manifest 卡——Jason 替代人选分析。
-// 候选人与余量实时引用 PEOPLE fixture（capacityPct 取数，不复制数字）；定性 copy 为
-// demo fixture 文案。bill/acme 不加新节点——卡从 output 产出圆显形（cases.ts 已配锚点）。
+// P6-03 (ADR-0013 决策 5)：bill/acme follow-up 段的 Manifest 卡——谁这周能搭把手。
+// 红线修复（ADR-0015）：不给人排替补榜、不打分、不贴 risk 等级。每人一句情境化、
+// 同事互助口吻的话——"这周手头怎样 + 能怎么帮"，而非"谁能替掉谁"。
+// 名字实时引用 PEOPLE fixture；定性 copy 为 demo fixture 文案。
 const ALTERNATIVE_CANDIDATES: Array<{
   personId: string
-  skillMatch: string
-  risk: string
-  riskLevel: 'low' | 'medium' | 'high'
+  note: string
 }> = [
-  // ⚠ 待 Danny 审字（skillMatch / risk 整组 copy）
+  // ⚠ 待 Danny 审字（note 整组 copy）
   {
     personId: 'u_fred',
-    skillMatch: 'Owns the data ingestion path — closest overlap with the Connector interrupts.',
-    risk: 'Low — clean signal picture this week.',
-    riskLevel: 'low',
+    note: "Fred knows the guide screens well, and his week looks light enough to pick a bit of this up.",
   },
   {
     personId: 'u_nasim',
-    skillMatch: 'Comfortable across the backend, but no Slack/GitHub connector context yet.',
-    risk: 'Medium — mid-sprint on model evaluation.',
-    riskLevel: 'medium',
+    note: "Nasim could step in on the motion and interactions, though she's mid-sprint and hasn't worked on the core flow before.",
   },
   {
     personId: 'u_aidy',
-    skillMatch: 'Knows the test surface, not the ingestion internals.',
-    risk: 'High — QA load spikes near the Friday ship.',
-    riskLevel: 'high',
+    note: "Aidy knows the review side, but design QA tends to get busy right before a Friday demo.",
   },
 ]
 
 function AlternativesCard({ question }: { question: string }) {
   return (
-    <section className="alternatives-card" aria-label="Follow-up output: alternatives for Jason">
+    <section className="alternatives-card" aria-label="Follow-up: who could help out this week">
       <header className="alternatives-header">
         <div>
-          <p className="eyebrow">Follow-up · Alternatives {/* ⚠ 待 Danny 审字 */}</p>
-          <h2>Who else can absorb Bill&rsquo;s interrupts? {/* ⚠ 待 Danny 审字 */}</h2>
+          <p className="eyebrow">Follow-up {/* ⚠ 待 Danny 审字 */}</p>
+          <h2>Who might have room to help out? {/* ⚠ 待 Danny 审字 */}</h2>
         </div>
-        <span>PM agent re-check {/* ⚠ 待 Danny 审字 */}</span>
+        <span>A second look {/* ⚠ 待 Danny 审字 */}</span>
       </header>
 
       <p className="alternatives-question">&ldquo;{question}&rdquo;</p>
+
+      <p className="alternatives-intro">
+        {/* ⚠ 待 Danny 审字 */}
+        A few people on the team might have a little room this week — here's how each is placed,
+        so you can decide who to ask.
+      </p>
 
       <div className="alternatives-list">
         {ALTERNATIVE_CANDIDATES.map((candidate) => {
           const person = PEOPLE.find((p) => p.id === candidate.personId)
           if (!person) return null
           return (
-            <article key={candidate.personId} className={`alternatives-row is-risk-${candidate.riskLevel}`}>
+            <article key={candidate.personId} className="alternatives-row">
               <div className="alternatives-person">
                 <PixelAvatar person={person} size={26} className="inline-avatar" />
                 <div>
@@ -531,9 +592,7 @@ function AlternativesCard({ question }: { question: string }) {
                   <span>{person.role}</span>
                 </div>
               </div>
-              <span className="alternatives-load">{person.capacityPct}% load {/* ⚠ 待 Danny 审字 */}</span>
-              <p className="alternatives-skill">{candidate.skillMatch}</p>
-              <p className="alternatives-risk">{candidate.risk}</p>
+              <p className="alternatives-note">{candidate.note}</p>
             </article>
           )
         })}
@@ -541,8 +600,8 @@ function AlternativesCard({ question }: { question: string }) {
 
       <p className="alternatives-verdict">
         {/* ⚠ 待 Danny 审字 */}
-        Fred is the strongest alternative if Jason takes the new job — Jason still carries the
-        cleanest margin. Either way, keep the swap to ≤ 2 days to protect the Friday ship.
+        Whoever you ask, it's worth keeping the hand-off to a couple of days so it stays a favour,
+        not a new burden — and so Friday stays protected.
       </p>
     </section>
   )
@@ -617,13 +676,13 @@ const POLICY_GIST_POINTS: Array<{ point: string; quote: string; ref: string }> =
 
 function PolicyGistCard() {
   return (
-    <section className="policy-gist-card" aria-label="Agent answer: Apple policy gist">
+    <section className="policy-gist-card" aria-label="The short version of Apple's policy">
       <header className="policy-gist-header">
         <div>
-          <p className="eyebrow">Agent answer · Policy gist {/* ⚠ 待 Danny 审字 */}</p>
-          <h2>Expedited App Review — the short version {/* ⚠ 待 Danny 审字 */}</h2>
+          <p className="eyebrow">The short version</p>
+          <h2>Expedited App Review — what it comes down to</h2>
         </div>
-        <span>Sources cited {/* ⚠ 待 Danny 审字 */}</span>
+        <span>Sources cited</span>
       </header>
 
       <div className="policy-gist-list">
@@ -638,8 +697,8 @@ function PolicyGistCard() {
 
       <p className="policy-gist-verdict">
         {/* ⚠ 待 Danny 审字 */}
-        For the Acme companion launch: submit a final build through the normal queue now, and
-        file the expedited request citing the pilot launch date — Apple grants these on a
+        For the Smart Shopping Guide companion launch: submit a final build through the normal
+        queue now, and file the expedited request citing the launch date — Apple grants these on a
         limited, case-by-case basis.
       </p>
     </section>
@@ -664,7 +723,7 @@ const COMPLIANCE_CHECKS: Array<{
     status: 'attention',
   },
   {
-    verdict: 'Expedited request is justifiable — the Acme pilot launch is a dated event.',
+    verdict: 'Expedited request is justifiable — the Smart Shopping Guide launch is a dated event.', // ⚠ 待 Danny 审字
     guideline: 'Expedited review criteria',
     status: 'pass',
   },
@@ -676,7 +735,7 @@ function ComplianceCard({ question }: { question: string }) {
       <header className="compliance-header">
         <div>
           <p className="eyebrow">Follow-up · Compliance check {/* ⚠ 待 Danny 审字 */}</p>
-          <h2>Does the Acme companion build comply? {/* ⚠ 待 Danny 审字 */}</h2>
+          <h2>Does the companion-app build comply? {/* ⚠ 待 Danny 审字 */}</h2>
         </div>
         <span>Against cited guidelines {/* ⚠ 待 Danny 审字 */}</span>
       </header>
@@ -706,27 +765,35 @@ function ComplianceCard({ question }: { question: string }) {
 }
 
 // ── P6-06 (ADR-0013 决策 4)：email errand case 的 Manifest 卡组 ──────────────────
-// 收件人实时派生自 PEOPLE fixture（team === 'Eng' 共 6 人）——不复制名单；
-// 地址 = name.lastInitial@company（如 bill.h@teammaster.io），fixture 口径。
-const ENG_RECIPIENTS = PEOPLE.filter((person) => person.team === 'Eng')
-const EMAIL_DOMAIN = 'teammaster.io' // ⚠ 待 Danny 审字（演示用公司域名）
+// 收件人实时派生自 PEOPLE fixture——不复制名单。设计团队 re-flavor 后大部分人在 Design 队，
+// 故取 Design + Eng 两队（= 工作团队），稳定取前 6 人保持 errand 的"6 recipients"口径。
+const ENG_RECIPIENTS = PEOPLE.filter(
+  (person) => person.team === 'Design' || person.team === 'Eng',
+).slice(0, 6)
+const EMAIL_DOMAIN = 'avery.io' // ⚠ 待 Danny 审字（演示用公司域名）
 
 function emailAddressOf(person: Person) {
-  const last = person.lastInitial ? `.${person.lastInitial.toLowerCase()}` : ''
-  return `${person.name.toLowerCase()}${last}@${EMAIL_DOMAIN}`
+  // handle = 名字各词用 '.' 连接、去空格小写（"Lin Qing" → lin.qing）；
+  // 单词名才附 lastInitial（"Jason" → jason.s），避免渲染出带空格的 handle。
+  const parts = person.name.trim().toLowerCase().split(/\s+/)
+  const handle =
+    parts.length > 1
+      ? parts.join('.')
+      : `${parts[0]}${person.lastInitial ? `.${person.lastInitial.toLowerCase()}` : ''}`
+  return `${handle}@${EMAIL_DOMAIN}`
 }
 
 // agent 预填的邮件草稿（fixture copy，呼应 memo 占位照片上的要点）。
-const EMAIL_SUBJECT = 'Friday ship: code freeze + Acme support rotation' // ⚠ 待 Danny 审字
+const EMAIL_SUBJECT = 'Friday demo: design freeze + client-support rotation' // ⚠ 待 Danny 审字
 // ⚠ 待 Danny 审字（草稿 body 整段 copy）
 const EMAIL_DRAFT_BODY = `Team,
 
-Two changes for the Acme pilot ship this Friday:
+Two changes for the Smart Shopping Guide demo this Friday:
 
-1. Code freeze starts Thursday 6pm — only Friday-path fixes go in after that.
-2. Acme support pings now route to the on-call rotation, not directly to Bill.
+1. Design freeze starts Thursday 6pm — only Friday-path fixes go in after that.
+2. Client-support pings now route to the on-call rotation, not directly to Lin Qing.
 
-If either of these blocks you, raise it in #eng before Thursday standup.
+If either of these blocks you, raise it in #team before Thursday standup.
 
 Thanks,
 Danny`
@@ -735,13 +802,13 @@ Danny`
 // 不入 rail replay（ADR-0006 决策 5 口径）；编辑实时流入 ② email-tool 卡的 body。
 function MemoDraftCard({ body, onChange }: { body: string; onChange: (text: string) => void }) {
   return (
-    <section className="memo-draft-card" aria-label="Agent draft: editable email text">
+    <section className="memo-draft-card" aria-label="A draft you can edit">
       <header className="memo-draft-header">
         <div>
-          <p className="eyebrow">Agent draft · Editable {/* ⚠ 待 Danny 审字 */}</p>
-          <h2>Memo, turned into an email {/* ⚠ 待 Danny 审字 */}</h2>
+          <p className="eyebrow">Draft · yours to edit</p>
+          <h2>Memo, turned into an email</h2>
         </div>
-        <span>From the memo photo {/* ⚠ 待 Danny 审字 */}</span>
+        <span>From the memo photo</span>
       </header>
       <textarea
         className="memo-draft-textarea"
@@ -763,17 +830,21 @@ function MemoDraftCard({ body, onChange }: { body: string; onChange: (text: stri
 // "人扣扳机"必须可见是人的手；rail seek 重置已点状态（replay 不含 sendEmail），接受。
 function EmailToolCard({ body, sent, onSend }: { body: string; sent: boolean; onSend: () => void }) {
   return (
-    <section className="email-tool-card" aria-label="Email tool: staged message awaiting Send">
+    <section className="email-tool-card" aria-label="The email, ready for you to send">
       <header className="email-tool-header">
         <div>
-          <p className="eyebrow">Email tool {/* ⚠ 待 Danny 审字 */}</p>
-          <h2>Ready to send {/* ⚠ 待 Danny 审字 */}</h2>
+          <p className="eyebrow">Drafted by Avery · you send it {/* ⚠ 待 Danny 审字 */}</p>
+          <h2>Ready for you to send</h2>
         </div>
         <span className={classNames(['email-tool-status', sent && 'is-sent'])}>
-          {/* ⚠ 待 Danny 审字（Staged/Sent badge 文案） */}
-          {sent ? 'Sent' : 'Staged'}
+          {sent ? 'You sent this' : 'Waiting on you'}
         </span>
       </header>
+
+      <div className="email-field">
+        <span className="email-field-label">From</span>
+        <p className="email-from">You {/* ⚠ 待 Danny 审字 */}</p>
+      </div>
 
       <div className="email-field">
         <span className="email-field-label">To</span>
@@ -806,35 +877,34 @@ function EmailToolCard({ body, sent, onSend }: { body: string; sent: boolean; on
           onClick={onSend}
         >
           {/* ⚠ 待 Danny 审字（Send / Sent ✓ 按钮文案） */}
-          {sent ? `Sent ✓ to ${ENG_RECIPIENTS.length} people` : 'Send'}
+          {sent ? `Sent ✓ — from you, to ${ENG_RECIPIENTS.length} people` : 'Send it yourself'}
         </button>
       </footer>
     </section>
   )
 }
 
-// follow-up：Slack-message 小 Manifest——短版发 #eng（决策 4；chip 锚在 email-tool 卡）。
+// follow-up：Slack-message 小 Manifest——短版发 #team（决策 4；chip 锚在 email-tool 卡）。
 const SLACK_SHORT_VERSION = // ⚠ 待 Danny 审字（Slack 短版整段 copy）
-  "Heads-up for Friday's Acme pilot ship — code freeze Thursday 6pm, and Acme support now goes to the on-call rotation (not straight to Bill). Full details in the email just sent to Engineering."
+  "Heads-up for Friday's Smart Shopping Guide demo — design freeze Thursday 6pm, and client support now goes to the on-call rotation (not straight to Lin Qing). I've just emailed the team the full details."
 
 function SlackMessageCard({ question }: { question: string }) {
   return (
-    <section className="slack-message-card" aria-label="Follow-up output: Slack message to #eng">
+    <section className="slack-message-card" aria-label="Follow-up: a short version for you to post to #team">
       <header className="slack-message-header">
         <div>
-          <p className="eyebrow">Follow-up · Slack {/* ⚠ 待 Danny 审字 */}</p>
-          <h2>Short version for #eng {/* ⚠ 待 Danny 审字 */}</h2>
+          <p className="eyebrow">Drafted by Avery · you post it {/* ⚠ 待 Danny 审字 */}</p>
+          <h2>A short version for #team {/* ⚠ 待 Danny 审字 */}</h2>
         </div>
-        <span>#eng {/* ⚠ 待 Danny 审字 */}</span>
+        <span>#team {/* ⚠ 待 Danny 审字 */}</span>
       </header>
 
       {question ? <p className="slack-message-question">&ldquo;{question}&rdquo;</p> : null}
 
       <div className="slack-message-bubble">
-        <span className="slack-message-author">
-          TeamMaster agent <i>APP</i> {/* ⚠ 待 Danny 审字 */}
-        </span>
+        <span className="slack-message-author">You {/* ⚠ 待 Danny 审字 */}</span>
         <p>{SLACK_SHORT_VERSION}</p>
+        <span className="slack-message-byline">Drafted by Avery {/* ⚠ 待 Danny 审字 */}</span>
       </div>
     </section>
   )
@@ -868,6 +938,69 @@ function FollowUpComposer({ onAsk }: { onAsk: (text: string) => void }) {
   )
 }
 
+// 第二轮（Danny）：原 .nexus-brief 大居中横幅（问题 + step 进度 + Context%）压住 Manifest
+// 卡。改成顶部一条紧凑 bar——eyebrow「Working it through」+ 问题截断 + 步骤进度；
+// hover / click 掉落一张浮层卡（drop-down），露出完整问题 + follow-up + step 进度。
+// 掉落卡 absolute 挂 bar 下缘，不占文档流 → 不再遮挡画布上的 Manifest 卡。
+// 红线修复（ADR-0015）：去掉「Context X%」——那是 AI 在谈自己的内存，用户不关心；
+// 只留人话的步骤进度（Step n of m）。
+function NexusBriefHud({
+  question,
+  latestFollowUpQuestion,
+  stepLabel,
+  stepCount,
+  planLength,
+}: {
+  question: string
+  latestFollowUpQuestion: string | null
+  stepLabel: string
+  stepCount: number
+  planLength: number
+}) {
+  // 决定 2（Danny）：摘要行常驻，详情卡只靠点击展开/收起——去掉 hover 触发（与 Dashboard 同口径）。
+  const [open, setOpen] = useState(false)
+  const showCard = open
+  const stepRead = stepCount === 0 ? 'Just getting started' : `Step ${stepCount} of ${planLength}`
+
+  return (
+    <div className={classNames(['nexus-brief-hud', open && 'is-open'])}>
+      <button
+        type="button"
+        className="nexus-brief-bar"
+        aria-expanded={showCard}
+        aria-label="Working it through — open the full thread read"
+        onClick={() => setOpen((o) => !o)}
+      >
+        <span className="nexus-brief-bar-eyebrow">Working it through</span>
+        <span className="nexus-brief-bar-question">&ldquo;{question}&rdquo;</span>
+        <span className="nexus-brief-step">{stepRead}</span>
+        <span className="nexus-brief-bar-caret" aria-hidden="true">
+          {showCard ? '▴' : '▾'}
+        </span>
+      </button>
+
+      {showCard ? (
+        <section className="nexus-brief-card" aria-label="The full thread read">
+          <p className="eyebrow">Working it through</p>
+          <p className="nexus-brief-card-question">&ldquo;{question}&rdquo;</p>
+          {latestFollowUpQuestion ? (
+            <p className="nexus-brief-followup">
+              Follow-up: &ldquo;{latestFollowUpQuestion}&rdquo;
+            </p>
+          ) : null}
+          <p
+            className="nexus-context-line"
+            aria-label={`${stepLabel} · ${stepRead.toLowerCase()}`}
+          >
+            <span className="nexus-context-step-label">{stepLabel}</span>
+            <span className="nexus-brief-step">{stepRead}</span>
+          </p>
+        </section>
+      ) : null}
+    </div>
+  )
+}
+
 // 人类发言者的像素头像（agent 发言无 person sprite，返回 null 保持文字 badge）。
 function ChatAvatar({ role, speaker }: { role: string; speaker: string }) {
   if (role !== 'human') return null
@@ -892,7 +1025,7 @@ function ChatCard() {
           <p className="eyebrow">Human loop · Chat</p>
           <h2>{HUMAN_LOOP.title}</h2>
         </div>
-        <span>Bill · PM agent · HR agent</span>
+        <span>Lin Qing · PM · People</span>
       </header>
       <div className="nexus-chat-log">
         {HUMAN_LOOP.messages.map((message, index) => (
@@ -910,7 +1043,7 @@ function ChatCard() {
               <ChatAvatar role={message.role} speaker={message.speaker} />
               <span className="chat-speaker">{message.speaker}</span>
               {message.agentKind ? (
-                <span className="chat-agent-badge">{message.agentKind.toUpperCase()} agent</span>
+                <span className="chat-agent-badge">{SPECIALIST_BADGE[message.agentKind]}</span>
               ) : null}
             </div>
             <p className="chat-text">{message.text}</p>
@@ -923,7 +1056,7 @@ function ChatCard() {
           type="text"
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
-          placeholder="Confirm, redirect, or ask for more evidence..."
+          placeholder="Reply, or ask for more…"
           aria-label="Chat reply draft"
         />
         <button type="submit" aria-label="Send chat reply">
@@ -1049,13 +1182,10 @@ function NexusEmptyState() {
   }
 
   return (
-    <section className="nexus-empty" aria-label="Nexus — no open threads">
-      <p className="eyebrow">Nexus</p>
-      <h2>No open threads {/* ⚠ 待 Danny 审字 */}</h2>
-      <p>
-        Ask anything to start a new thread, or reopen one from History.{' '}
-        {/* ⚠ 待 Danny 审字 */}
-      </p>
+    <section className="nexus-empty" aria-label="Working it through — nothing open right now">
+      <p className="eyebrow">Working it through</p>
+      <h2>Nothing in the room right now</h2>
+      <p>Ask anything to start working something through, or pick one back up from History.</p>
       <form className="nexus-empty-composer" aria-label="Start a new thread" onSubmit={handleSubmit}>
         <input
           type="text"
@@ -1120,14 +1250,10 @@ export function NexusScene() {
   const [memoDraftEdit, setMemoDraftEdit] = useState<string | null>(null)
   const emailBody = memoDraftEdit ?? EMAIL_DRAFT_BODY
   const dispatchedTaskKeys = useMemo(() => new Set(tasks.map(taskTemplateKey)), [tasks])
-  // P6-04 (ADR-0013 决策 7)：context-window HUD——数值纯派生自 steps.length × active case
-  // 数据，store 零新增字段，seek 任意位置自洽。% = 最新一步的脚本化 stepContextPct
-  //（0 步 = 0%，question staged 尚未消耗）；Step 分母 = 主段 + 已追加 follow-up 段总步数
-  //（threadPlan 确定性派生）。每 thread 独立：切 tab（P6-02）thread/caseDef 都换，数字跟着换。
+  // P6-04（修订 · 红线 ADR-0015）：原 context-window HUD 显示「Context X%」（AI 谈自己内存）
+  // 已移除——brief 只留人话的步骤进度（Step n of m，派生自 steps.length / threadPlan）。
+  // Step 分母 = 主段 + 已追加 follow-up 段总步数（threadPlan 确定性派生）。
   const planLength = threadPlan(thread).length
-  const contextPct = activeStep ? (caseDef.stepContextPct[activeStep] ?? 0) : 0
-  const contextTier =
-    contextPct > CONTEXT_ALERT_PCT ? 'alert' : contextPct > CONTEXT_WARN_PCT ? 'warn' : 'calm'
   // P6-05：末态判定泛化为「编排表走完」（原 hard-code structured-output 只对 hero 成立；
   // errand case 末步不同。askFollowUp 延长 planLength → 标签自动回到 Advance）。
   const advanceLabel =
@@ -1221,7 +1347,7 @@ export function NexusScene() {
         className="nexus-followup-chip"
         onClick={() => handleFollowUp(nextFollowUp.suggestedQuestion)}
       >
-        <span className="nexus-followup-chip-eyebrow">Suggested follow-up {/* ⚠ 待 Danny 审字 */}</span>
+        <span className="nexus-followup-chip-eyebrow">You might also ask</span>
         {nextFollowUp.suggestedQuestion}
       </button>
     ) : null
@@ -1237,7 +1363,7 @@ export function NexusScene() {
   const slackQuestion = followUpQuestionFor('follow-up-slack')
 
   return (
-    <section className="scene scene-nexus is-active" aria-label="Nexus">
+    <section className="scene scene-nexus is-active" aria-label="The room">
       <PanZoomCanvas ref={camRef} board={NEXUS_BOARD}>
         <div className="canvas-grid board-surface" aria-hidden="true" />
         {/* P6-02：空态（无 active thread）不渲染 world 内容——只留画板格栅 + HUD 空态面板。
@@ -1253,7 +1379,7 @@ export function NexusScene() {
             top: `${caseDef.manifestLabelPos.y}px`,
           }}
         >
-          Manifest
+          What Avery put together
         </span>
 
         {showMismatch ? (
@@ -1386,29 +1512,14 @@ export function NexusScene() {
         <>
           {/* feat-004 (ADR-0014)：终端流左栏 HUD——思考过程逐拍打印，MANIFEST 行可点飞卡。 */}
           <NexusTerminal caseDef={caseDef} thread={thread} onInspect={inspectCard} />
-          <section className="nexus-brief">
-            <p className="eyebrow">Nexus orchestration</p>
-            <p>&ldquo;{question}&rdquo;</p>
-            {/* P6-03：已追加的最新 follow-up 提问（chip 文本或 composer 自由文本）。 */}
-            {latestFollowUp ? (
-              <p className="nexus-brief-followup">
-                Follow-up: &ldquo;{latestFollowUp.question}&rdquo; {/* ⚠ 待 Danny 审字（前导词） */}
-              </p>
-            ) : null}
-            {/* P6-04（修订）：context-window HUD 压成单行 subtle——step 标签并排二级小字，
-                数字带强调色；>40% warn（amber）、>70% alert（rust）两档变色，meter 条移除。 */}
-            <p
-              className="nexus-context-line"
-              aria-label={`Context window ${contextPct}% used · step ${thread.steps.length} of ${planLength}`}
-            >
-              <span className="nexus-context-step-label">
-                {activeStep ? caseDef.stepLabels[activeStep] : 'Question staged'}
-              </span>
-              <span className={`nexus-context-stats is-${contextTier}`}>
-                Context {contextPct}% · Step {thread.steps.length}/{planLength}
-              </span>
-            </p>
-          </section>
+          {/* 第二轮（Danny）：原大横幅压成顶部紧凑 bar + hover/click 掉落卡（见 NexusBriefHud）。 */}
+          <NexusBriefHud
+            question={question}
+            latestFollowUpQuestion={latestFollowUp?.question ?? null}
+            stepLabel={activeStep ? caseDef.stepLabels[activeStep] : 'Question staged'}
+            stepCount={thread.steps.length}
+            planLength={planLength}
+          />
 
           <div className="nexus-advance-bar">
             <button type="button" className="nexus-advance" onClick={runAgent}>

@@ -6,7 +6,6 @@ import {
   tasksForPerson,
   weeklySummaryFor,
   type DetailPhase,
-  type Sentiment,
 } from '../../data/fixtures.p3'
 import { DetailSection, DetailShell, SourceAnchor } from '../DetailShell'
 import { PixelAvatar } from '../PixelAvatar'
@@ -27,16 +26,10 @@ const TASK_STATUS_LABEL: Record<Task['status'], string> = {
   done: 'Done',
 }
 
-const SENTIMENT_LABEL: Record<Sentiment, string> = {
-  positive: 'Positive',
-  steady: 'Steady',
-  strained: 'Strained',
-}
-
 // ⚠ 待 Danny 审字：believed/grown 模块深度标签。
 const HR_ANALYSIS_EYEBROW = {
-  believed: 'Observed symptoms',
-  grown: 'Capabilities-backed',
+  believed: "What's showing up",
+  grown: 'Playbook-backed',
 } satisfies Record<DetailPhase, string>
 
 export function EmployeeDetailScene() {
@@ -94,11 +87,6 @@ export function EmployeeDetailScene() {
           <div className="overview-stat">
             <span className="overview-label">{overview.progressLabel}</span>
             <strong>{overview.progressValue}</strong>
-            {person.capacityPct != null ? (
-              <div className="progress-track" aria-hidden="true">
-                <div className="progress-fill" style={{ width: `${Math.min(person.capacityPct, 100)}%` }} />
-              </div>
-            ) : null}
           </div>
 
           <div className="overview-stat">
@@ -131,17 +119,14 @@ export function EmployeeDetailScene() {
         </div>
       </DetailSection>
 
-      {/* 3 · Weekly summary + sentiment */}
+      {/* 3 · How the week went（去掉情绪 badge，让护着人的 prose 承载——ADR-0015 红线）*/}
       <DetailSection
         eyebrow="This week"
-        title="Weekly summary & sentiment"
-        empty={weekly ? undefined : 'No weekly summary yet — nothing notable surfaced.'}
+        title="How the week went"
+        empty={weekly ? undefined : 'Nothing notable came up this week.'}
       >
         {weekly ? (
           <div className="weekly-block">
-            <span className={`sentiment-pill is-${weekly.sentiment}`}>
-              {SENTIMENT_LABEL[weekly.sentiment]} · {weekly.sentimentNote}
-            </span>
             <p>
               {weekly.text}
               <SourceAnchor signals={personSignals} />
@@ -153,14 +138,14 @@ export function EmployeeDetailScene() {
       {/* 4 · HR knowledge analysis（capability-backed · no personnel judgment）*/}
       <DetailSection
         eyebrow={HR_ANALYSIS_EYEBROW[phase]}
-        title="HR knowledge analysis"
-        empty={analysis ? undefined : 'No HR analysis needed — signals look steady.'}
+        title="What this looks like"
+        empty={analysis ? undefined : 'Nothing to flag — things look steady here.'}
       >
         {analysis ? (
           <div className="hr-analysis">
             {analysis.capabilityId ? (
               <p className="hr-analysis-capability">
-                Capability · {capabilityTitleOf(analysis.capabilityId)}
+                Playbook · {capabilityTitleOf(analysis.capabilityId)}
               </p>
             ) : null}
             <p className="hr-analysis-reading">

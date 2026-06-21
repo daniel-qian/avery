@@ -70,39 +70,13 @@ button {
   right: 20px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 18px;
   pointer-events: none;
 }
 
-.brand-lockup,
 .scene-tabs {
   pointer-events: auto;
-}
-
-.brand-lockup {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border: 1px solid var(--rule);
-  border-radius: var(--radius);
-  background: rgba(255, 253, 248, 0.76);
-  box-shadow: var(--shadow-soft);
-  backdrop-filter: blur(12px);
-}
-
-.brand-mark {
-  display: grid;
-  width: 38px;
-  height: 38px;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--ink);
-  color: var(--paper);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
 }
 
 .eyebrow {
@@ -249,13 +223,40 @@ h1 {
 .team-zone-label {
   position: absolute;
   transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.team-zone-name {
   color: var(--ink-faint);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  white-space: nowrap;
   opacity: 0.55;
+}
+
+/* 团队级柔性信号：一行安静的人味读数（不量化个人）。语气随节奏分档微调色。 */
+.team-zone-pace {
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: 12px;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  color: var(--ink-soft);
+  opacity: 0.72;
+}
+
+.team-zone-pace.tone-warning {
+  color: var(--terracotta);
+  opacity: 0.82;
+}
+
+.team-zone-pace.tone-stable {
+  color: var(--ink-soft);
 }
 
 .edge-path {
@@ -278,47 +279,106 @@ h1 {
   stroke-width: 1.9;
 }
 
-/* 修订 4：weather/briefing = 顶部居中的「干净文字」HUD（无卡片背景/边框，字更小）。
-   恒可见、不随 zoom 变形。 */
-.briefing-layer {
+/* 第二轮（Danny）：weather/briefing 不再用大居中横幅压住地图。压成顶部一行 pill，
+   hover / click 掉落一张浮层卡（drop-down），与 Nexus context steps 同口径。
+   pill 锚在顶部居中 HUD 带；掉落卡 absolute 挂 pill 下缘 → 不挤占/遮挡地图与项目卡。 */
+.briefing-hud {
   position: absolute;
   z-index: 40;
   top: 60px;
   left: 50%;
   transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   width: auto;
-  max-width: 720px;
-  text-align: center;
-  pointer-events: none;
-  padding: 0;
-  border: none;
-  background: none;
-  box-shadow: none;
-  backdrop-filter: none;
+  max-width: min(720px, calc(100vw - 56px));
 }
 
-.briefing-layer h2 {
-  margin-bottom: 4px;
-  font-size: 17px;
+.briefing-pill {
+  display: inline-flex;
+  max-width: min(640px, calc(100vw - 56px));
+  align-items: center;
+  gap: 9px;
+  padding: 8px 15px;
+  border: 1px solid rgba(105, 128, 109, 0.42);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.96);
+  color: var(--ink);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(12px);
+  cursor: pointer;
+  transition:
+    color var(--fast) ease,
+    border-color var(--fast) ease,
+    transform var(--medium) ease;
 }
 
-.scene-dashboard .briefing-layer p:not(.eyebrow) {
-  font-size: 12px;
+.briefing-pill:hover,
+.briefing-pill:focus-visible,
+.briefing-hud.is-open .briefing-pill {
+  outline: none;
+  border-color: rgba(105, 128, 109, 0.7);
+  transform: translateY(-1px);
 }
 
-.briefing-layer .metric-row {
-  justify-content: center;
-  margin-top: 8px;
+.briefing-pill-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--sage, rgba(105, 128, 109, 1));
 }
 
-.briefing-layer .metric-row span {
-  min-height: 0;
-  padding: 0;
-  border: none;
-  background: none;
+.briefing-pill-text {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
 }
 
-.briefing-layer h2 {
+.briefing-pill-caret {
+  flex: none;
+  color: var(--ink-faint);
+  font-size: 10px;
+}
+
+/* 掉落卡：浮层挂 pill 下缘，不占文档流（地图始终完整露出）。 */
+.briefing-card {
+  position: absolute;
+  z-index: 41;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(560px, calc(100vw - 56px));
+  padding: 16px 18px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: rgba(255, 253, 248, 0.96);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(14px);
+  text-align: left;
+  animation: drop-card-in 160ms ease;
+}
+
+/* transform 已被 translateX(-50%) 占用（居中），入场只淡入——不碰 transform 防错位。 */
+@keyframes drop-card-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.briefing-card .metric-row {
+  margin-top: 12px;
+}
+
+.briefing-card h2 {
   margin-bottom: 10px;
   font-family: Georgia, "Times New Roman", serif;
   font-size: 21px;
@@ -327,17 +387,8 @@ h1 {
   letter-spacing: 0;
 }
 
-.nexus-brief h2 {
-  margin-bottom: 12px;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(28px, 4vw, 52px);
-  font-weight: 500;
-  line-height: 1.03;
-  letter-spacing: 0;
-}
-
-.briefing-layer p:not(.eyebrow),
-.nexus-brief p:not(.eyebrow),
+.briefing-card p:not(.eyebrow),
+.nexus-brief-card p:not(.eyebrow),
 .nexus-inspector p {
   color: var(--ink-soft);
   font-size: 15px;
@@ -854,21 +905,100 @@ h1 {
   outline: none;
 }
 
-/* 修订 4：nexus-brief = 顶部居中 HUD（world→HUD，样式不变）。 */
-.nexus-brief {
+/* 第二轮（Danny）：nexus-brief 不再用大居中横幅压住 Manifest 卡。压成顶部一行 bar，
+   hover / click 掉落浮层卡（drop-down，与 Dashboard briefing pill / Nexus history 同口径）。
+   bar 锚在顶部居中 HUD 带（避开左栏终端）；掉落卡 absolute 挂 bar 下缘 → 不遮挡画布卡。 */
+.nexus-brief-hud {
   position: absolute;
   z-index: 40;
   top: 60px;
-  left: 50%;
+  left: calc(50% + 240px);
   transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   width: auto;
-  max-width: 720px;
-  text-align: center;
-  pointer-events: none;
+  max-width: min(640px, calc(100vw - 540px));
 }
 
-.nexus-brief h2 {
-  max-width: 520px;
+.nexus-brief-bar {
+  display: inline-flex;
+  max-width: min(620px, calc(100vw - 540px));
+  align-items: center;
+  gap: 10px;
+  padding: 8px 15px;
+  border: 1px solid rgba(105, 128, 109, 0.42);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.96);
+  color: var(--ink);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(12px);
+  cursor: pointer;
+  transition:
+    color var(--fast) ease,
+    border-color var(--fast) ease,
+    transform var(--medium) ease;
+}
+
+.nexus-brief-bar:hover,
+.nexus-brief-bar:focus-visible,
+.nexus-brief-hud.is-open .nexus-brief-bar {
+  outline: none;
+  border-color: rgba(105, 128, 109, 0.7);
+  transform: translateY(-1px);
+}
+
+.nexus-brief-bar-eyebrow {
+  flex: none;
+  color: var(--ink-faint);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.nexus-brief-bar-question {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-style: italic;
+}
+
+.nexus-brief-bar-caret {
+  flex: none;
+  color: var(--ink-faint);
+  font-size: 10px;
+}
+
+/* 掉落卡：浮层挂 bar 下缘，不占文档流（Manifest 卡始终完整露出）。 */
+.nexus-brief-card {
+  position: absolute;
+  z-index: 41;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(560px, calc(100vw - 540px));
+  padding: 16px 18px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: rgba(255, 253, 248, 0.96);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(14px);
+  text-align: left;
+  animation: p6-popover-in 160ms ease;
+}
+
+.nexus-brief-card-question {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.nexus-brief-card .nexus-context-line {
+  justify-content: flex-start;
 }
 
 /* feat-004 (ADR-0014)：.flow-node / .nexus-flow-layer / .nexus-edge-* 整组退役——
@@ -989,14 +1119,6 @@ h1 {
     backdrop-filter: blur(12px);
   }
 
-  .brand-lockup {
-    min-width: 0;
-  }
-
-  .brand-lockup h1 {
-    font-size: 16px;
-  }
-
   .scene-tabs {
     justify-content: center;
   }
@@ -1015,24 +1137,34 @@ h1 {
     display: block;
   }
 
-  .briefing-layer,
-  .nexus-brief,
+  .briefing-hud,
+  .nexus-brief-hud,
   .nexus-inspector,
   .composer-layer,
   .demo-controls {
     left: 18px;
     right: 18px;
     width: auto;
+    max-width: none;
     transform: none;
+    align-items: stretch;
   }
 
-  .briefing-layer {
+  .briefing-hud {
     top: 116px;
   }
 
-  .briefing-layer h2,
-  .nexus-brief h2 {
-    font-size: clamp(30px, 9vw, 44px);
+  .briefing-pill,
+  .nexus-brief-bar {
+    max-width: none;
+  }
+
+  .briefing-card,
+  .nexus-brief-card {
+    left: 0;
+    width: auto;
+    right: 0;
+    transform: none;
   }
 
   .people-layer,
@@ -1082,7 +1214,7 @@ h1 {
     overflow: hidden;
   }
 
-  .nexus-brief {
+  .nexus-brief-hud {
     top: 118px;
   }
 
@@ -1123,14 +1255,6 @@ h1 {
 
 /* ───────────────────────── P1 · Dashboard ───────────────────────── */
 /* layout/density pass · focus 暗化缩放 · composer · alert pills */
-
-.app-shell[data-scene='dashboard'] .brand-lockup {
-  display: none;
-}
-
-.app-shell[data-scene='dashboard'] .prototype-topbar {
-  justify-content: flex-end;
-}
 
 /* 修订 3：顶部 HUD = 全宽横向 tags/search 条。容器 pointer-events:none、子元素 auto →
    条上空白区点击落到 board（可 pan / clearFocus），chip/搜索仍可交互。 */
@@ -1827,11 +1951,11 @@ h1 {
     min-width: 0;
   }
 
-  .scene-dashboard .briefing-layer {
-    top: 330px;
-    left: 50%;
-    right: auto;
-    width: calc(100vw - 36px);
+  .scene-dashboard .briefing-hud {
+    top: 116px;
+    left: 18px;
+    right: 18px;
+    width: auto;
   }
 
   .scene-dashboard .people-layer {
@@ -1961,7 +2085,7 @@ h1 {
 }
 
 .scene-nexus .canvas-grid,
-.scene-nexus .nexus-brief,
+.scene-nexus .nexus-brief-hud,
 .scene-nexus .nexus-inspector {
   transition:
     opacity var(--medium) ease,
@@ -2208,6 +2332,119 @@ h1 {
 
 .timeline-milestone.is-conditional .timeline-title-row span {
   color: var(--terracotta);
+}
+
+/* ── 责任拆分 + Lin Qing 可完成 checklist（TimelineCard 内的明确组件，ADR-0015 声音）── */
+.scope-split,
+.lin-checklist {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule);
+}
+
+.scope-split-label,
+.lin-checklist-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  color: var(--ink-faint);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.scope-split-list {
+  display: grid;
+  gap: 8px;
+}
+
+.scope-split-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.4fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 8px 12px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.48);
+}
+
+.scope-split-owner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.scope-split-scope {
+  min-width: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.lin-checklist-items {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lin-checklist-toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid rgba(105, 128, 109, 0.34);
+  border-radius: var(--radius);
+  background: rgba(105, 128, 109, 0.07);
+  color: var(--ink);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--fast) ease, border-color var(--fast) ease;
+}
+
+.lin-checklist-toggle:hover {
+  background: rgba(105, 128, 109, 0.14);
+}
+
+.lin-checklist-box {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid rgba(105, 128, 109, 0.55);
+  border-radius: 5px;
+  background: var(--paper-strong);
+  color: var(--sage);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.lin-checklist-item.is-done .lin-checklist-toggle {
+  border-color: rgba(105, 128, 109, 0.5);
+  background: rgba(105, 128, 109, 0.16);
+}
+
+.lin-checklist-item.is-done .lin-checklist-box {
+  background: var(--sage);
+  border-color: var(--sage);
+  color: var(--paper-strong);
+}
+
+.lin-checklist-item.is-done .lin-checklist-text {
+  color: var(--ink-soft);
+  text-decoration: line-through;
+  text-decoration-color: rgba(105, 128, 109, 0.6);
 }
 
 .structured-output-card {
@@ -3798,9 +4035,9 @@ h1 {
   }
 }
 
-/* ───── P3-04 · Capabilities sell 页（moat banner + grouped playbooks） ───── */
+/* ───── P3-04 · Playbooks 页（「为什么值得信」横条 + grouped playbooks） ───── */
 
-.moat-banner {
+.playbook-why {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -3815,7 +4052,7 @@ h1 {
   box-shadow: var(--shadow-soft);
 }
 
-.moat-point {
+.playbook-why-point {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -3825,7 +4062,7 @@ h1 {
   letter-spacing: 0.01em;
 }
 
-.moat-point::before {
+.playbook-why-point::before {
   content: "";
   width: 7px;
   height: 7px;
@@ -5228,27 +5465,21 @@ h1 {
   gap: 10px;
 }
 
+.alternatives-intro {
+  margin-bottom: 12px;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
 .alternatives-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 4px 12px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px 12px;
   padding: 12px 14px;
   border: 1px solid var(--rule);
-  border-left-width: 3px;
   border-radius: var(--radius);
   background: rgba(255, 255, 255, 0.44);
-}
-
-.alternatives-row.is-risk-low {
-  border-left-color: rgba(105, 128, 109, 0.7);
-}
-
-.alternatives-row.is-risk-medium {
-  border-left-color: rgba(196, 148, 58, 0.7);
-}
-
-.alternatives-row.is-risk-high {
-  border-left-color: rgba(188, 92, 73, 0.7);
 }
 
 .alternatives-person {
@@ -5272,32 +5503,12 @@ h1 {
   text-transform: uppercase;
 }
 
-.alternatives-load {
-  align-self: center;
-  padding: 3px 10px;
-  border: 1px solid var(--rule);
-  border-radius: 999px;
-  color: var(--ink-soft);
-  font-size: 12px;
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-.alternatives-skill,
-.alternatives-risk {
+.alternatives-note {
   grid-column: 1 / -1;
   margin: 0;
-  font-size: 13px;
-  line-height: 1.45;
-}
-
-.alternatives-skill {
   color: var(--ink-soft);
-}
-
-.alternatives-risk {
-  color: var(--ink-faint);
-  font-weight: 600;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .alternatives-verdict {
@@ -5316,7 +5527,7 @@ h1 {
    ADR-0013 决策 7：数值纯派生自 active thread steps.length × case stepContextPct——
    store 零新增字段、seek 自洽。压成一行：step 过程标签并排（二级小字）+ 数字读数
    （强调色，tabular-nums 防跳宽）；>40% warn（amber）、>70% alert（rust）。meter 条已移除。 */
-.nexus-brief .nexus-context-line {
+.nexus-brief-card .nexus-context-line {
   display: flex;
   align-items: baseline;
   justify-content: center;
@@ -5333,23 +5544,14 @@ h1 {
   letter-spacing: 0.02em;
 }
 
-.nexus-context-stats {
+/* 红线修复（ADR-0015）：原 .nexus-context-stats（Context X% 读数，含 amber/rust 警示色）
+   退役——brief 只留人话的步骤进度。中性 subtle，无警示着色。 */
+.nexus-brief-step {
+  color: var(--ink-soft, rgba(60, 64, 58, 0.62));
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.01em;
-}
-
-.nexus-context-stats.is-calm {
-  color: rgba(105, 128, 109, 1);
-}
-
-.nexus-context-stats.is-warn {
-  color: rgba(176, 124, 32, 1);
-}
-
-.nexus-context-stats.is-alert {
-  color: rgba(188, 92, 73, 1);
 }
 
 /* ── P6-05 · web-search errand case：浏览器预览卡 + policy gist 卡 + 合规判定卡 ──
@@ -5820,6 +6022,13 @@ h1 {
   font-weight: 700;
 }
 
+.email-from {
+  margin: 0;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .email-body {
   margin: 0;
   color: var(--ink-soft);
@@ -5920,6 +6129,15 @@ h1 {
   color: var(--ink-soft);
   font-size: 13px;
   line-height: 1.55;
+}
+
+.slack-message-byline {
+  display: block;
+  margin-top: 6px;
+  color: var(--ink-faint);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
 }
 
 /* ── P6-07 · rail 三幕：case 间隔 title card 浮层（ADR-0013 决策 8–9） ─────────

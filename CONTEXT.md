@@ -1,10 +1,22 @@
-# TeamMaster
+# Avery
+
+（旧称 TeamMaster；品牌已锁定 Avery，见 [ADR-0015](docs/adr/0015-product-tone-human-advisor-debrand-saas-naming.md)。内部领域概念名 Nexus / Capabilities / Reality-gap 等仍保留，只换 user-facing surface label。）
 
 面向小公司 manager / founder / CEO 的人与项目管理平台。把公司事实、专家方法论、实时工作信号合成为可追溯、可校对、可执行、且经人确认的管理建议。
+
+定调（[ADR-0015](docs/adr/0015-product-tone-human-advisor-debrand-saas-naming.md)）：这是一个**有人情味、人性化**的产品——帮 HR 和中高层处理团队里的"人情世故"，姿态是**资深前辈在你耳边**（a wise senior at your ear），不是仪表盘 + agent 编排的 AI SaaS 效率工具。
 
 本文件只是术语表（glossary），不放实现细节、不放 demo 脚本、不放架构决策。
 
 ## Language
+
+**Positioning（定调）**：
+产品是**"一个人"——资深前辈在你耳边**，不是**"一个地方"**（平台/仪表盘/你进去操作的系统）。"地方"语法（Hub / OS / Atlas / Workspace）天然漂向 SaaS 效率工具，是要逃离的观感。一切命名、文案、取景以"人 + 人情味"为总开关。见 [ADR-0015](docs/adr/0015-product-tone-human-advisor-debrand-saas-naming.md)。
+_Avoid_: AI SaaS 工具 / 效率工具 / 仪表盘 / 堆 agent 功能（这些是要逃离的反面，不是产品本身）
+
+**Voice（品牌声音）**：
+像一个见过世面、站在你这边、从不居高临下的资深同事说话——温暖、平实、把难搞的人际问题说出口而不带评判或术语，永远指向善意的下一步而非结论。**红线测试**（任一不过即砍/重写）：① 被讨论的那个人看到这屏会觉得被评判/被处理吗？② 它像 AI 工具在自夸 agent/自动化/效率吗？③ 一个温暖的资深人类会真的这样说出口吗？关键护栏：**洗掉"机器在评判人"+VC 自夸腔，但保留"它说得出依据"**（reasoning/evidence 改人话不删——前辈与算命先生之别）。
+_Avoid_: `the moat` / `Auto-prioritized` / `Trusted output`（VC 腔，别进用户界面）；给人打分/量化成数值（人不该有血条）
 
 **Dashboard**：
 ambient 空间式指挥中心 —— 把人、项目、信号画成一张平静的地图，呈现当前"组织天气"。它是**观察面**：你看，还没动手。
@@ -12,6 +24,7 @@ _Avoid_: home、canvas（canvas 是视觉手法，不是这个概念本身）
 
 **Nexus**：
 **行动面** —— manager 的一个问题在这里变成一条被编排的 Thread：specialist agents 与人类同事协同，agent 在背景聆听并交叉校对证据，按需调用 tools，最终产出供人 review 的结构化可信输出。
+_Surface label_（[ADR-0015](docs/adr/0015-product-tone-human-advisor-debrand-saas-naming.md)）：user-facing 不出现 "Nexus" / "orchestration"（纯技术腔）；动作语境用 **"Working it through"**（自解释），需要名词指代该空间时才用 **"the room"**。"Nexus" 仅作内部领域概念名保留。
 _Avoid_: 把**整个** Nexus 等同于 chat / conversation / 一个聊天 thread（会抹掉多 agent 编排本质）。注意：Nexus 内部确实嵌着一个**窄口径**的子面 **Chat**（见下条），但 Nexus ≠ Chat——Chat 只是编排走到"需要人裁断"那一步时临时开出的决策面。
 
 **Thread**：
@@ -40,6 +53,7 @@ _Avoid_: select、filter（filter 暗示"减项"，focus 是"点亮关联簇"）
 
 **Reality gap**：
 "被相信的状态"与"实时信号"之间被检测出的矛盾（例：owner 报 on-track，但信号显示 PR 卡住、重复 blocker、任务零更新）。系统只**指出矛盾并给低风险下一步**，绝不做人身/人格评价。其中"自报 vs 信号"这一具体子类叫 **report mismatch**。
+_Surface label_（[ADR-0015](docs/adr/0015-product-tone-human-advisor-debrand-saas-naming.md)）：user-facing 不用 "Reality gap" / "report mismatch"（像数据校验错误、点名时刺痛），改 **"Worth a closer look"**；底层领域概念名不变。
 _Avoid_: discrepancy、conflict
 
 **Manifest**：
@@ -51,5 +65,6 @@ agent 产出的、落在 Dashboard / 详情页表面上**可直接执行**的单
 _Avoid_: action item、todo（会跟已派出的 Task 混淆）
 
 **Capabilities**：
-TeamMaster 自有的垂直领域专家知识层——跨 HR / Legal / PM / Finance / Ops / Sales 的真实案例、解决方案、SOP / playbook。可信性的"第二条腿"：公司事实回答"发生了什么"，Capabilities 回答"专业上该怎么判断、怎么处理"。是 agent 建议区别于普通 ChatGPT（只有泛化常识）的关键。**TeamMaster 私有资产，订阅制提供，agent 检索时自动优先引用——产品的护城河。**
+Avery 自有的垂直领域专家知识层——跨 HR / Legal / PM / Finance / Ops / Sales 的真实案例、解决方案、SOP / playbook。可信性的"第二条腿"：公司事实回答"发生了什么"，Capabilities 回答"专业上该怎么判断、怎么处理"。是 agent 建议区别于普通 ChatGPT（只有泛化常识）的关键。**Avery 私有资产，订阅制提供，agent 检索时自动优先引用——产品的护城河。**
+_Surface label_（[ADR-0015](docs/adr/0015-product-tone-human-advisor-debrand-saas-naming.md)）：user-facing 一律用 **"Playbooks"**（资深前辈的词，温暖、有经验感）；"Capabilities" 仅作内部领域概念名 / type / 变量名保留，不进用户界面（含"the moat"等护城河自夸不进界面）。
 _Avoid_: CAPA（撞行业既有术语 Corrective-And-Preventive-Action，会让听众卡顿解码）、capabilities RAG（RAG 是检索机制，不是这个知识层本身）、专家能力库

@@ -18,7 +18,9 @@ import { AVATAR_SPRITES, type AvatarSprite } from './avatarSprites'
 // ───────────────────────── Types（即 state 数据契约）─────────────────────────
 
 export type ProjectStatus = 'on-track' | 'at-risk' | 'blocked' | 'done'
-export type SignalSource = 'slack' | 'github' | 'task' | 'manual'
+// 设计团队信号来源（ADR-0015 re-flavor）：figma = 设计文件/原型；feedback = 客户反馈轮次/评审；
+// task = 任务板；manual = 经理手记。旧工程源（slack/github）退役。
+export type SignalSource = 'figma' | 'feedback' | 'task' | 'manual'
 
 export interface Person {
   id: string
@@ -123,50 +125,59 @@ export interface DashboardTag {
 // ───────────────────────── People（~14；You/Wang 真名，其余 SNL）─────────────
 
 export const PEOPLE: Person[] = [
-  { id: 'u_you', name: 'You', role: 'Founder / CEO', team: 'Founders', capacityPct: 95, moodPct: 72, avatarSprite: AVATAR_SPRITES.paladin, storyCritical: true },
-  { id: 'u_wang', name: 'Wang', role: 'Co-founder / Head of Domain', team: 'Founders', capacityPct: 90, moodPct: 80, avatarSprite: AVATAR_SPRITES.cleric, storyCritical: true },
-  { id: 'u_vanessa', name: 'Vanessa', lastInitial: 'B', role: 'Product Manager', team: 'Product', capacityPct: 88, moodPct: 62, avatarSprite: AVATAR_SPRITES.archer, storyCritical: true },
-  { id: 'u_bill', name: 'Bill', lastInitial: 'H', role: 'Backend Engineer', team: 'Eng', capacityPct: 134, moodPct: 24, avatarSprite: AVATAR_SPRITES.blacksmith, storyCritical: true }, // 超载（被打断）
-  { id: 'u_jason', name: 'Jason', lastInitial: 'S', role: 'Backend Engineer', team: 'Eng', capacityPct: 70, moodPct: 76, avatarSprite: AVATAR_SPRITES.swordsman, storyCritical: true }, // 有余量 → 接 Bill 的活
-  // ── orbit 纹理（名字可改）──
-  { id: 'u_kristen', name: 'Kristen', lastInitial: 'W', role: 'Frontend Engineer', team: 'Eng', capacityPct: 92, moodPct: 68, avatarSprite: AVATAR_SPRITES.mage },
-  { id: 'u_nasim', name: 'Nasim', lastInitial: 'P', role: 'ML Engineer', team: 'Eng', capacityPct: 85, moodPct: 74, avatarSprite: AVATAR_SPRITES.alchemist },
-  { id: 'u_andy', name: 'Andy', lastInitial: 'S', role: 'Product Designer', team: 'Design', capacityPct: 80, moodPct: 78, avatarSprite: AVATAR_SPRITES.merchant },
-  { id: 'u_kate', name: 'Kate', lastInitial: 'M', role: 'Customer Success Lead', team: 'GTM', capacityPct: 108, moodPct: 56, avatarSprite: AVATAR_SPRITES.farmer },
+  // ⚠ 待 Danny 审字（全部 display name / role）。id 保持稳定不动（守引用）；
+  // display name re-map 成合伙人场景的 Prism Design Team（New Retail Smart Shopping Guide）。
+  { id: 'u_you', name: 'You', role: 'Design Manager', team: 'Founders', capacityPct: 95, moodPct: 72, avatarSprite: AVATAR_SPRITES.paladin, storyCritical: true },
+  { id: 'u_wang', name: 'Wang', role: 'Design Lead', team: 'Founders', capacityPct: 90, moodPct: 80, avatarSprite: AVATAR_SPRITES.cleric, storyCritical: true },
+  // Sun Xiaomei（原 Vanessa）= 客户反馈整理 / 优先级
+  { id: 'u_vanessa', name: 'Sun Xiaomei', lastInitial: 'S', role: 'UX Researcher', team: 'Product', capacityPct: 88, moodPct: 62, avatarSprite: AVATAR_SPRITES.archer, storyCritical: true },
+  // Lin Qing（原 Bill）= 核心 UI flow 和页面体验（本 case 动力下降的主角）
+  { id: 'u_bill', name: 'Lin Qing', lastInitial: 'L', role: 'Product Designer', team: 'Design', capacityPct: 134, moodPct: 24, avatarSprite: AVATAR_SPRITES.mage, storyCritical: true }, // 工作量高（消化一整周变动反馈）
+  // Jason（搭把手的余量同事）→ 本场景重铸为可分担反馈整理的设计同事
+  { id: 'u_jason', name: 'Jason', lastInitial: 'S', role: 'Product Designer', team: 'Design', capacityPct: 70, moodPct: 76, avatarSprite: AVATAR_SPRITES.swordsman, storyCritical: true }, // 有余量
+  // Chen Mingyuan（原 Kristen）= 接口和数据联调 / 推荐数据字段
+  { id: 'u_kristen', name: 'Chen Mingyuan', lastInitial: 'C', role: 'Design Technologist', team: 'Eng', capacityPct: 92, moodPct: 68, avatarSprite: AVATAR_SPRITES.alchemist, storyCritical: true },
+  // ── orbit 纹理（非本 case 主角，填团队地图）──
+  { id: 'u_nasim', name: 'Nasim', lastInitial: 'P', role: 'Motion Designer', team: 'Design', capacityPct: 85, moodPct: 74, avatarSprite: AVATAR_SPRITES.kid },
+  // Zheng Zixuan（原 Andy）= 视觉组件和交互细节
+  { id: 'u_andy', name: 'Zheng Zixuan', lastInitial: 'Z', role: 'Visual Designer', team: 'Design', capacityPct: 80, moodPct: 78, avatarSprite: AVATAR_SPRITES.merchant, storyCritical: true },
+  { id: 'u_kate', name: 'Kate', lastInitial: 'M', role: 'Client Partner', team: 'GTM', capacityPct: 108, moodPct: 56, avatarSprite: AVATAR_SPRITES.farmer },
   { id: 'u_will', name: 'Will', lastInitial: 'F', role: 'Account Executive', team: 'GTM', capacityPct: 75, moodPct: 73, avatarSprite: AVATAR_SPRITES.thief },
-  { id: 'u_cecily', name: 'Cecily', lastInitial: 'S', role: 'Growth / Marketing', team: 'GTM', capacityPct: 65, moodPct: 82, avatarSprite: AVATAR_SPRITES.kid },
-  { id: 'u_kenan', name: 'Kenan', lastInitial: 'T', role: 'Operations', team: 'Ops', capacityPct: 60, moodPct: 79, avatarSprite: AVATAR_SPRITES.demon },
-  { id: 'u_fred', name: 'Fred', lastInitial: 'A', role: 'Data Engineer', team: 'Eng', capacityPct: 78, moodPct: 70, avatarSprite: AVATAR_SPRITES.skeletonGeneral },
-  { id: 'u_aidy', name: 'Aidy', lastInitial: 'B', role: 'QA Engineer', team: 'Eng', capacityPct: 82, moodPct: 69, avatarSprite: AVATAR_SPRITES.witch },
+  { id: 'u_cecily', name: 'Cecily', lastInitial: 'S', role: 'Content Designer', team: 'GTM', capacityPct: 65, moodPct: 82, avatarSprite: AVATAR_SPRITES.demon },
+  { id: 'u_kenan', name: 'Kenan', lastInitial: 'T', role: 'Design Ops', team: 'Ops', capacityPct: 60, moodPct: 79, avatarSprite: AVATAR_SPRITES.witch },
+  { id: 'u_fred', name: 'Fred', lastInitial: 'A', role: 'Prototyper', team: 'Design', capacityPct: 78, moodPct: 70, avatarSprite: AVATAR_SPRITES.skeletonGeneral },
+  { id: 'u_aidy', name: 'Aidy', lastInitial: 'B', role: 'Design QA', team: 'Design', capacityPct: 82, moodPct: 69, avatarSprite: AVATAR_SPRITES.kid },
 ]
 
 // ───────────────────────── Projects（~7）────────────────────────────────────
 
 export const PROJECTS: Project[] = [
   {
+    // ⚠ 待 Danny 审字。id 'p_acme' 保持不动（守 store / 详情页引用）；retitle 成合伙人 Demo。
     id: 'p_acme',
-    title: 'Acme Pilot',
+    title: 'New Retail Smart Shopping Guide',
     ownerId: 'u_vanessa',
     status: 'at-risk',
     progress: 72,
     dueDate: 'This Friday',
-    dependsOn: ['p_connector'], // ← Friday 交付卡在 Connector 上
-    summary: 'First design-partner pilot. Ships Friday. Blocked by the Connector dependency.',
+    dependsOn: ['p_connector'], // ← Friday Demo 交付依赖核心导购 flow
+    summary: 'Client demo for the retail smart shopping guide — user profiles, product recommendations, store dashboard, mobile experience. Ships Friday. Held up while the core guide flow keeps getting reworked.',
     storyCritical: true,
-    risk: { progress: 72, blockers: 64, staffing: 38, quality: 30 }, // 依赖 Connector 拖累进度/阻塞
+    risk: { progress: 72, blockers: 64, staffing: 38, quality: 30 }, // 依赖核心导购 flow 拖累进度
   },
   {
+    // ⚠ 待 Danny 审字。id 'p_connector' 保持不动；retitle 成 Lin Qing 负责的核心导购 flow。
     id: 'p_connector',
-    title: 'Connector: Slack / GitHub',
+    title: 'Core shopping-guide flow',
     ownerId: 'u_bill',
     status: 'at-risk', // 系统判断
-    reportedStatus: 'on-track', // ← Bill 自报，制造 report mismatch
+    reportedStatus: 'on-track', // ← 经理以为只是更新慢，制造 manager-view mismatch
     progress: 48,
     dueDate: 'This Thursday',
-    summary: 'Slack + GitHub ingestion. Acme pilot depends on it.',
+    summary: 'The core guide journey — home entry, recommendation cards, the user-profile dialog. The whole Demo leans on it.',
     storyCritical: true,
-    hotspot: true, // briefing「1 hot spot」= 这里（mismatch / Bill 所在）
-    risk: { progress: 62, blockers: 86, staffing: 74, quality: 42 }, // Bill 过载 + rate-limit 卡点
+    hotspot: true, // briefing「1 hot spot」= 这里（mismatch / Lin Qing 所在）
+    risk: { progress: 62, blockers: 86, staffing: 74, quality: 42 }, // Lin Qing 消化变动反馈 + 验收不清
   },
   {
     id: 'p_pitch',
@@ -180,42 +191,46 @@ export const PROJECTS: Project[] = [
   },
   {
     id: 'p_capabilities',
-    title: 'Capabilities Build',
+    title: 'Writing the playbooks',
     ownerId: 'u_wang',
     status: 'on-track',
     progress: 55,
-    summary: 'Proprietary vertical playbooks (HR / Project Ops / …). Subscription moat.',
+    summary: "Wang is writing down how good managers actually decide — HR, project ops, and more — so the team's advice keeps getting wiser.",
     risk: { progress: 30, blockers: 18, staffing: 26, quality: 20 },
   },
   { id: 'p_designsys', title: 'Design System', ownerId: 'u_andy', status: 'on-track', progress: 64, risk: { progress: 24, blockers: 14, staffing: 22, quality: 26 } },
-  { id: 'p_csonboard', title: 'CS Onboarding Revamp', ownerId: 'u_kate', status: 'on-track', progress: 40, risk: { progress: 36, blockers: 24, staffing: 48, quality: 22 } }, // Kate 108% load
-  { id: 'p_billing', title: 'Billing v1', ownerId: 'u_jason', status: 'on-track', progress: 30, risk: { progress: 28, blockers: 18, staffing: 16, quality: 24 } },
+  { id: 'p_csonboard', title: 'Client Onboarding Kit', ownerId: 'u_kate', status: 'on-track', progress: 40, risk: { progress: 36, blockers: 24, staffing: 48, quality: 22 } }, // Kate 108% load
+  { id: 'p_billing', title: 'Store Dashboard polish', ownerId: 'u_jason', status: 'on-track', progress: 30, risk: { progress: 28, blockers: 18, staffing: 16, quality: 24 } },
 ]
 
-// ───────────────────────── Tasks（聚焦 Acme + Connector）─────────────────────
+// ───────────────────────── Tasks（聚焦 Demo + 核心导购 flow）─────────────────
+// ⚠ 待 Danny 审字（task title）。id 全部保持不动（fixtures.p3 override 按 id 索引）。
 
 export const TASKS: Task[] = [
-  // Acme Pilot
-  { id: 't_acme_int', projectId: 'p_acme', title: 'Integration test suite', assigneeId: 'u_kristen', status: 'in-progress' },
-  { id: 't_acme_data', projectId: 'p_acme', title: 'Seed pilot demo data', assigneeId: 'u_vanessa', status: 'in-progress' },
-  { id: 't_acme_hook', projectId: 'p_acme', title: 'Hook up Connector to Acme', assigneeId: 'u_bill', status: 'stalled' }, // ← 卡点
-  { id: 't_acme_uat', projectId: 'p_acme', title: 'UAT with Acme', assigneeId: 'u_aidy', status: 'todo' },
-  // Connector
-  { id: 't_con_slack', projectId: 'p_connector', title: 'Slack ingest + rate-limit handling', assigneeId: 'u_bill', status: 'stalled' },
-  { id: 't_con_gh', projectId: 'p_connector', title: 'GitHub webhook receiver', assigneeId: 'u_bill', status: 'in-progress' },
-  { id: 't_con_dedupe', projectId: 'p_connector', title: 'Event dedupe + hashing', assigneeId: 'u_bill', status: 'todo' },
+  // New Retail Smart Shopping Guide（Demo）
+  { id: 't_acme_int', projectId: 'p_acme', title: 'Recommendation data fields', assigneeId: 'u_kristen', status: 'in-progress' }, // Chen Mingyuan
+  { id: 't_acme_data', projectId: 'p_acme', title: 'Sort & prioritize client feedback', assigneeId: 'u_vanessa', status: 'in-progress' }, // Sun Xiaomei
+  { id: 't_acme_hook', projectId: 'p_acme', title: 'Wire the core flow into the demo build', assigneeId: 'u_bill', status: 'stalled' }, // ← 卡点（Lin Qing）
+  { id: 't_acme_uat', projectId: 'p_acme', title: 'Demo walkthrough rehearsal', assigneeId: 'u_aidy', status: 'todo' },
+  // Core shopping-guide flow（Lin Qing 负责的核心页面体验）
+  { id: 't_con_slack', projectId: 'p_connector', title: 'Home guide entry + recommendation cards', assigneeId: 'u_bill', status: 'stalled' },
+  { id: 't_con_gh', projectId: 'p_connector', title: 'User-profile dialog', assigneeId: 'u_bill', status: 'in-progress' },
+  { id: 't_con_dedupe', projectId: 'p_connector', title: 'Extra visual polish pass', assigneeId: 'u_bill', status: 'todo' },
 ]
 
 // ───────────────────────── Signals（reality gap 的证据链）────────────────────
 
+// ⚠ 待 Danny 审字（全部 summary）。设计世界证据链：Figma frame 反复重做 / 反馈文档未解决评论 /
+// 没有明确验收标准。id / subjectId / tag 保持不动（卡片按 id 索引）。
 export const SIGNALS: Signal[] = [
-  { id: 's_pr', source: 'github', subjectType: 'project', subjectId: 'p_connector', summary: 'PR #142 (Slack ingest) open 6 days, no new commits', ageDays: 6, tag: 'stalled' },
-  { id: 's_blocker', source: 'slack', subjectType: 'project', subjectId: 'p_connector', summary: '"Blocked on Slack API rate limits" raised 3 days running in #eng, unresolved', ageDays: 3, tag: 'repeated-blocker' },
-  { id: 's_noupdate', source: 'task', subjectType: 'task', subjectId: 't_con_slack', summary: 'Connector tasks: 0 updates in 4 days', ageDays: 4, tag: 'no-update' },
-  { id: 's_report', source: 'manual', subjectType: 'project', subjectId: 'p_connector', summary: 'Bill marked Connector "on track" in Monday standup', ageDays: 2, tag: 'self-report' },
-  // ── 根因（HR 线）：Bill 不是低产，是被打断 ──
-  { id: 's_mentions', source: 'slack', subjectType: 'person', subjectId: 'u_bill', summary: 'Bill @-mentioned 9× in 3 days in #acme-support to fight urgent customer issues', ageDays: 3, tag: 'interrupt' },
-  { id: 's_commits', source: 'github', subjectType: 'person', subjectId: 'u_bill', summary: "This week's commits are mostly Acme hotfixes, not Connector work", ageDays: 2, tag: 'interrupt' },
+  { id: 's_pr', source: 'figma', subjectType: 'project', subjectId: 'p_connector', summary: 'Home guide flow reopened and reworked 6 days running — still no signed-off version', ageDays: 6, tag: 'stalled' },
+  { id: 's_blocker', source: 'feedback', subjectType: 'project', subjectId: 'p_connector', summary: '"What counts as done for the recommendation cards?" raised 3 days running, never answered', ageDays: 3, tag: 'repeated-blocker' },
+  { id: 's_noupdate', source: 'task', subjectType: 'task', subjectId: 't_con_slack', summary: 'Core flow frames: 12 unresolved feedback comments, no acceptance criteria set', ageDays: 4, tag: 'no-update' },
+  { id: 's_report', source: 'manual', subjectType: 'project', subjectId: 'p_connector', summary: 'Manager read the core flow as "just running a little slow" on Monday', ageDays: 2, tag: 'self-report' },
+  // ── 根因（People 线）：Lin Qing 不是慢，是 finish line 一直在动（Maslow 安全感/尊重）──
+  // tag 'interrupt' 是内部 type 值（不外显），沿用旧标签；summary 已改 Maslow 取景。
+  { id: 's_mentions', source: 'feedback', subjectType: 'person', subjectId: 'u_bill', summary: 'Lin Qing absorbed ~9 new client change requests in 3 days — the brief kept moving under her', ageDays: 3, tag: 'interrupt' },
+  { id: 's_commits', source: 'figma', subjectType: 'person', subjectId: 'u_bill', summary: "Her week went into reworking screens against new feedback, not finishing the core guide flow", ageDays: 2, tag: 'interrupt' },
 ]
 
 // ───────────────────────── Capabilities（被 agent 自动优先引用）──────────────
@@ -224,31 +239,36 @@ export const SIGNALS: Signal[] = [
 export const CAPABILITIES: CapabilityEntry[] = [
   {
     id: 'cap_po_dep',
+    // ⚠ 待 Danny 审字
     domain: 'project-ops',
-    title: 'Cross-team dependency at risk near a deadline',
-    gist: 'When a downstream dependency shows stalled signals close to a ship date, surface the dependency and confirm its owner + scope first. Re-baseline or de-scope before adding people. Do not reassign blame.',
+    title: 'Shifting requirements near a ship date',
+    gist: 'When the finish line keeps moving — new feedback, unclear acceptance — the first move is to freeze this week’s scope and split who owns what. Protect the core path before reading anyone as slow. A moving target is a project problem, not a person problem.',
   },
   {
     id: 'cap_hr_interrupt',
+    // ⚠ 待 Danny 审字
     domain: 'hr',
-    title: 'Low output vs. interrupt overload',
-    gist: 'Before reading reduced task activity as performance, check interrupt load (mentions, support pulls, context-switching). If interrupts dominate, the fix is rebalancing load — not evaluation. Never infer performance from a single signal.',
+    title: 'Reading motivation, not output — Maslow’s ladder',
+    gist: 'Before reading slow delivery as low effort, read where someone sits on the motivation ladder: is the workload sustainable, does "done" feel safe and clear, do they feel part of the work or alone in the mess, is their real contribution being seen? Most stalls are a dip in safety and recognition, not capability. Never infer performance from a single signal.',
   },
 ]
 
 // ───────────────────────── Reality gap / Mismatch 卡 ─────────────────────────
 // ⚠ 高价值：killer beat 的卡片内容
 
+// ⚠ 待 Danny 审字（整块）。Maslow 重写：从"自报 vs 信号"的 report-mismatch
+// 改成"经理看到的（Lin Qing 页面更新慢）vs 她实际在扛的（一整周变动的客户反馈）"
+// ——贡献没被正确识别（esteem gap）。字段名 / signal id / gapType 语义槽位不动。
 export const MISMATCH = {
   subjectPersonId: 'u_bill',
   subjectProjectId: 'p_connector',
-  reported: 'On track (Monday standup)',
-  signalsSay: 'At risk',
-  gapType: 'report mismatch',
+  reported: 'Behind — the pages keep slipping',
+  signalsSay: 'Carrying a week of changing feedback',
+  gapType: 'What the manager sees vs. what Lin Qing is carrying',
   evidenceSignalIds: ['s_pr', 's_blocker', 's_noupdate'],
-  rootCause: 'Interrupt overload, not underperformance — Bill absorbed 9 Acme-support pulls in 3 days; his Connector work stalled as a result.',
+  rootCause: 'The work didn’t get easier — the brief kept moving. Lin Qing absorbed a week of changing client feedback and rework with no clear sign-off; what looks like "slow" is a week of churn that never showed up as visible progress.',
   rootCauseSignalIds: ['s_mentions', 's_commits'],
-  safeFraming: 'Evidence-based. This is a workload-routing issue, not a personnel judgment.',
+  safeFraming: 'This is about understanding what wore her down this week, not grading the person. The fix is freezing the demo scope and making her work visible — not a performance call.',
 }
 
 // ───────────────────────── Nexus inspector（B4 / B6 / B7 轻量步）─────────────
@@ -270,77 +290,89 @@ export interface HumanLoopMessage {
 }
 
 // ⚠ 待 Danny 审字：B7 Chat transcript（Venus-facing 英文）。
+// ⚠ 待 Danny 审字（整段 transcript）。Maslow 重写：1:1 不问"为什么还没好"，
+// 改成"我看到你这周处理了很多反馈——先保护核心 Demo 路径，哪些反馈影响交付、
+// 哪些能放到下一版"。Avery 起草开场白，真人来发（ADR-0015）。
 const HUMAN_LOOP_MESSAGES: HumanLoopMessage[] = [
   {
+    id: 'hl_hr_open',
+    speaker: 'People',
+    role: 'agent',
+    agentKind: 'hr',
+    text: 'Before anything about the work — open by checking in, not checking up. Something like: "How are you holding up? This week looked rough." Then give her a beat to talk.',
+    reference: 'Drafted for you to send',
+  },
+  {
     id: 'hl_pm_q',
-    speaker: 'PM agent',
+    speaker: 'PM',
     role: 'agent',
     agentKind: 'pm',
-    text: 'Bill — Connector PR #142 has had no commits for 6 days. Before we re-plan Friday: is the stall the Slack rate-limit work, or something else?',
-    reference: 'Evidence · PR #142 · 6d no commits',
+    text: 'Once she’s talked, you can steer it gently: "Let’s protect the core guide path together — which of the client changes actually affect Friday, and which can wait for the next version?"',
+    reference: 'Drafted for you to send',
   },
   {
     id: 'hl_bill_reveal',
-    speaker: 'Bill',
+    speaker: 'Lin Qing',
     role: 'human',
-    text: "It's the rate-limit handling — but honestly I've barely touched it. I've been pulled into Acme-support fires all week, ~9 urgent asks in three days.",
+    text: "Honestly the brief kept moving — new client feedback every day, and I was never sure what counted as done. I spent the week reworking screens instead of finishing the core guide flow.",
   },
   {
     id: 'hl_hr_frame',
-    speaker: 'HR agent',
+    speaker: 'People',
     role: 'agent',
     agentKind: 'hr',
-    text: 'That matches the signals: this reads as interrupt load, not output. Flagging the routing play — no performance read here.',
-    reference: 'Capability · Interrupt-overload playbook',
+    text: 'That tracks — she never knew what counted as done, and the week of changes she absorbed isn’t visible anywhere. That wears anyone down, and it’s not about effort. Freezing the scope is the kind move here, not a performance read.',
+    reference: 'Playbook · Maslow’s ladder',
   },
   {
     id: 'hl_you_decide',
     speaker: 'You',
     role: 'human',
-    text: 'So if we take the Acme-support load off Bill, the Connector moves again?',
+    text: 'So if we freeze this week’s feedback and make it clear what "done" is, the core demo lands?',
   },
   {
     id: 'hl_bill_commit',
-    speaker: 'Bill',
+    speaker: 'Lin Qing',
     role: 'human',
-    text: 'Yes. Give me two uninterrupted blocks and route the support pulls elsewhere for two days, and I can land the rate-limit work by Thursday.',
+    text: 'Yes. If no new feedback comes in this week and I just own the core guide flow, I can have the path working by Thursday and hand it over clean.',
   },
   {
     id: 'hl_pm_plan',
-    speaker: 'PM agent',
+    speaker: 'PM',
     role: 'agent',
     agentKind: 'pm',
-    text: "Jason's at 70% with a clean week — routing the interrupts to him protects Friday's core ship. I'll re-baseline the plan now.",
-    reference: 'Next · re-baselined timeline',
+    text: "Then let’s freeze scope, split the rest off Lin Qing’s plate — feedback triage, recommendation data fields, key visuals each go to someone else — and give her a short, completable checklist. I’ll lay it out now.",
+    reference: 'Next · frozen scope + checklist',
   },
 ]
 
 export const HUMAN_LOOP = {
-  title: 'Bill enters the loop',
+  title: 'Lin Qing enters the loop',
   description:
-    'The agent opens a chat with the people who can settle the call — agents stay in the room, bringing evidence and Capabilities.',
+    'Avery drafts the opener — the warm one, not the "why isn’t it done" one — and stays in the room with the evidence and the playbook, so you send it in your own voice.',
   messages: HUMAN_LOOP_MESSAGES,
 }
 
 export const NEXUS_INSPECTOR_CONTENT = {
+  // ⚠ 待 Danny 审字（inspector body）。
   'pm-agent': {
-    title: 'PM agent checks delivery evidence',
-    body: 'Connector evidence is pulled from work systems, then matched against Company RAG and Project-Ops Capability guidance.',
+    title: 'PM checks delivery evidence',
+    body: 'Core-flow evidence is pulled from your design files and feedback rounds, then read against what the team already knows and the Project-Ops playbook on shifting requirements.',
     artifacts: [
-      { label: 'Connector evidence · s_pr', detail: signalById.s_pr.summary },
-      { label: 'Connector evidence · s_blocker', detail: signalById.s_blocker.summary },
-      { label: 'Connector evidence · s_noupdate', detail: signalById.s_noupdate.summary },
-      { label: 'Capability · cap_po_dep', detail: capabilityById.cap_po_dep.gist },
+      { label: 'Core-flow evidence · s_pr', detail: signalById.s_pr.summary },
+      { label: 'Core-flow evidence · s_blocker', detail: signalById.s_blocker.summary },
+      { label: 'Core-flow evidence · s_noupdate', detail: signalById.s_noupdate.summary },
+      { label: 'Playbook · cap_po_dep', detail: capabilityById.cap_po_dep.gist },
     ],
   },
   'hr-root-cause': {
-    title: 'HR agent checks root cause',
+    title: 'People side checks root cause',
     body: MISMATCH.rootCause,
     artifacts: [
-      { label: 'Root cause', detail: 'Interrupt overload, not low output.' },
-      { label: 'Interrupt signal · s_mentions', detail: signalById.s_mentions.summary },
-      { label: 'Interrupt signal · s_commits', detail: signalById.s_commits.summary },
-      { label: 'Capability · cap_hr_interrupt', detail: capabilityById.cap_hr_interrupt.gist },
+      { label: 'Root cause', detail: 'A moving finish line and invisible contribution — not low output.' },
+      { label: 'Workload signal · s_mentions', detail: signalById.s_mentions.summary },
+      { label: 'Workload signal · s_commits', detail: signalById.s_commits.summary },
+      { label: 'Playbook · cap_hr_interrupt', detail: capabilityById.cap_hr_interrupt.gist },
       { label: 'Safe framing', detail: MISMATCH.safeFraming },
     ],
   },
@@ -350,59 +382,86 @@ export const NEXUS_INSPECTOR_CONTENT = {
 // ───────────────────────── Agent 结构化输出（6 段式）────────────────────────
 // ⚠⚠ 最高价值：Venus 会逐字读这一段。请你审。
 
+// ⚠ 待 Danny 审字（整块——Venus 逐字读）。Maslow 重写：conclusion = 动机层级读法
+// 结论段；recommendedActions = 冻结范围 + 责任拆分 + 可完成 checklist beats。
 export const AGENT_OUTPUT: AgentOutput = {
   conclusion:
-    'The Acme pilot is at risk for Friday — but it’s holdable. The blocker is the Connector dependency, stalled because Bill is absorbing Acme-support interrupts (not neglect). Clear his interrupts and trim non-core scope, and Friday still ships.',
+    "Lin Qing’s drop in motivation isn’t about responsibility — the project’s sense of safety and accomplishment have been worn down. Constantly changing client feedback keeps the definition of done unstable, and her real contribution this week — absorbing a week of feedback and rework — isn’t visible anywhere in the project’s progress. The Smart Shopping Guide demo is still holdable for Friday: freeze this week’s demo scope, split the client feedback into priorities, and give Lin Qing a clear, completable checklist, and the core guide path lands.",
   evidence: [
-    'Acme ship depends on the Connector (hook-up task is stalled).',
-    'Connector PR #142 has had no commits for 6 days.',
-    '"Slack rate-limit" blocker raised 3 days running, unresolved.',
-    'Connector tasks: 0 updates in 4 days — yet reported "on track" Monday.',
-    'Bill was @-mentioned 9× in 3 days for Acme support; his commits this week are mostly Acme hotfixes.',
+    'The Friday demo leans on the core guide flow, and the wire-up task has stalled.',
+    'The home guide flow has been reopened and reworked 6 days running — the work is in motion, just never signed off.',
+    '"What counts as done for the recommendation cards?" was raised 3 days running and never answered — an unclear, moving target.',
+    'The core-flow frames carry 12 unresolved feedback comments with no acceptance criteria, so the week’s effort never landed as visible progress.',
+    'Lin Qing absorbed ~9 new client change requests in 3 days; her time went into reworking screens, not finishing the core guide flow.',
   ],
   uncertainties: [
-    'Whether the Slack rate-limit blocker can be cracked by Thursday — this single point decides Friday vs the Tuesday contingency.',
-    'Whether Acme would prefer a proactive Tuesday slip over a thinner Friday ship.',
+    'Whether the team can truly hold "no new client feedback this week" — the freeze only works if everyone respects it.',
+    'Whether the client would prefer a proactive Tuesday slip over a thinner-but-on-time Friday demo.',
   ],
   recommendedActions: [
-    // 主方案：保住周五
-    'Offload Bill’s Acme-support interrupts to Jason (70% load) for 2 days so he can focus the Connector.',
-    'De-scope the Connector: ship core (Slack + GitHub ingest) Friday, defer event-dedupe to next week.',
-    'Confirm the trimmed Connector scope today (Vanessa ↔ Bill).',
-    // 兜底：绑定唯一变数
-    'Contingency — only if the Slack rate-limit blocker isn’t cracked by Thursday: slip Acme Fri → Tue and tell the stakeholder today, not Friday night.',
+    // 1 · 不先谈绩效，先冻结本周范围
+    'Don’t open with performance — freeze this week’s demo scope first. The Friday demo keeps only the core guide path; no new client feedback gets added in.',
+    // 2 · 把责任拆清楚（写进 Project Detail）
+    'Split who owns what: Lin Qing takes the core guide flow only; Sun Xiaomei triages and prioritizes incoming client feedback; Chen Mingyuan confirms the recommendation data fields; Zheng Zixuan does the key visuals and nothing extra.',
+    // 3 · 给 Lin Qing 一个可完成的 checklist
+    'Give Lin Qing a short, completable checklist — home guide entry, recommendation cards, the user-profile dialog, the path running end to end — and push every non-core piece of feedback to the next iteration.',
+    // 4 · 1:1 话术
+    'In the 1:1, lead with what she carried, not what’s missing: "I saw you handled a lot of client feedback this week — which of it actually affects Friday, and which can move to the next version?"',
+    // 5 · HR 风险判断
+    'This isn’t a capability issue — it’s unstable requirements, invisible contribution, and unclear boundaries. The manager should step in on scope; no formal HR involvement yet, and it’s worth a check-in again next week to see how Lin Qing is doing.',
   ],
-  needsConfirmationFrom: ['You (founder) — the contingency slip call', 'Vanessa — Acme scope cut'],
+  needsConfirmationFrom: ['You (manager) — freezing this week’s demo scope', 'Sun Xiaomei — the responsibility split'],
   nextTasks: [
-    { title: 'Take over Bill’s Acme-support interrupts for 2 days', assigneeId: 'u_jason', due: 'Today' },
-    { title: 'Crack Slack rate-limit blocker (decides Friday vs Tue contingency)', assigneeId: 'u_bill', due: 'Thursday' },
-    { title: 'Confirm trimmed Connector scope for a Friday core ship', assigneeId: 'u_vanessa', due: 'Today' },
+    { title: 'Own the core guide flow only — work the completable checklist to a running path', assigneeId: 'u_bill', due: 'Thursday' },
+    { title: 'Triage incoming client feedback into "affects Friday" vs "next iteration"', assigneeId: 'u_vanessa', due: 'Today' },
+    { title: 'Confirm the recommendation data fields the core flow needs', assigneeId: 'u_kristen', due: 'Today' },
   ],
 }
 
 // ───────────────────────── Timeline（B8 工具产出）──────────────────────────
 
+// ⚠ 待 Danny 审字。Maslow 重写：从"re-baseline"改成"冻结范围 + 责任拆分"取景；
+// state 值（replanned/held/deferred/conditional）不动——MILESTONE_STATE_COPY 据此渲染。
 export const TIMELINE = {
-  title: 'Acme pilot — re-baselined to hold Friday',
+  title: 'Smart Shopping Guide demo — scope frozen, core path protected for Friday',
   milestones: [
-    { label: 'Connector core (Slack + GitHub ingest)', when: 'Thu', state: 'replanned' },
-    { label: 'Connector ↔ Acme hookup', when: 'Thu pm', state: 'replanned' },
-    { label: 'Acme UAT', when: 'Fri am', state: 'planned' },
-    { label: 'Ship core', when: 'Fri', state: 'held' }, // ← 主方案的胜利点
-    { label: 'Event dedupe', when: 'Next week', state: 'deferred' },
-    { label: 'Slip to Tue', when: 'Tue', state: 'conditional' }, // 仅当 rate-limit 周四前解不掉才触发
+    { label: 'Freeze this week’s demo scope (no new feedback)', when: 'Thu', state: 'replanned' },
+    { label: 'Lin Qing — core guide flow running end to end', when: 'Thu pm', state: 'replanned' },
+    { label: 'Client demo walkthrough', when: 'Fri am', state: 'planned' },
+    { label: 'Core demo lands', when: 'Fri', state: 'held' }, // ← 主方案的胜利点
+    { label: 'Non-core feedback', when: 'Next week', state: 'deferred' },
+    { label: 'Slip to Tue', when: 'Tue', state: 'conditional' }, // 仅当核心路径周四前走不通才触发
   ],
 }
+
+// ⚠ 待 Danny 审字（整块）。合伙人案例的核心产物，作为 TimelineCard 内的明确组件呈现：
+// (1) 责任拆分——把活儿从 Lin Qing 一个人手里拆给团队；(2) 给 Lin Qing 的可完成 checklist
+// （清楚的交付边界 + "什么算做完"），非核心反馈进 next iteration。owner 用 person id（守头像引用）。
+export const SCOPE_SPLIT: { ownerId: string; scope: string }[] = [
+  { ownerId: 'u_bill', scope: 'Core guide flow — and only the core flow' },
+  { ownerId: 'u_vanessa', scope: 'Triage and prioritize the client feedback' },
+  { ownerId: 'u_kristen', scope: 'Confirm the recommendation data fields' },
+  { ownerId: 'u_andy', scope: 'Key visuals only — no extra polishing' },
+]
+
+export const LIN_QING_CHECKLIST: { id: string; label: string; done: boolean }[] = [
+  { id: 'ck_entry', label: 'Home guide entry', done: false },
+  { id: 'ck_cards', label: 'Recommendation cards', done: false },
+  { id: 'ck_dialog', label: 'User-profile dialog', done: false },
+  { id: 'ck_path', label: 'Whole guide path runs end to end', done: false },
+  { id: 'ck_defer', label: 'Non-core feedback → next iteration', done: true },
+]
 
 // ───────────────────────── Briefings（B1 calm / B10 updated）────────────────
 // ⚠ 高价值：开场与收尾的"组织天气"
 
+// ⚠ 待 Danny 审字（headline / subhead）。
 export const BRIEFING_V1: Briefing = {
   id: 'b_v1',
   version: 1,
   tone: 'calm',
-  headline: 'Acme pilot ships Friday. Org health looks steady.',
-  subhead: 'One quiet hot-spot sits near the Connector dependency.',
+  headline: 'The Smart Shopping Guide demo ships Friday. Team health looks steady.',
+  subhead: 'One quiet hot-spot sits around the core guide flow.',
   metrics: [
     { label: 'health', value: '82%' },
     { label: 'active projects', value: '7' },
@@ -410,12 +469,13 @@ export const BRIEFING_V1: Briefing = {
   ],
 }
 
+// ⚠ 待 Danny 审字（headline / subhead）。
 export const BRIEFING_V2: Briefing = {
   id: 'b_v2',
   version: 2,
   tone: 'alert', // 仍非 calm：风险是真的，只是已被看见并接管
-  headline: 'Acme still ships Friday — the hidden risk is caught and owned.',
-  subhead: 'Root cause was interrupt overload, not a delivery slip. Bill’s interrupts moved to Jason · scope trimmed · 3 actions in flight · Tuesday held as contingency.',
+  headline: 'The demo still ships Friday — the hidden risk is caught and owned.',
+  subhead: 'The dip was a moving finish line, not a delivery slip. Scope frozen this week · responsibilities split · Lin Qing on a clear checklist · Tuesday held as contingency.',
   metrics: [
     { label: 'health', value: '82%' }, // 不再是"乐观盲值"，而是已校验、风险已 owned
     { label: 'risks owned', value: '1' },
@@ -425,24 +485,25 @@ export const BRIEFING_V2: Briefing = {
 
 // ───────────────────────── Onboarding（B0 prologue）─────────────────────────
 
+// ⚠ 待 Danny 审字（onboarding 段全部英文 copy）。设计团队 re-flavor：源换成 Figma / 反馈渠道。
 export const ONBOARDING = {
   sampleFiles: [
-    { name: 'TeamMaster_Company_Handbook.pdf', kind: 'pdf' },
-    { name: 'Acme_Pilot_SOW.docx', kind: 'docx' },
+    { name: 'Studio_Handbook.pdf', kind: 'pdf' },
+    { name: 'Smart_Shopping_Guide_Brief.docx', kind: 'docx' },
     { name: 'Team_Roster.csv', kind: 'csv' },
-    { name: 'Q3_Roadmap.md', kind: 'md' },
+    { name: 'Demo_Roadmap.md', kind: 'md' },
   ],
-  // 连接动态事实源（GitHub/Slack）——注入公司动态记忆前过三道安全工序，产物只落本地。
-  // ⚠ 待 Danny 审字（connect 段全部英文 copy）
+  // 连接动态事实源（Figma/反馈渠道）——注入团队动态记忆前过三道安全工序，产物只落本地。
   connectSources: [
-    { name: 'GitHub', detail: 'Commits · PRs · reviews' },
-    { name: 'Slack', detail: '#eng · #ops · #general' },
+    { name: 'Figma', detail: 'Files · frames · comments' },
+    { name: 'Feedback', detail: 'Client rounds · design reviews' },
   ],
-  connectPipeline: ['De-identification', 'Cleanup', 'Security scan'],
-  connectNote: 'Sanitized facts are saved as local files only — never uploaded to the cloud.',
-  parsedInto: ['Company profile', 'Team roster (14 people)', '7 active projects', 'Recent work signals'],
+  connectPipeline: ['Names kept private', 'Tidied up', 'Checked for anything sensitive'],
+  connectNote: 'Everything it learns stays on your machine — nothing leaves, nothing goes to a server.',
+  parsedInto: ['Studio profile', 'Team roster (14 people)', '7 active projects', 'Recent work signals'],
   capabilitiesMatched: ['Project Ops playbooks', 'HR playbooks'], // 自动优先
-  caption: 'TeamMaster reads your files, builds the company brain, and auto-loads the right Capabilities.',
+  caption:
+    "Give it what you'd hand a new design manager on day one — the files, the feedback, the context — and it'll learn your team from there.",
 }
 
 // ───────────────────────── Dashboard tags（B1/B2 自由交互，最多 5）─────────────
@@ -450,11 +511,12 @@ export const ONBOARDING = {
 export const DASHBOARD_TAGS: DashboardTag[] = [
   { id: 'tag_week', label: 'This week', match: { by: 'due', within: 'this-week' } },
   { id: 'tag_risk', label: 'At risk', match: { by: 'status', status: 'at-risk' } },
-  { id: 'tag_acme', label: 'Acme Pilot', match: { by: 'project', projectId: 'p_acme' } },
-  { id: 'tag_eng', label: 'Engineering', match: { by: 'team', team: 'Eng' } },
+  { id: 'tag_acme', label: 'Shopping Guide demo', match: { by: 'project', projectId: 'p_acme' } }, // ⚠ 待 Danny 审字
+  { id: 'tag_eng', label: 'Design', match: { by: 'team', team: 'Design' } },
   { id: 'tag_hot', label: 'Hot spots', match: { by: 'hotspot' } },
 ]
 
 // ───────────────────────── Hero 问题（B3 composer）──────────────────────────
 
-export const HERO_QUESTION = 'Are we on track to ship the Acme pilot this Friday?'
+// ⚠ 待 Danny 审字。
+export const HERO_QUESTION = 'Are we on track to ship the Smart Shopping Guide demo this Friday?'

@@ -25,11 +25,11 @@ export type ThreadStepKind =
   // web-search errand case（ADR-0013 决策 3）：
   | 'web-search' // agent 调 web tool 查 Apple 政策（浏览器预览卡显形）
   | 'policy-gist' // agent 的实际回答：guideline 要点引文 + 回链 URL（gist 卡）
-  | 'follow-up-compliance' // follow-up：Acme companion build 合规判定（短 Manifest）
+  | 'follow-up-compliance' // follow-up：companion-app build 合规判定（短 Manifest）
   // email errand case（ADR-0013 决策 4）：
   | 'memo-draft' // agent 经 doc-reader 读 memo 照片、预填邮件文本（可编辑草稿卡显形）
   | 'email-ready' // email tool 卡待命：To/subject/body 已填、Send 等人点（sendEmail 不进 SCRIPT）
-  | 'follow-up-slack' // follow-up：短版发 #eng 的 Slack-message Manifest
+  | 'follow-up-slack' // follow-up：短版发 #team 的 Slack-message Manifest
 
 // ── 终端流（ADR-0014 决策 2/4）────────────────────────────────────────────────
 // 每 step 一组 lines，终端 HUD 逐拍打印。行集合 = (caseDef, thread) 纯函数——
@@ -115,7 +115,7 @@ export const BILL_ACME_CASE_ID: CaseId = 'bill-acme'
 
 export const BILL_ACME_CASE: CaseDefinition = {
   id: BILL_ACME_CASE_ID,
-  title: 'Bill & the Acme pilot', // ⚠ 待 Danny 审字（tab 短名）
+  title: 'Lin Qing & the Shopping Guide demo', // ⚠ 待 Danny 审字（tab 短名）
   question: HERO_QUESTION,
 
   // 主段编排。free-click 每调一次 runAgent 推进一步；
@@ -130,13 +130,13 @@ export const BILL_ACME_CASE: CaseDefinition = {
   ],
 
   stepLabels: {
-    'pm-agent': 'PM agent checks delivery evidence',
-    'cross-check': 'Reality gap cross-check',
-    'hr-root-cause': 'HR agent checks root cause',
-    'human-loop': 'Bill enters the loop',
-    timeline: 'Tool builds the re-baselined timeline',
-    'structured-output': 'Structured output is ready',
-    'follow-up-alternatives': 'PM agent re-checks alternatives for Jason', // ⚠ 待 Danny 审字
+    'pm-agent': 'PM checks delivery evidence',
+    'cross-check': 'What the manager sees vs. what Lin Qing is carrying',
+    'hr-root-cause': 'People side checks root cause',
+    'human-loop': 'Lin Qing enters the loop',
+    timeline: 'Freezing scope and splitting the work',
+    'structured-output': 'The read is ready',
+    'follow-up-alternatives': 'PM takes another look at who could help', // ⚠ 待 Danny 审字
   },
 
   // 每步脚本化 context-%（ADR-0013 决策 7）：重步骤可见地多耗
@@ -158,128 +158,132 @@ export const BILL_ACME_CASE: CaseDefinition = {
       {
         speaker: 'pm',
         type: 'thought',
-        text: 'Scoping the question — the Friday ship runs through the Connector dependency. Pulling its live signals first.',
+        text: 'Scoping the question — the Friday demo runs through Lin Qing’s core guide flow. Let me look at this week’s design files and feedback first, before reading anyone as slow.',
       },
-      { speaker: 'pm', type: 'tool-call', text: 'pull signals --project connector --window 7d' },
+      { speaker: 'pm', type: 'tool-call', text: 'Looking over the core guide flow — design files and feedback rounds, last 7 days' },
       {
         speaker: 'tool',
         type: 'tool-result',
-        text: 'PR #142 (Slack ingest): open 6 days, no new commits',
+        text: 'Home guide flow: reopened and reworked 6 days running, still no signed-off version',
       },
       {
         speaker: 'tool',
         type: 'tool-result',
-        text: '#eng: "Blocked on Slack API rate limits" — raised 3 days running, unresolved',
+        text: '"What counts as done for the recommendation cards?" — asked 3 days running, never answered',
       },
-      { speaker: 'tool', type: 'tool-result', text: 'Connector tasks: 0 updates in 4 days' },
+      { speaker: 'tool', type: 'tool-result', text: 'Core-flow frames: 12 unresolved feedback comments, no acceptance criteria set' },
       {
         speaker: 'pm',
         type: 'thought',
-        text: 'Stalled signals on a downstream dependency, days from a ship date — checking the playbook before jumping to staffing moves.',
+        text: 'The brief keeps moving and the work is clearly in motion, not abandoned — this looks like shifting requirements, not slow hands. Checking the playbook.',
       },
       {
         speaker: 'system',
         type: 'thought',
-        text: 'Capability loaded · Cross-team dependency at risk near a deadline',
+        text: 'Playbook · Shifting requirements near a ship date',
       },
     ],
     'cross-check': [
       {
         speaker: 'pm',
         type: 'thought',
-        text: 'Now cross-checking the signals against what the team believes.',
+        text: 'Now setting what the manager sees next to what Lin Qing is actually carrying this week.',
       },
-      { speaker: 'pm', type: 'tool-call', text: 'read status --source standup --project connector' },
+      { speaker: 'pm', type: 'tool-call', text: 'Comparing the manager’s read against the week of feedback Lin Qing absorbed' },
       {
         speaker: 'tool',
         type: 'tool-result',
-        text: 'Bill marked Connector "on track" in Monday standup',
+        text: 'Manager sees: "behind — the pages keep slipping." Lin Qing carried a week of changing client feedback and rework.',
       },
       {
         speaker: 'pm',
         type: 'thought',
-        text: 'Reported on-track, signals say at-risk — that is a report mismatch. Surfacing it as evidence, not judgment.',
+        text: 'The contribution is real, it just never showed up as visible progress. Surfacing the gap as evidence, not judgment.',
       },
-      { speaker: 'system', type: 'manifest', text: 'Reality gap — report mismatch', ref: 'cross-check' },
+      { speaker: 'system', type: 'manifest', text: 'Worth a closer look — what the manager sees vs. what Lin Qing is carrying', ref: 'cross-check' },
     ],
     'hr-root-cause': [
       {
         speaker: 'hr',
         type: 'thought',
-        text: "Picking this up from the HR side — a stall this sharp is rarely about effort. Checking interrupt load before anyone reads it as performance.",
-      },
-      { speaker: 'hr', type: 'tool-call', text: 'pull signals --person bill --tag interrupt' },
-      {
-        speaker: 'tool',
-        type: 'tool-result',
-        text: 'Bill @-mentioned 9× in 3 days in #acme-support to fight urgent customer issues',
-      },
-      {
-        speaker: 'tool',
-        type: 'tool-result',
-        text: "This week's commits are mostly Acme hotfixes, not Connector work",
+        text: "Picking this up from the people side — a dip this sharp is rarely about effort. Let me look again at where Lin Qing’s drive slipped this week before anyone calls it performance.",
       },
       {
         speaker: 'hr',
         type: 'thought',
-        text: 'Interrupt overload, not underperformance. The fix is workload routing — never a personnel call from a single stalled signal.',
+        text: 'Thinking it through the way Maslow would: she’s never sure what counts as done this week, so finishing the work never feels safe.',
+      },
+      {
+        speaker: 'hr',
+        type: 'thought',
+        text: 'And the manager only sees what’s missing, not the week of client changes she quietly absorbed — so the work she did do isn’t being seen.',
+      },
+      {
+        speaker: 'hr',
+        type: 'thought',
+        text: 'So this is about safety and being seen, not capability. The kind move is to freeze the scope and make her work visible — never a personnel call from a single stalled signal.',
       },
       {
         speaker: 'system',
         type: 'thought',
-        text: 'Capability loaded · Low output vs. interrupt overload',
+        text: 'Playbook · Reading motivation, not output — Maslow’s ladder',
       },
     ],
     'human-loop': [
       {
         speaker: 'system',
         type: 'thought',
-        text: 'The agents need a human call — opening a thread chat with Bill. Agents stay in the room.',
-      },
-      {
-        speaker: 'pm',
-        type: 'thought',
-        text: 'Bill — PR #142 has had no commits for 6 days. Is the stall the rate-limit work, or something else?',
-      },
-      {
-        speaker: 'bill',
-        type: 'thought',
-        text: "It's the rate-limit handling — but honestly I've barely touched it. I've been pulled into Acme-support fires all week.",
-      },
-      {
-        speaker: 'bill',
-        type: 'thought',
-        text: 'Route the support pulls elsewhere for two days and I can land it by Thursday.',
+        text: 'This needs a human call — drafting an opener for you to send Lin Qing. The specialists stay in the room.',
       },
       {
         speaker: 'hr',
         type: 'thought',
-        text: 'That matches the signals — interrupt load, not output. No performance read here.',
+        text: 'Open by checking in, not by checking up: "How are you holding up? This week looked rough." Then just listen for a beat.',
       },
-      { speaker: 'system', type: 'manifest', text: 'Human loop — Bill enters the loop', ref: 'human-loop' },
+      {
+        speaker: 'pm',
+        type: 'thought',
+        text: 'Once she’s talked, you can steer gently: "Let’s protect the core guide path together — which of the client changes affect Friday, and which can wait for the next version?"',
+      },
+      {
+        speaker: 'bill',
+        type: 'thought',
+        text: "Honestly the brief kept moving — new client feedback every day, and I was never sure what counted as done. I spent the week reworking screens.",
+      },
+      {
+        speaker: 'bill',
+        type: 'thought',
+        text: 'Freeze the scope and let me just own the core guide flow, and I can have the path working by Thursday.',
+      },
+      {
+        speaker: 'hr',
+        type: 'thought',
+        text: 'That matches the read — a moving finish line and invisible work, not low effort. No performance read here.',
+      },
+      { speaker: 'system', type: 'manifest', text: 'Human loop — Lin Qing enters the loop', ref: 'human-loop' },
     ],
     timeline: [
       {
         speaker: 'pm',
         type: 'thought',
-        text: "Bill's Thursday commitment unblocks the path. Re-baselining the plan around the Friday ship.",
+        text: "Lin Qing's Thursday commitment holds if the scope stops moving. Freezing this week and splitting who owns what.",
       },
       {
         speaker: 'pm',
         type: 'tool-call',
-        text: 'timeline rebuild --protect "Ship core (Fri)" --defer non-core',
+        text: 'Drawing up the plan — freeze this week’s demo scope, protect the core path, split the rest of the work',
       },
       {
         speaker: 'tool',
         type: 'tool-result',
-        text: 'Connector core → Thu · Acme hookup → Thu pm · UAT → Fri am · Ship core → Fri (held)',
+        text: 'Scope frozen → Thu · Lin Qing core flow → Thu pm · walkthrough → Fri am · Core demo lands → Fri (held)',
       },
       {
         speaker: 'tool',
         type: 'tool-result',
-        text: 'Event dedupe → next week (deferred) · Slip to Tue → conditional only',
+        text: 'Lin Qing = core flow · Sun Xiaomei = feedback triage · Chen Mingyuan = recommendation data fields · Zheng Zixuan = key visuals only · non-core feedback → next week',
       },
-      { speaker: 'system', type: 'manifest', text: 'Re-baselined timeline — Friday holds', ref: 'timeline' },
+      { speaker: 'system', type: 'manifest', text: 'Scope frozen, responsibilities split — Friday holds', ref: 'timeline' },
     ],
     'structured-output': [
       {
@@ -290,31 +294,31 @@ export const BILL_ACME_CASE: CaseDefinition = {
       {
         speaker: 'hr',
         type: 'thought',
-        text: 'Adding the safe framing: this is a workload-routing issue, not a personnel judgment.',
+        text: 'Adding the safe framing: this is about understanding what wore her down, not grading the person.',
       },
       {
         speaker: 'pm',
         type: 'thought',
-        text: 'Two human confirmations required: the contingency slip call (you) and the Acme scope cut (Vanessa).',
+        text: 'Two human confirmations required: freezing this week’s demo scope (you) and the responsibility split (Sun Xiaomei).',
       },
-      { speaker: 'system', type: 'manifest', text: 'Decision report — ready for human review', ref: 'structured-output' },
+      { speaker: 'system', type: 'manifest', text: 'The read — yours to sign off', ref: 'structured-output' },
     ],
     'follow-up-alternatives': [
       {
         speaker: 'pm',
         type: 'thought',
-        text: "Re-opening the staffing question — if Jason takes the new job, who absorbs Bill's interrupts?",
+        text: "Re-opening the staffing question — if Jason takes the new role, who picks up the work we just split off Lin Qing's plate?",
       },
-      { speaker: 'pm', type: 'tool-call', text: 'scan capacity --team eng --window 7d' },
+      { speaker: 'pm', type: 'tool-call', text: 'Checking who on the design team has room this week' },
       {
         speaker: 'tool',
         type: 'tool-result',
-        text: 'Fred 78% · Nasim 85% · Aidy 82% — signal pictures attached',
+        text: 'Fred has room this week · Nasim steady · Aidy steady — workload pictures attached',
       },
       {
         speaker: 'pm',
         type: 'thought',
-        text: 'Fred is the strongest alternative — closest overlap with the ingestion path, clean week. Keep any swap to ≤ 2 days.',
+        text: 'Fred is the strongest fit — closest overlap with the core guide screens, a clean week. Keep the handoff small so the scope stays frozen.',
       },
       { speaker: 'system', type: 'manifest', text: 'Alternatives for Jason', ref: 'follow-up-alternatives' },
     ],
@@ -324,12 +328,14 @@ export const BILL_ACME_CASE: CaseDefinition = {
 
   // 双列瀑布（ADR-0014 决策 7）：卡按 step 序贪心入较短列。half = 估算半宽/半高，
   // 仅供镜头 bbox 与瀑布间距。
+  // half-宽/高（中心 ± half）。值按 dev 实测渲染高度校准（offsetHeight/2）+ 余量，
+  // 避免双列瀑布按估算高度留不够间距导致卡片重叠（timeline 含 scope-split+who-owns+checklist 最高）。
   cardAnchors: buildManifestGrid([
-    ['cross-check', { w: 380, h: 330 }],
-    ['human-loop', { w: 360, h: 380 }],
-    ['timeline', { w: 425, h: 350 }],
-    ['structured-output', { w: 475, h: 460 }],
-    ['follow-up-alternatives', { w: 400, h: 300 }],
+    ['cross-check', { w: 517, h: 350 }], // 实测 1034×682
+    ['human-loop', { w: 360, h: 400 }],
+    ['timeline', { w: 293, h: 515 }], // 实测 586×1011（最高，原 350 严重不足）
+    ['structured-output', { w: 475, h: 500 }],
+    ['follow-up-alternatives', { w: 400, h: 300 }], // 实测 800×582
   ]),
 
   // bill/acme follow-up showcase（ADR-0013 决策 5）。
@@ -362,15 +368,15 @@ export const WEB_SEARCH_CASE: CaseDefinition = {
   title: 'Apple review policy', // ⚠ 待 Danny 审字（tab 短名）
   // ADR-0013 决策 3 原文——resolveCaseForQuestion 精确匹配此文本进本 case 的 thread。
   question:
-    "We're shipping the Acme companion app — what's Apple's policy on expedited App Review?", // ⚠ 待 Danny 审字
+    "We're shipping the Smart Shopping Guide companion app — what's Apple's policy on expedited App Review?", // ⚠ 待 Danny 审字
 
   // 短链主段：2 步（errand 深度，ADR-0013 决策 2——否决等重编排）。
   orchestration: ['web-search', 'policy-gist'],
 
   stepLabels: {
-    'web-search': 'Agent searches Apple developer docs', // ⚠ 待 Danny 审字
+    'web-search': 'Avery searches Apple developer docs', // ⚠ 待 Danny 审字
     'policy-gist': 'Policy gist is ready', // ⚠ 待 Danny 审字
-    'follow-up-compliance': 'Agent checks the Acme build against the guidelines', // ⚠ 待 Danny 审字
+    'follow-up-compliance': 'Avery checks the companion-app build against the guidelines', // ⚠ 待 Danny 审字
   },
 
   // errand thread 的低 context-%（决策 7）：主段收在 ~15%，follow-up 推到 ~23%——
@@ -406,7 +412,7 @@ export const WEB_SEARCH_CASE: CaseDefinition = {
       {
         speaker: 'agent',
         type: 'thought',
-        text: 'Distilling the policy to what matters for the Acme companion launch.',
+        text: 'Distilling the policy to what matters for the Smart Shopping Guide companion launch.', // ⚠ 待 Danny 审字
       },
       {
         speaker: 'agent',
@@ -424,7 +430,7 @@ export const WEB_SEARCH_CASE: CaseDefinition = {
       {
         speaker: 'agent',
         type: 'thought',
-        text: 'Checking the current Acme companion build against the guidelines just cited.',
+        text: 'Checking the current companion-app build against the guidelines just cited.', // ⚠ 待 Danny 审字
       },
       { speaker: 'agent', type: 'tool-call', text: 'review build --against guidelines 2.1, 5.1.1' },
       {
@@ -437,7 +443,7 @@ export const WEB_SEARCH_CASE: CaseDefinition = {
         type: 'thought',
         text: 'One fix before submitting: declare the analytics SDK in the privacy labels. Everything else is ready.',
       },
-      { speaker: 'system', type: 'manifest', text: 'Compliance check — Acme companion build', ref: 'follow-up-compliance' },
+      { speaker: 'system', type: 'manifest', text: 'Compliance check — companion-app build', ref: 'follow-up-compliance' }, // ⚠ 待 Danny 审字
     ],
   },
 
@@ -454,7 +460,7 @@ export const WEB_SEARCH_CASE: CaseDefinition = {
     {
       id: 'acme-compliance',
       anchorStep: 'policy-gist',
-      suggestedQuestion: 'Does our current Acme companion build comply with this?', // ⚠ 待 Danny 审字
+      suggestedQuestion: 'Does our current companion-app build comply with this?', // ⚠ 待 Danny 审字
       steps: ['follow-up-compliance'],
     },
   ],
@@ -475,18 +481,18 @@ export const MEMO_PHOTO_NAME = 'memo-draft.jpg' // attachment chip 显示的文�
 
 export const EMAIL_CASE: CaseDefinition = {
   id: EMAIL_CASE_ID,
-  title: 'Memo → Eng email', // ⚠ 待 Danny 审字（tab 短名）
+  title: 'Memo → team email', // ⚠ 待 Danny 审字（tab 短名）
   // ADR-0013 决策 4 / issue 原文——resolveCaseForQuestion 精确匹配此文本进本 case 的 thread。
-  question: 'Turn this memo draft into an email and send it to everyone in Engineering.', // ⚠ 待 Danny 审字
+  question: 'Turn this memo draft into an email and send it to everyone on the team.', // ⚠ 待 Danny 审字
 
   // 短链主段：2 步（errand 深度，决策 2）。Send 本身不是编排步骤——email-ready 把一切
   // 备好，扣扳机的是人（sendEmail action，不进 SCRIPT）。
   orchestration: ['memo-draft', 'email-ready'],
 
   stepLabels: {
-    'memo-draft': 'Agent reads the memo and drafts the email', // ⚠ 待 Danny 审字
+    'memo-draft': 'Avery reads the memo and drafts the email', // ⚠ 待 Danny 审字
     'email-ready': 'Email staged — waiting for you to hit Send', // ⚠ 待 Danny 审字
-    'follow-up-slack': 'Agent drafts the short version for #eng', // ⚠ 待 Danny 审字
+    'follow-up-slack': 'Avery drafts the short version for #team', // ⚠ 待 Danny 审字
   },
 
   // errand thread 的低 context-%（决策 7）：主段收在 ~17%，follow-up 推到 ~24%。
@@ -508,12 +514,12 @@ export const EMAIL_CASE: CaseDefinition = {
       {
         speaker: 'tool',
         type: 'tool-result',
-        text: 'Extracted: code freeze Thursday 6pm · Acme support pings → on-call rotation',
+        text: 'Extracted: design freeze Thursday 6pm · client support pings → on-call rotation', // ⚠ 待 Danny 审字
       },
       {
         speaker: 'agent',
         type: 'thought',
-        text: 'Drafting the announcement email for Engineering — the draft stays editable until you send it.',
+        text: 'Drafting the announcement email for the team — the draft stays editable until you send it.', // ⚠ 待 Danny 审字
       },
       { speaker: 'system', type: 'manifest', text: 'Email draft — editable', ref: 'memo-draft' },
     ],
@@ -521,7 +527,7 @@ export const EMAIL_CASE: CaseDefinition = {
       {
         speaker: 'agent',
         type: 'tool-call',
-        text: 'email stage --to eng-all --subject "Friday ship: code freeze + Acme support rotation"',
+        text: 'email stage --to team-all --subject "Friday demo: design freeze + client-support rotation"', // ⚠ 待 Danny 审字
       },
       { speaker: 'tool', type: 'tool-result', text: '6 recipients resolved from the team roster' },
       {
@@ -535,15 +541,15 @@ export const EMAIL_CASE: CaseDefinition = {
       {
         speaker: 'agent',
         type: 'thought',
-        text: 'Condensing the email into a two-line heads-up for #eng.',
+        text: 'Condensing the email into a two-line heads-up for #team.', // ⚠ 待 Danny 审字
       },
-      { speaker: 'agent', type: 'tool-call', text: 'slack draft --channel #eng' },
+      { speaker: 'agent', type: 'tool-call', text: 'slack draft --channel #team' },
       {
         speaker: 'tool',
         type: 'tool-result',
         text: 'Draft ready — full details deferred to the email just staged',
       },
-      { speaker: 'system', type: 'manifest', text: 'Slack message — short version for #eng', ref: 'follow-up-slack' },
+      { speaker: 'system', type: 'manifest', text: 'Slack message — short version for #team', ref: 'follow-up-slack' }, // ⚠ 待 Danny 审字
     ],
   },
 
@@ -560,7 +566,7 @@ export const EMAIL_CASE: CaseDefinition = {
     {
       id: 'slack-short-version',
       anchorStep: 'email-ready',
-      suggestedQuestion: 'Also post a short version to #eng in Slack', // ⚠ 待 Danny 审字
+      suggestedQuestion: 'Also post a short version to #team in Slack', // ⚠ 待 Danny 审字
       steps: ['follow-up-slack'],
     },
   ],

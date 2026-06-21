@@ -4,9 +4,9 @@ import { useCanvas, type Scene } from '../store/canvasStore'
 // 也给个 free-click tab（litmus：每个 beat 自由点击可达）。detail 仍走钻入。
 const TABS: { label: string; scene: Scene }[] = [
   { label: 'Onboarding', scene: 'onboarding' },
-  { label: 'Dashboard', scene: 'dashboard' },
-  { label: 'Nexus', scene: 'nexus' },
-  { label: 'Capabilities', scene: 'capabilities' },
+  { label: 'Your team', scene: 'dashboard' },
+  { label: 'The room', scene: 'nexus' },
+  { label: 'Playbooks', scene: 'capabilities' },
 ]
 
 export function Topbar() {
@@ -14,15 +14,6 @@ export function Topbar() {
   const goScene = useCanvas((s) => s.goScene)
   return (
     <header className="prototype-topbar" aria-label="Prototype controls">
-      <div className="brand-lockup">
-        <span className="brand-mark" aria-hidden="true">
-          TM
-        </span>
-        <div>
-          <p className="eyebrow">TeamMaster prototype</p>
-          <h1>Ambient command center</h1>
-        </div>
-      </div>
       <nav className="scene-tabs" aria-label="Scene">
         {TABS.map((t) => (
           <button

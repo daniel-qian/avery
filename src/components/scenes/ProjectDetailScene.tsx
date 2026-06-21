@@ -40,10 +40,10 @@ const GROWN_STATUS_LABEL: Record<string, string> = {
 }
 
 // ⚠ 待 Danny 审字：Act1/Act3 detail shell copy.
-const NO_HANDOFFS_COPY = 'No handoffs yet — agent actions have not been generated.'
+const NO_HANDOFFS_COPY = 'Nothing to hand off yet — no next steps drawn up so far.'
 const RISK_CALLOUT_LABEL = {
   believed: 'Reported vs signals',
-  grown: 'Reality gap',
+  grown: 'Worth a closer look',
 } satisfies Record<DetailPhase, string>
 
 function statusLabel(projectId: string, status: string, phase: DetailPhase) {
@@ -52,7 +52,8 @@ function statusLabel(projectId: string, status: string, phase: DetailPhase) {
 }
 
 function actionSignalsFor(handoffText: string, symptomSignals: Signal[], interruptSignals: Signal[]) {
-  if (/Bill|interrupt|focus/i.test(handoffText) && interruptSignals.length > 0) {
+  // 行动文案命中"人/反馈/1:1/checklist"语义 → 用 person-level（workload）证据；否则用症状证据。
+  if (/Lin Qing|feedback|focus|checklist|1:1/i.test(handoffText) && interruptSignals.length > 0) {
     return interruptSignals
   }
   return symptomSignals
@@ -131,7 +132,7 @@ export function ProjectDetailScene() {
           ))}
           {mismatch ? (
             <>
-              <span className="brief-mismatch">Connector reported {mismatch.reported}</span>
+              <span className="brief-mismatch">Read as {mismatch.reported.toLowerCase()}</span>
               <span className="brief-mismatch">
                 Signals say {mismatch.signalsSay.toLowerCase()}
                 <SourceAnchor signals={fallbackSymptomSignals} />
@@ -145,7 +146,7 @@ export function ProjectDetailScene() {
             {isGrown ? (
               <>
                 <strong>
-                  {mismatch.gapType}: diagnosed, actions in flight, still at-risk.
+                  {mismatch.gapType}: read in, actions in flight, still at-risk.
                   <SourceAnchor signals={fallbackSymptomSignals} />
                 </strong>
                 <span>
@@ -160,11 +161,11 @@ export function ProjectDetailScene() {
             ) : (
               <>
                 <strong>
-                  Connector is the visible blocker: reported on-track, but the live signals are at-risk.
+                  The core guide flow is the visible blocker: read as just slow, but the live signals say churn.
                   <SourceAnchor signals={fallbackSymptomSignals} />
                 </strong>
                 <span>
-                  Bill's interrupt load is visible, but no agent diagnosis has been generated yet.
+                  The week of changing feedback Lin Qing absorbed is visible, but no read has been generated yet.
                   <SourceAnchor signals={fallbackInterruptSignals} />
                 </span>
               </>
@@ -307,7 +308,7 @@ export function ProjectDetailScene() {
                       className="handoff-fly"
                       onClick={() => askQuestion(handoff.flyToNexus as string)}
                     >
-                      Dig in via Nexus →
+                      Take this into the room →
                     </button>
                   ) : null}
                 </div>
@@ -360,7 +361,8 @@ export function ProjectDetailScene() {
               (signal) => signal.subjectType === 'person' && signal.subjectId === update.personId,
             )
             const updateSignals =
-              personSignals.length > 0 || /Connector|Slack|hookup|blocked|stalled|dependency|UAT/i.test(update.update)
+              personSignals.length > 0 ||
+              /core (guide )?flow|feedback|reworked|stalled|dependency|walkthrough|demo/i.test(update.update)
                 ? personSignals.length > 0
                   ? personSignals
                   : fallbackSymptomSignals
