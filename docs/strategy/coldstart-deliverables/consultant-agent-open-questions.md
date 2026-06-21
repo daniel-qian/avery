@@ -35,4 +35,15 @@ Use this to grill the architecture. Every item has a recommendation; the goal of
 1. **Red-line validator strictness.** Pattern-match (cheap, deterministic, publishable) vs an LLM-classifier judge (catches subtle person-scoring, but less transparent). *Lean:* pattern-match for the hard gate + an LLM check as a logged secondary signal, not a gate.
 2. **Baseline fairness.** Do codex/claude baselines get *zero* scaffold, or the same skill files minus `cite()`/red-line? *Lean:* publish both — "raw" proves the gap exists, "scaffolded-minus-redline" proves the red line specifically is the differentiator.
 3. **What the eval is allowed to claim.** Grounding/actionability/humanity/red-line-adherence — yes. Outcome/ROI ("makes your team better") — **no**, say so out loud. The honesty is the credibility (Ray).
+
+---
+
+## RESOLVED — 2026-06-21 (Danny: 「按推荐」)
+
+All recommendations ACCEPTED as the build baseline for feat-011:
+- **Q1 → Python + `anthropic-sdk-python`, hand-rolled ~150-line loop.** (eval analysis stays Python regardless.)
+- **Q2 → file-based `facts.md`/`notes.md` + keyword `recall()`; defer vector DB** behind the same `recall()` signature.
+- **Q3 → markdown skill files (tiered prompt) + FIXED chain `read_case → recall → cite → draft_advice`, no free-roaming planner.** Skill files carry the relational model + red-line rules + **「kind read can be wrong」discipline (ADR-0016)**. `⚠ 待 Danny 审字` on skill-file voice still applies.
+- **Q4 → documented ingestion contract**: partner facts → `memory/facts.md`; partner real situations → `cases/<id>.md`; partner questions → frozen scenario prompts. Anonymize before any git-commit; explicit "nothing leaves the machine" statement for partners.
+- **Cross-cutting accepted as the leans**: red-line = pattern-match hard gate + LLM secondary signal (logged, not gated); publish BOTH baselines (raw + scaffolded-minus-redline); eval claims grounding/actionability/humanity/red-line only — never outcome/ROI.
 </content>
