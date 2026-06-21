@@ -1,0 +1,9 @@
+# Generated run output (transcripts, judgeset, run_meta, scorecard). Regenerate with runner.py.
+runs/
+# FROZEN.lock.json is intentionally NOT ignored — it is the pre-registration record.
+
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/

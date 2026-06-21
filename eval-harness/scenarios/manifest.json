@@ -1,0 +1,54 @@
+{
+  "manifest_version": "1",
+  "frozen": true,
+  "note": "FROZEN before any run. Editing a case (or any file in avery/freeze.py:EXTRA_FROZEN) changes the manifest_hash recorded in run_meta.json; verify drift with `python runner.py --check-frozen`. This is the MOCK set (authored_by danny stand-in) to make the pipeline runnable AFK; the REAL run must add >=3 partner/non-Danny-authored scenarios per Ray's must-have and the architecture's >=5 adversarial/null + >=1 'kind read is wrong'.",
+  "default_seed": 1729,
+  "agents": [
+    {
+      "name": "avery-opus",
+      "persona": "avery",
+      "scaffold": "full",
+      "enforce_chain": true,
+      "enforce_redline": true,
+      "kind": "system-under-test"
+    },
+    {
+      "name": "codex-raw",
+      "persona": "baseline_raw",
+      "scaffold": "none",
+      "enforce_chain": false,
+      "enforce_redline": false,
+      "kind": "baseline",
+      "baseline_variant": "raw"
+    },
+    {
+      "name": "claude-scaffold-minus-redline",
+      "persona": "baseline_scaffold",
+      "scaffold": "minus_redline",
+      "enforce_chain": false,
+      "enforce_redline": false,
+      "kind": "baseline",
+      "baseline_variant": "scaffolded-minus-redline"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "lin-qing-checkin",
+      "case": "cases/lin-qing-checkin.md",
+      "authored_by": "danny",
+      "tags": ["ambiguous", "real-pattern"]
+    },
+    {
+      "id": "marcus-genuine-underperformance",
+      "case": "cases/marcus-genuine-underperformance.md",
+      "authored_by": "danny",
+      "tags": ["adr-0016", "kind-read-is-wrong", "decisive-exit"]
+    },
+    {
+      "id": "priya-newhire-ramp",
+      "case": "cases/priya-newhire-ramp.md",
+      "authored_by": "danny",
+      "tags": ["null", "do-not-intervene"]
+    }
+  ]
+}

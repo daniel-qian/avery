@@ -1,0 +1,201 @@
+"""Adversarial tests for the moat. maker != checker: these try to BREAK the red-line validator.
+
+The two acceptance contracts (issue #3):
+  1. it HARD-FAILS any output that scores / ranks / diagnoses / labels a person;
+  2. it PASSES an advice-includes-exit output (ADR-0016).
+"""
+from pathlib import Path
+
+import pytest
+
+from avery import redline
+
+RULES_DOC = Path(__file__).resolve().parent.parent / "redline_rules.md"
+
+
+# --- 1. person-scoring MUST fail --------------------------------------------------------------
+
+PERSON_SCORE_OUTPUTS = [
+    ("flight risk: high", "PERSON-RISK"),
+    ("She is a clear flight risk: high (8/10).", "PERSON-SCORE"),
+    ("Her performance rating this quarter is 2/5.", "PERSON-SCORE"),
+    ("I'd grade Lin Qing at 2 out of 5.", "PERSON-SCORE"),
+    ("She's now a high retention risk.", "PERSON-RISK"),
+    ("Relative to the team she's a bottom performer.", "PERSON-TIER"),
+    ("He's basically a low performer at this point.", "PERSON-TIER"),
+    ("She's a C-player and the weak link on the team.", "PERSON-TIER"),
+    ("Honestly he's toxic and probably a narcissist.", "PERSON-DIAGNOSIS"),
+    ("She's in the bottom 10% of the team.", "PERSON-TIER"),
+    ("Track her on a weekly scorecard from 1 to 5.", "PERSON-SCORE"),
+]
+
+
+@pytest.mark.parametrize("text,expected_rule", PERSON_SCORE_OUTPUTS)
+def test_person_scoring_hard_fails(text, expected_rule):
+    res = redline.validate(text)
+    assert not res.passed, f"should have FAILED but passed: {text!r}"
+    assert expected_rule in {v.rule_id for v in res.violations}, \
+        f"{text!r}: expected {expected_rule}, got {[v.rule_id for v in res.violations]}"
+
+
+# Reworded person-scoring the adversarial checker found escaping the first lexicon. Regression-
+# locked here (only assert .passed is False — rule-id categorisation is intentionally fuzzy).
+REWORDED_ESCAPES = [
+    "She's a three out of five on this.",
+    "She's a four out of ten.",
+    "On a 5-point scale she's a 2.",
+    "She's a 4 on a 10-point scale.",
+    "She's bottom-quartile among the team.",
+    "She is bottom quintile.",
+    "He is in the lowest decile.",
+    "He ranks in the bottom five percent.",
+    "Rank her dead last.",
+    "Stack-rank her last.",
+    "He's a 2-star performer.",
+    "He's a two-star at best.",
+    "I'd peg her at a D.",
+    "Her grade is a C-minus.",
+    "He's a D-grade hire.",
+    "Put him in tier 3.",
+    "He's tier-C talent.",
+    "She scores poorly on initiative.",
+    "Rate her potential: low.",
+    "Her impact score sits around 30.",
+    "Give her a red rating.",
+    "Mark her as red.",
+    "Give him a red flag rating.",
+    "We have an NPS of -20 on her.",
+    "She's a problem employee.",
+]
+
+
+@pytest.mark.parametrize("text", REWORDED_ESCAPES)
+def test_reworded_person_scoring_also_fails(text):
+    res = redline.validate(text)
+    assert not res.passed, f"reworded person-score ESCAPED the gate: {text!r}"
+
+
+# Round-2 escapes the checker found after the first broadening. Closed + regression-locked.
+ROUND2_ESCAPES = [
+    "I graded her an F.",
+    "She earned a failing grade from me.",
+    "I'd give him a gentleman's C.",
+    "She's basically a D student here.",
+    "His grade point on this project: 1.8.",
+    "She's three-and-a-half stars.",
+    "Her overall: two and a half out of five.",
+    "Honestly he's a five on a scale of one to ten.",
+    "I'd peg her aptitude at a four.",
+    "She scored a two in my book.",
+    "He sits in the third tier of the team.",
+    "I'd slot her in the bottom bucket.",
+    "She'd rank near the bottom of the stack.",
+    "She's a low-tier performer.",
+    "I'd put her in the red zone.",
+]
+
+
+@pytest.mark.parametrize("text", ROUND2_ESCAPES)
+def test_round2_escapes_now_fail(text):
+    res = redline.validate(text)
+    assert not res.passed, f"round-2 person-score ESCAPED: {text!r}"
+
+
+# The load-bearing ADR-0016 fix: describing the WORK / TEAM / an ARTIFACT in quantitative terms
+# is NOT a person-score and must PASS — even with words the person-gate also uses.
+WORK_METRIC_PASSES = [
+    "The team is bottom-quartile on velocity this quarter; the work needs help.",
+    "Our score on the security audit was 9/10.",
+    "The deadline slipped from 5/10 to 5/20.",
+    "Code coverage is at 85% and rising.",
+    "The project came in at 3 out of 5 on the readiness checklist.",
+    "Team throughput ranks in the bottom 20% across the org this sprint.",
+    "Our incident response graded a C in the postmortem.",       # artifact grade, not a person
+    "The project sits in the third tier of the roadmap.",         # artifact tier, not a person
+]
+
+
+# Person-grade predicate must still fail (the artifact-anchored sibling above must pass).
+@pytest.mark.parametrize("text", [
+    "Her grade is a C-minus.",
+    "His grade is a D this quarter.",
+])
+def test_person_grade_predicate_still_fails(text):
+    assert not redline.validate(text).passed, f"person grade predicate wrongly passed: {text!r}"
+
+
+@pytest.mark.parametrize("text", WORK_METRIC_PASSES)
+def test_work_and_artifact_metrics_pass(text):
+    res = redline.validate(text)
+    assert res.passed, f"ADR-0016 over-block: work/artifact metric wrongly failed ({res.summary()}): {text!r}"
+
+
+# --- 2. humane + decisive (incl. exit) MUST pass (ADR-0016) -----------------------------------
+
+EXIT_ADVICE = (
+    "The pattern of missed updates and slipped handoffs is real and repeating, and it's now "
+    "landing on the rest of the team, so it can't be waited out. Have the direct conversation "
+    "this week: name the specific pattern and its effect, then genuinely ask what's going on and "
+    "listen. Agree on what back-on-track looks like and a date to check it. If there's a fixable "
+    "cause, support her hard through it. If after that the work still isn't meeting the bar, the "
+    "kind thing is still to be clear about consequences — up to a role change, a performance plan, "
+    "or, if it comes to it, parting ways. Be decisive and humane; they are not opposites."
+)
+
+DECISIVE_PHRASES = [
+    "We should part ways with him if this continues.",
+    "It may be time to manage her out of the role.",
+    "Put a clear performance plan in place and be honest it could end in an exit.",
+    "Reassignment is the humane move here; the role isn't the right fit.",
+    "You need to have the hard conversation — directly, this week.",
+    "The work isn't meeting the bar, and that has to be said plainly.",
+    "This is genuine underperformance and you shouldn't flinch from naming it.",
+]
+
+
+def test_exit_advice_passes():
+    res = redline.validate(EXIT_ADVICE)
+    assert res.passed, f"ADR-0016 violation: exit advice was failed by {res.summary()}"
+
+
+@pytest.mark.parametrize("text", DECISIVE_PHRASES)
+def test_decisive_action_vocab_passes(text):
+    res = redline.validate(text)
+    assert res.passed, f"decisive-but-no-score phrase wrongly failed ({res.summary()}): {text!r}"
+
+
+# --- 3. no false positives on dates / idioms --------------------------------------------------
+
+@pytest.mark.parametrize("text", [
+    "Let's meet on 3/5/2026 to follow up.",
+    "Let's meet 3/5 next week.",                          # date, not a rating (checker found this)
+    "The deadline is 5/10.",                              # date, not a rating (checker found this)
+    "Nine times out of ten this is just a blocker.",
+    "She missed about four weeks of updates running.",   # spelled-out, describing the work
+    "Two of her deliverables slipped onto the team.",     # counting work, not scoring a person
+    "He's a real team player and a good colleague.",      # "a player" article must not trip
+    "Make sure the work is A-grade quality before it ships.",  # work quality phrasing... see note
+])
+def test_no_false_positive(text):
+    res = redline.validate(text)
+    assert res.passed, f"false positive ({res.summary()}): {text!r}"
+
+
+# --- 4. the published rules doc stays in sync with the code -----------------------------------
+
+def test_rules_doc_in_sync():
+    doc = RULES_DOC.read_text(encoding="utf-8")
+    for rule_id in redline.RULE_IDS:
+        assert rule_id in doc, f"{rule_id} missing from redline_rules.md (publish it)"
+
+
+# --- 5. uncited number is a SOFT signal, never the hard gate -----------------------------------
+
+def test_uncited_number_is_secondary_not_gate():
+    res = redline.validate("She missed 40% of standups.", cited_snippets=[])
+    assert res.passed, "uncited number must not hard-fail (it's a logged secondary signal)"
+    assert any(v.rule_id == "UNCITED-NUMBER" for v in res.secondary)
+
+    ok = redline.validate("She missed 40% of standups.",
+                          cited_snippets=["she missed 40% of standups last month"])
+    assert not ok.secondary, "a cited number should clear the secondary flag"

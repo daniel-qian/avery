@@ -1,0 +1,9 @@
+# Avery eval-harness deps.
+# The loop/runner/judge core uses only the stdlib + (for kappa) scipy/numpy.
+# `anthropic` is only required to run the RealBrain / real LLM judges; mock mode needs none of it.
+
+anthropic>=0.40        # RealBrain (claude-opus-4-8) + cross-family judges via SDK-compatible clients
+openai>=1.40           # baseline codex/GPT brain + non-Claude judge family
+scipy>=1.11            # Cohen's kappa
+numpy>=1.24
+pytest>=8.0            # test suite

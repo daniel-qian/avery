@@ -1,0 +1,47 @@
+{
+  "manifest_hash": "68f956cfc9db983d990bbed664184eb41949b6f21e7c484704b6f25fff494839",
+  "files": [
+    {
+      "path": "cases/lin-qing-checkin.md",
+      "sha256": "58f3cc90c7261b5c9bb49cbcc39b216defa8b38e085434db82246e8483433703"
+    },
+    {
+      "path": "cases/marcus-genuine-underperformance.md",
+      "sha256": "0e358a76e281adc2e3b9c39a97b83f3f9ebb858fa5b81429d997e5b0cb0a69f3"
+    },
+    {
+      "path": "cases/priya-newhire-ramp.md",
+      "sha256": "e1a9ef0f75b4d7ec542c31547f7dce1445ddf403569c7e658a8e3ac1c075855f"
+    },
+    {
+      "path": "memory/facts.md",
+      "sha256": "5ae9af3c37f2c7a4c422ac2c5dfaff79f10b35cc418b1749bec65d37ff2b976f"
+    },
+    {
+      "path": "memory/notes.md",
+      "sha256": "18da39515f09bd247fab7047f5b12c888b9bd6509f7ff8af5984a3c6a55e93b5"
+    },
+    {
+      "path": "redline_rules.md",
+      "sha256": "b59c3151806820342359da9c31b3f0d21b7fcd8115797a4f4854e89bc3017842"
+    },
+    {
+      "path": "scenarios/manifest.json",
+      "sha256": "16a39eac43bee74a1a20c6962ebf6974f7dd0400fbdef31f5f76713e576467c3"
+    },
+    {
+      "path": "skills/00-relational-model.md",
+      "sha256": "eaec3523fa8086aefcaf1dadcee1fffe1b2a52f323c16b10ae868b9141da4884"
+    },
+    {
+      "path": "skills/01-red-line.md",
+      "sha256": "7d38ad2ecdd212a77f5e3492f42483a5e969ff68dca1605a670d3135432d5736"
+    },
+    {
+      "path": "skills/02-kind-read-can-be-wrong.md",
+      "sha256": "aecee90e76cabd6d9b4092ac80d518ce5ad65a9ae74b40fff4ae0804808ef676"
+    }
+  ],
+  "git_commit": "79d8ba9b7dd68a5aebea4e96aabbb58f41b0eb17",
+  "git_dirty": true
+}
