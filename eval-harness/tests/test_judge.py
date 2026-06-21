@@ -82,7 +82,7 @@ def test_human_sample_is_about_30_percent_and_kappa_handled_honestly(scored):
                    json.loads((scored["_out"] / "judgeset.json").read_text())["comparisons"]
                    if c["swap_of"] is None])
     n_sample = len(scored["human_sample_template"])
-    assert round(n_sample / n_pairs, 1) in (0.3, 0.33, 0.4), f"{n_sample}/{n_pairs} not ~30%"
+    assert n_sample == max(1, round(n_pairs * 0.30)), f"{n_sample}/{n_pairs} not the 30% target"
     # kappa is either a number OR explicitly flagged as degenerate — never silently faked
     assert sc["cohens_kappa_judge_vs_human"] is not None or sc["cohens_kappa_note"]
     assert sc["judge_human_agreement"] is not None

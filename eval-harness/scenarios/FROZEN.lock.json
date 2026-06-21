@@ -1,6 +1,10 @@
 {
-  "manifest_hash": "68f956cfc9db983d990bbed664184eb41949b6f21e7c484704b6f25fff494839",
+  "manifest_hash": "8256f746e75e0a16254664b5d8fa66405085389c4fc24291e4b618b427148105",
   "files": [
+    {
+      "path": "cases/jordan-brilliant-but-corrosive.md",
+      "sha256": "c198f3eb478eb9ec1b50c8bbe2b9ba889678b4e74433fb2d0775de28da287e43"
+    },
     {
       "path": "cases/lin-qing-checkin.md",
       "sha256": "58f3cc90c7261b5c9bb49cbcc39b216defa8b38e085434db82246e8483433703"
@@ -15,7 +19,7 @@
     },
     {
       "path": "memory/facts.md",
-      "sha256": "5ae9af3c37f2c7a4c422ac2c5dfaff79f10b35cc418b1749bec65d37ff2b976f"
+      "sha256": "0a3ca1cf61ee56fd7c3469d239a706745727471e93a854f7e42c73c952388479"
     },
     {
       "path": "memory/notes.md",
@@ -27,7 +31,7 @@
     },
     {
       "path": "scenarios/manifest.json",
-      "sha256": "16a39eac43bee74a1a20c6962ebf6974f7dd0400fbdef31f5f76713e576467c3"
+      "sha256": "5ce575be7db394b69af28aa5ea551012d1efed91db0dcaf641d1c92fa9342eb9"
     },
     {
       "path": "skills/00-relational-model.md",
@@ -42,6 +46,6 @@
       "sha256": "aecee90e76cabd6d9b4092ac80d518ce5ad65a9ae74b40fff4ae0804808ef676"
     }
   ],
-  "git_commit": "79d8ba9b7dd68a5aebea4e96aabbb58f41b0eb17",
+  "git_commit": "b8d1cdaf9128696608ad52e276c7303b91327933",
   "git_dirty": true
 }

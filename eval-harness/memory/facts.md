@@ -34,3 +34,11 @@
 - Her velocity is below the team median, which is normal and expected this early in ramp.
 - She is asking good questions, her code reviews are thorough, and two teammates noted she is already unblocking others.
 - The one missed deadline in her record was a dependency owned by another team, not her work.
+
+## Prior context on Jordan (Platform team, senior engineer)
+- Jordan is a senior engineer who consistently ships high-quality work on time, and the team depends on several systems Jordan owns.
+- In the last two months, two junior engineers have each separately asked the manager to be moved off Jordan's projects.
+- In code review Jordan's comments are frequently curt and dismissive ("this is obvious", "did you even run this?"); three were raised in a retro as discouraging.
+- In the last planning meeting Jordan presented a junior engineer's design as Jordan's own; the junior raised it privately with the manager afterward.
+- Jordan is widely regarded as brilliant, and the manager has avoided the issue partly because the output is so strong.
+- No one has yet given Jordan direct, specific feedback about the interpersonal impact of these behaviours.

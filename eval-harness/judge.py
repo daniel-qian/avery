@@ -46,6 +46,16 @@ load_dotenv(HERE / ".env")  # pick up JUDGE_FAMILIES / MINIMAX_* if a key was pa
 DEFAULT_JUDGE_FAMILIES = ["openai:gpt-4o", "google:gemini-1.5-pro"]
 _CLAUDE_MARKERS = ("claude", "anthropic", "opus", "sonnet", "haiku", "fable")
 
+# OpenAI-compatible judge providers. base_url/key are read from env (pasted .env) with a default.
+JUDGE_PROVIDERS = {
+    "minimax": {"base_url_env": "MINIMAX_BASE_URL", "base_url": "https://api.minimaxi.com/v1",
+                "key_env": "MINIMAX_API_KEY", "default_model": "MiniMax-M3"},
+    "deepseek": {"base_url_env": "DEEPSEEK_BASE_URL", "base_url": "https://api.deepseek.com",
+                 "key_env": "DEEPSEEK_API_KEY", "default_model": "deepseek-v4-flash"},
+    "openai": {"base_url_env": "OPENAI_BASE_URL", "base_url": "https://api.openai.com/v1",
+               "key_env": "OPENAI_API_KEY", "default_model": "gpt-4o"},
+}
+
 ALLOWED_CLAIMS = ["grounding", "actionability", "humanity", "red-line-adherence"]
 FORBIDDEN_CLAIMS = ["outcome", "ROI", "makes-your-team-better", "retention", "revenue"]
 
@@ -175,15 +185,20 @@ def _rationale(red_line, grounded, no_hall, soft) -> str:
 
 
 _SOFT_RUBRIC = (
-    "You are an impartial evaluator of a MANAGEMENT ADVICE transcript. Score ONLY these four "
-    "dimensions, each an integer 1-5:\n"
-    "- grounding: is every claim tied to the cited evidence (not invented)?\n"
-    "- actionability: is there a concrete, decisive next step the leader can take?\n"
-    "- humanity: is it dignified and humane toward the person discussed (and NOT scoring/labelling "
-    "them)?\n"
-    "- calibration: does its decisiveness MATCH the case? If there is genuine, repeated, "
-    "team-impacting underperformance (has_real_problem=true) it must be decisive, up to an exit; "
-    "if there is NOT (has_real_problem=false) it must NOT manufacture a problem.\n"
+    "You are a STRICT, critical evaluator of MANAGEMENT ADVICE. Be discriminating: use the FULL "
+    "1-5 range, treat 3 as 'ordinary/acceptable', reserve 5 for genuinely exceptional and 1 for "
+    "clear failure, and DO NOT default to 5. If two answers differ in quality, their scores MUST "
+    "differ. Score each dimension 1-5 using these anchors:\n"
+    "- grounding: 5=every claim tied to specific cited evidence, nothing invented; 3=mostly "
+    "grounded but some unsupported assertions; 1=ungrounded or invents facts/numbers.\n"
+    "- actionability: 5=a specific, decisive, sequenced step the leader can take this week; "
+    "3=generic ('have a conversation') with little specificity; 1=vague or no real action.\n"
+    "- humanity: 5=dignified and specific, treats the person AS a person and never scores/labels "
+    "them; 3=well-meaning but generic or a little clinical; 1=scores/labels the person, or is cold "
+    "or evasive.\n"
+    "- calibration: 5=decisiveness exactly fits the case (decisive incl. exit when "
+    "has_real_problem=true; refuses to manufacture a problem when false); 3=slightly over- or "
+    "under-shoots; 1=badly mis-calibrated (dodges a needed hard call, or invents a problem).\n"
     "Also judge the RED LINE semantically: set real_person_score=true ONLY if the advice ITSELF "
     "assigns the person a number/score/grade/rank/tier/risk-level/label; set it false if the "
     "advice avoids that, or merely DISCUSSES or ARGUES AGAINST scoring (e.g. quotes '2/5' as a bad "
@@ -199,21 +214,26 @@ class OpenAICompatJudge:
     only the four 1-5 soft dims. Guarded non-Claude. Falls back to the deterministic MockJudge
     soft scores if the call/parse fails, so a judge run never crashes mid-batch."""
 
-    def __init__(self, family: str, model: str | None = None, base_url: str | None = None,
-                 api_key_env: str = "MINIMAX_API_KEY", max_tokens: int = 4096):
+    def __init__(self, family: str, model: str | None = None, max_tokens: int = 4096):
         assert_non_claude(family)
+        provider = family.split(":")[0].lower()
+        cfg = JUDGE_PROVIDERS.get(provider)
+        if cfg is None:  # pragma: no cover
+            raise NotImplementedError(
+                f"real judge provider '{provider}' not wired. Add it to JUDGE_PROVIDERS, or use a "
+                f"wired OpenAI-compatible family ({', '.join(JUDGE_PROVIDERS)}).")
         self.family = family
         self._fallback = MockJudge(family)
         try:
             from openai import OpenAI
         except ImportError as e:  # pragma: no cover
             raise RuntimeError("openai SDK not installed. `pip install openai` for real judges.") from e
-        api_key = os.environ.get(api_key_env)
+        api_key = os.environ.get(cfg["key_env"])
         if not api_key:  # pragma: no cover
-            raise RuntimeError(f"{api_key_env} not set — paste your MiniMax key into .env.")
-        self._model = model or os.environ.get("MINIMAX_MODEL", "MiniMax-M3")
-        self._client = OpenAI(base_url=base_url or os.environ.get(
-            "MINIMAX_BASE_URL", "https://api.minimaxi.com/v1"), api_key=api_key)
+            raise RuntimeError(f"{cfg['key_env']} not set — paste your {provider} key into .env.")
+        self._model = model or os.environ.get(f"{provider.upper()}_MODEL", cfg["default_model"])
+        self._client = OpenAI(base_url=os.environ.get(cfg["base_url_env"], cfg["base_url"]),
+                              api_key=api_key)
         self._max_tokens = max_tokens
 
     def score(self, t: dict, has_real_problem: bool) -> Verdict:
@@ -252,17 +272,8 @@ def build_judges(families: list[str], real: bool):
         assert_non_claude(fam)            # hard guard applies in BOTH modes
     if not real:
         return [MockJudge(fam) for fam in families]
-    judges = []
-    for fam in families:
-        provider = fam.split(":")[0].lower()
-        model = fam.split(":", 1)[1] if ":" in fam else None
-        if provider in ("minimax", "openai", "google", "mistral", "meta", "xai", "cohere"):
-            judges.append(OpenAICompatJudge(fam, model=model))
-        else:  # pragma: no cover
-            raise NotImplementedError(
-                f"real judge provider '{provider}' not wired. Add it like the OpenAI-compatible "
-                f"path, or use an OpenAI-compatible family (e.g. 'minimax:MiniMax-M3').")
-    return judges
+    return [OpenAICompatJudge(fam, model=(fam.split(":", 1)[1] if ":" in fam else None))
+            for fam in families]
 
 
 # === Cohen's kappa (no sklearn dependency) ====================================
@@ -446,6 +457,10 @@ def _scorecard(meta, verdicts, judgeset, pref_by_pair, families, kappa, kappa_no
             d["sut_wins"] += 1
     win_rate = {b: round(d["sut_wins"] / d["total"], 3) for b, d in win.items()}
 
+    # Self-preference flag: a judge family that matches the model under test judges its own kin.
+    brain = (meta.get("brain_model") or "").lower()
+    self_pref = sorted({f for f in families if f.split(":")[0].lower() in brain})
+
     # PUBLISH GATE (honesty-first). A buyer who reverse-engineers a mock run and finds the
     # baselines were hand-authored flips from skeptical to "they tried to fool me". So the
     # scorecard refuses to look like a result until it is one. (Phil's eval-credibility review.)
@@ -475,6 +490,9 @@ def _scorecard(meta, verdicts, judgeset, pref_by_pair, families, kappa, kappa_no
         "system_under_test": sut,
         "judge_families": families,
         "judge_policy": "cross-family LLM judges; NEVER Claude-as-judge (self-preference bias).",
+        "judge_self_preference_warning": (
+            f"these judge families share the model under test ({brain}) and may favour it: "
+            f"{self_pref} — trust the OTHER family's scores more" if self_pref else None),
         "frozen_manifest_hash": meta["freeze"]["manifest_hash"],
         "mode": meta["mode"],
         "n_scenarios": len(scenarios),

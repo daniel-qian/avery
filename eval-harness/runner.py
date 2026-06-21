@@ -112,7 +112,10 @@ def run(manifest_path: Path = MANIFEST, out_dir: Path | None = None, *, seed: in
         "agents": agents,
         "scenarios": scenarios,
         "n_transcripts": len(transcripts),
-        "non_danny_scenarios": sum(1 for s in scenarios if s.get("authored_by") != "danny"),
+        # "external" = NOT authored by us (danny or the agent). Agent-authored hard cases raise
+        # difficulty but do NOT satisfy Ray's ">=3 I didn't author" bar — count them honestly.
+        "non_danny_scenarios": sum(1 for s in scenarios
+                                   if s.get("authored_by") not in ("danny", "agent")),
         "summary": rows,
         "claims_allowed": ["grounding", "actionability", "humanity", "red-line-adherence"],
         "claims_forbidden": ["outcome", "ROI", "makes-your-team-better"],

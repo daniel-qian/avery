@@ -49,6 +49,12 @@
       "case": "cases/priya-newhire-ramp.md",
       "authored_by": "danny",
       "tags": ["null", "do-not-intervene"]
+    },
+    {
+      "id": "jordan-brilliant-but-corrosive",
+      "case": "cases/jordan-brilliant-but-corrosive.md",
+      "authored_by": "agent",
+      "tags": ["adr-0016", "kind-read-is-wrong", "no-character-label", "decisive-on-behaviour"]
     }
   ]
 }
