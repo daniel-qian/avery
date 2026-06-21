@@ -1,0 +1,615 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Avery landing — global styles.
+   Warm, plainspoken, "senior at your ear" — NOT a SaaS dashboard.
+   Calm paper-warm background, ink text, one muted accent. No chrome, no hype.
+   ───────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --paper: #faf7f2;
+  --paper-raised: #ffffff;
+  --ink: #232020;
+  --ink-soft: #5c5550;
+  --ink-faint: #8a807a;
+  --line: #e7e0d6;
+  --accent: #3f5a52; /* muted deep green — calm, trustworthy */
+  --accent-soft: #eef2ee;
+  --warn: #b25c3b; /* warm terracotta for red-line flags — not alarm-red */
+  --warn-soft: #f7ece6;
+  --ok: #3f5a52;
+  --radius: 14px;
+  --shadow: 0 1px 2px rgba(35, 32, 32, 0.04), 0 8px 28px rgba(35, 32, 32, 0.06);
+  --maxw: 1080px;
+  --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --serif: ui-serif, Georgia, Cambria, "Times New Roman", serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.18;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+.wrap {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.eyebrow {
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 600;
+}
+
+.section {
+  padding: 84px 0;
+  border-top: 1px solid var(--line);
+}
+
+.section__head {
+  max-width: 640px;
+  margin-bottom: 40px;
+}
+
+.section__head h2 {
+  font-size: 30px;
+  margin: 12px 0 14px;
+}
+
+.section__head p {
+  color: var(--ink-soft);
+  font-size: 18px;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font: inherit;
+  font-weight: 600;
+  font-size: 16px;
+  padding: 14px 24px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+}
+
+.btn--primary {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: var(--shadow);
+}
+
+.btn--primary:hover {
+  transform: translateY(-1px);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+.btn--ghost:hover {
+  background: var(--paper-raised);
+}
+
+/* ── Hero ─────────────────────────────────────────────────────────────── */
+.hero {
+  padding: 96px 0 76px;
+}
+
+.hero__mark {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.hero__title {
+  font-size: clamp(34px, 5.2vw, 56px);
+  font-weight: 700;
+  margin: 28px 0 0;
+  max-width: 14ch;
+}
+
+.hero__title em {
+  font-style: normal;
+  color: var(--accent);
+}
+
+.hero__sub {
+  font-size: clamp(18px, 2.4vw, 22px);
+  color: var(--ink-soft);
+  margin: 22px 0 0;
+  max-width: 38ch;
+}
+
+.hero__cta {
+  margin-top: 36px;
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.hero__reassure {
+  margin-top: 20px;
+  font-size: 14px;
+  color: var(--ink-faint);
+}
+
+/* ── Demo video slot ──────────────────────────────────────────────────── */
+.video-slot {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  border-radius: var(--radius);
+  border: 1px dashed var(--line);
+  background: linear-gradient(180deg, #fff 0%, var(--paper) 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  color: var(--ink-faint);
+}
+
+.video-slot__badge {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--ink-faint);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 12px;
+  background: var(--paper-raised);
+}
+
+.video-slot__play {
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+}
+
+.video-slot__cap {
+  font-size: 14px;
+  max-width: 40ch;
+}
+
+/* ── Eval / advice-contrast ───────────────────────────────────────────── */
+.eval__note {
+  background: var(--accent-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  font-size: 14.5px;
+  color: var(--ink-soft);
+  margin-bottom: 28px;
+}
+
+.eval__note strong {
+  color: var(--ink);
+}
+
+.eval-row {
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 22px;
+  margin-bottom: 28px;
+}
+
+.eval-row__brief {
+  border-left: 3px solid var(--accent);
+  padding-left: 16px;
+  margin-bottom: 18px;
+}
+
+.eval-row__brief .q {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.chip {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--ink-faint);
+  background: var(--paper);
+}
+
+.chip--adv {
+  color: var(--warn);
+  border-color: var(--warn);
+  background: var(--warn-soft);
+}
+
+.evidence {
+  margin: 4px 0 22px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.evidence__label {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--ink-faint);
+  margin-bottom: 8px;
+}
+
+.evidence ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.evidence li {
+  margin: 3px 0;
+}
+
+.advice-grid {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr 1fr;
+  gap: 16px;
+}
+
+.advice-cell {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--paper);
+  display: flex;
+  flex-direction: column;
+}
+
+.advice-cell--avery {
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: inset 0 0 0 1px var(--accent-soft);
+}
+
+.advice-cell__advisor {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.advice-cell--avery .advice-cell__advisor {
+  color: var(--accent);
+}
+
+.advice-label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--ink-faint);
+  margin: 14px 0 6px;
+}
+
+.advice-cell__read {
+  font-size: 14.5px;
+  color: var(--ink);
+}
+
+.advice-cell ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.advice-cell ul li {
+  margin: 6px 0;
+}
+
+.advice-cell__answer {
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.guardrail {
+  margin-top: 14px;
+  border-left: 3px solid var(--accent);
+  padding: 8px 0 8px 12px;
+  font-size: 13.5px;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+.flag {
+  margin-top: auto;
+  padding-top: 14px;
+  font-size: 13px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.flag__icon {
+  flex-shrink: 0;
+  font-weight: 700;
+}
+
+.flag--crossed {
+  color: var(--warn);
+}
+
+.flag--ok {
+  color: var(--ok);
+}
+
+.placeholder-tag {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+
+/* Baseline cells sit BELOW Avery, visually quieter — they're the contrast,
+   not a competing product. */
+.advice-cell--baseline {
+  background: #f4f1ec;
+  border-color: var(--line);
+}
+
+.advice-cell--baseline .advice-cell__advisor {
+  color: var(--ink-faint);
+}
+
+/* A rejected (red-line-crossed) baseline reads clearly as the WRONG answer:
+   muted text + a warm "rejected" wash, so a screenshot of it can't be mistaken
+   for a feature Avery is offering. */
+.advice-cell--rejected {
+  background: var(--warn-soft);
+  border-color: var(--warn);
+  border-style: dashed;
+}
+
+.advice-cell--rejected .advice-cell__answer {
+  color: var(--ink-faint);
+}
+
+.rejected-tag {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--warn);
+  background: #fff;
+  border: 1px solid var(--warn);
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+
+/* The red-line flag is the most persuasive pixel on a rejected cell — make it
+   carry weight, not whisper. */
+.advice-cell--rejected .flag--crossed {
+  background: #fff;
+  border: 1px solid var(--warn);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-weight: 500;
+}
+
+/* ── What Avery is / isn't ────────────────────────────────────────────── */
+.isnt-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.isnt-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px;
+  background: var(--paper-raised);
+}
+
+.isnt-card h3 {
+  font-size: 18px;
+  margin-bottom: 14px;
+}
+
+.isnt-card ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.isnt-card li {
+  position: relative;
+  padding-left: 26px;
+  margin: 10px 0;
+  color: var(--ink-soft);
+  font-size: 15.5px;
+}
+
+.isnt-card--is li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.isnt-card--isnt li::before {
+  content: "—";
+  position: absolute;
+  left: 0;
+  color: var(--ink-faint);
+  font-weight: 700;
+}
+
+.privacy-line {
+  margin-top: 22px;
+  background: var(--accent-soft);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  font-size: 16px;
+  color: var(--ink);
+}
+
+.privacy-line strong {
+  color: var(--accent);
+}
+
+/* ── Email capture / CTA ──────────────────────────────────────────────── */
+.cta {
+  text-align: center;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 24px;
+  padding: 64px 28px;
+  margin: 84px 0 0;
+}
+
+.cta h2 {
+  font-size: clamp(26px, 4vw, 38px);
+  max-width: 18ch;
+  margin: 0 auto 16px;
+}
+
+.cta p {
+  color: rgba(255, 255, 255, 0.82);
+  max-width: 44ch;
+  margin: 0 auto 28px;
+}
+
+.capture {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.capture input {
+  flex: 1 1 240px;
+  font: inherit;
+  font-size: 16px;
+  padding: 14px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.capture input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.capture input:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.capture .btn--primary {
+  background: #fff;
+  color: var(--accent);
+}
+
+.cta__micro {
+  margin-top: 16px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.capture__ok {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* ── Footer ───────────────────────────────────────────────────────────── */
+.foot {
+  padding: 40px 0 64px;
+  color: var(--ink-faint);
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .advice-grid {
+    grid-template-columns: 1fr;
+  }
+  .isnt-grid {
+    grid-template-columns: 1fr;
+  }
+  .section {
+    padding: 64px 0;
+  }
+}

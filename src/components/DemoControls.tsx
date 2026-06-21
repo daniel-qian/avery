@@ -28,6 +28,7 @@ function getCaptionParts(index: number) {
 export function DemoControls() {
   const index = useRail((s) => s.index)
   const hidden = useRail((s) => s.hidden)
+  const capture = useRail((s) => s.capture)
   const caption = getCaptionParts(index)
 
   useLayoutEffect(() => {
@@ -48,6 +49,9 @@ export function DemoControls() {
         useRail.getState().restart()
       } else if (event.key.toLowerCase() === 'h') {
         useRail.getState().toggleHidden()
+      } else if (event.key.toLowerCase() === 'c') {
+        // feat-006：clean capture mode 的黏性开关（录屏前按一次，全程干净帧）。
+        useRail.getState().toggleCapture()
       }
     }
 
@@ -55,7 +59,9 @@ export function DemoControls() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
-  if (hidden) return null
+  // capture（录屏）= 藏掉全部 rail chrome（进度栏 + title card），键盘驱动仍在
+  //（handler 在上面的 effect 里，与渲染无关）；hidden = 旧的快速窥视。
+  if (hidden || capture) return null
 
   return (
     <>
