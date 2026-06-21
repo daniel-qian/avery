@@ -54,14 +54,15 @@ The scaffold was reviewed by the three buyer/voice personas. Acted-on feedback
 is already in the page. These are left for Danny because they conflict with a
 locked decision or need a fact only he has:
 
-- **On-device / privacy wording.** The 2026-06-20 roundtable green-lit "nothing
-  leaves, nothing goes to a server — lead louder with this." But all three
-  checkers independently flagged the literal "server" phrasing as defensive /
-  raising "where does the model actually run?" So the page now leads with the
-  warm, verifiable half ("nothing gets scored or stored against anyone") and the
-  techy absolute was dropped. **Decision for Danny:** if on-device is
-  architecturally true and you want to confirm it, we can lead louder with it
-  again (per the roundtable); if not, leave it dropped.
+- **Privacy wording — RESOLVED (founder-confirmed 2026-06-21).** Architecture:
+  all company data + model outputs live on the company's own machines, not ours;
+  data does pass a cloud SDK API but is de-identified / scrubbed first. The page
+  now states the *accurate* version — "The details stay on your own machines,
+  not ours — and before anything reaches the AI, names and identifiers are
+  stripped out first" — instead of the earlier inaccurate "nothing goes to a
+  server." This is the question buyers WILL raise, so it's answered head-on
+  (and it converts Ray's earlier "where does the model actually run?" doubt into
+  a credible answer).
 - **Hero slug — kept as-is (not changed).** Will suggested "A senior voice in
   your ear…" over "the senior at your ear" (noun ambiguity). Held: DECISION-MEMO
   §2 mandates the exact master slug and it's the line both buyers quoted back.

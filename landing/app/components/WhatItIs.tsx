@@ -1,9 +1,11 @@
 // "What Avery is / isn't" — leans on safeFraming + a privacy promise, plus the
 // ADR-0016 decisiveness line (helps you HAVE the hard call when warranted, not
-// avoid it). NOTE: the literal on-device claim ("nothing goes to a server",
-// roundtable-greenlit) was dropped after all three persona checkers read it as
-// defensive / raising "where does the model run?"; the warm, verifiable half is
-// kept. Re-leading with on-device is a founder decision — see landing/README.md.
+// avoid it). PRIVACY (founder-confirmed 2026-06-21): the data + model outputs
+// live on the company's own machines, not ours; data does pass a cloud SDK API
+// but is de-identified / scrubbed first. So we state the ACCURATE version (stays
+// on your machines; names stripped before anything reaches the AI) rather than
+// the inaccurate "nothing goes to a server" — this is the question buyers WILL
+// raise, so it's answered head-on. See landing/README.md.
 
 export function WhatItIs() {
   return (
@@ -43,8 +45,10 @@ export function WhatItIs() {
         </div>
 
         <p className="privacy-line">
-          <strong>Your situations stay yours.</strong> Nothing about your people
-          is scored, filed, or kept against anyone.
+          <strong>Your situations stay yours.</strong> The details stay on your
+          own machines, not ours &mdash; and before anything reaches the AI,
+          names and identifiers are stripped out first. Nothing about your people
+          is ever scored, filed, or kept against anyone.
         </p>
       </div>
     </section>
