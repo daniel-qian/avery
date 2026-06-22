@@ -1,5 +1,5 @@
 {
-  "manifest_hash": "8256f746e75e0a16254664b5d8fa66405085389c4fc24291e4b618b427148105",
+  "manifest_hash": "2a8734390b6a5061af71ea8d9a4744c113104e769b9b6a0b9069051c968b4df7",
   "files": [
     {
       "path": "cases/jordan-brilliant-but-corrosive.md",
@@ -15,7 +15,7 @@
     },
     {
       "path": "cases/priya-newhire-ramp.md",
-      "sha256": "e1a9ef0f75b4d7ec542c31547f7dce1445ddf403569c7e658a8e3ac1c075855f"
+      "sha256": "4a6d52f9086a2230732beebf3ef82f89ef56c7e2b4520f2ea52e2db6caa04755"
     },
     {
       "path": "memory/facts.md",
@@ -46,6 +46,6 @@
       "sha256": "aecee90e76cabd6d9b4092ac80d518ce5ad65a9ae74b40fff4ae0804808ef676"
     }
   ],
-  "git_commit": "b8d1cdaf9128696608ad52e276c7303b91327933",
+  "git_commit": "e49ba62f10b100e5843dbe2db3b80be244a591bc",
   "git_dirty": true
 }

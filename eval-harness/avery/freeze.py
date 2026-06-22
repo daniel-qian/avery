@@ -24,6 +24,14 @@ def _sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def _normalized_bytes(path: Path) -> bytes:
+    """Hash on line-ending-normalized text so the frozen hash is stable across platforms (git's
+    CRLF<->LF conversion on Windows checkout otherwise flips the byte hash and false-positives a
+    drift)."""
+    text = path.read_text(encoding="utf-8")
+    return text.replace("\r\n", "\n").replace("\r", "\n").encode("utf-8")
+
+
 def _git(root: Path, *args: str) -> str | None:
     try:
         out = subprocess.run(["git", *args], cwd=root, capture_output=True, text=True, timeout=10)
@@ -60,7 +68,7 @@ def compute_freeze(manifest_path: Path) -> dict:
     per_file, h = [], hashlib.sha256()
     for f in files:
         rel = f.relative_to(root.resolve()).as_posix()
-        digest = _sha(f.read_bytes())
+        digest = _sha(_normalized_bytes(f))
         per_file.append({"path": rel, "sha256": digest})
         h.update(rel.encode() + b"\0" + digest.encode() + b"\n")
 
