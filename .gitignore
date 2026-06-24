@@ -5,3 +5,14 @@ dist-ssr
 .vite
 .DS_Store
 *.tsbuildinfo
+
+# Agent-local state. Keep project hook/config paths trackable by default:
+# .claude/settings.json, .claude/hooks/, .codex/hooks.json, .codex/config.toml, .codex/hooks/
+.claude/settings.local.json
+.claude/worktrees/
+.claude/cache/
+.claude/archives/
+.claude/launch.json
+.codex/local/
+.codex/cache/
+.codex/archives/

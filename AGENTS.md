@@ -24,6 +24,7 @@ Before writing code:
 - `npm run typecheck` —— `tsc -b` 零错。
 - `npm run build` —— typecheck + vite build。
 - 没有自动化 test suite：行为验证靠 `npm run dev` 目测，验证了什么写进 evidence。
+- Harness 收尾机械门见 `docs/agents/clean-state-checklist.md`；较大 session 的验收评分见 `docs/agents/evaluator-rubric.md`。
 
 ## Definition of Done
 
@@ -43,7 +44,8 @@ Before ending（或 context 快用完时）：
 1. 更新 `progress.md`：What's Done / In Progress / Next steps / Blockers / Files Modified。
 2. 更新 `feature_list.json` 状态与 evidence。
 3. 跨 session 的大块交接另写 `session-handoff.md`。
-4. 目标：下个 session 不靠聊天记录、只靠这三个文件就能 restartable。
+4. 按 `docs/agents/clean-state-checklist.md` 过一遍 branch/worktree/dirty files/hook liveness。
+5. 目标：下个 session 不靠聊天记录、只靠这些 repo 文件就能 restartable。
 
 ## Agent skills
 

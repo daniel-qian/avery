@@ -5,7 +5,7 @@
 
 ## Current State
 
-**Last Updated:** 2026-06-21（冷启动 AFK session）
+**Last Updated:** 2026-06-24（agent harness upgrade）
 **Active Feature:** 无 active 编码 feature。P7 wave 推进中。本 session（roles-loop workflow，Danny 全程 AFK）完成 4 个 P1 桶并 commit：**feat-005 改名**（已合入 main，commit 89ce238）、**feat-007 顾问 agent 调研/架构**、**feat-008 eval sheet 规格+mock**、**feat-009 文案 kit**（均为交付文档，commit 46084d1，见 `docs/strategy/coldstart-deliverables/`）。
 **🔴 头号待办（Danny 价值观抉择）：** Dana + Ray 盲测各自独立撞到**同一堵点**——当前所有素材只展示 Avery「护着人」，读起来像帮回避型管理者躲掉硬对话的工具（Ray：comfort blanket / 免责盾牌）。需 Danny 拍板：**Avery 是否愿意在人确实有问题时,把管理者推进一场果断的硬对话(含 exit)?** 推荐 YES。此决定卡住录屏(feat-013)与对抗 scenario(feat-012)。详见 `docs/strategy/coldstart-deliverables/DECISION-MEMO.md` §3。
 **⚠ 给下个 session：** 先读 `DECISION-MEMO.md` + `session-handoff.md` + 本文件 + `feature_list.json`，不要回放聊天记录。
@@ -82,3 +82,11 @@
 - **🔑 跨 feature 续接（给 integrator/下个 session）**：现在有两套 feat-012 产物——别的 session 的 `eval-scenarios/`（27 条 SCN markdown 场景，含 reserved 合伙人槽）+ 我的 `eval-harness/`（**可跑的** Python runner + 4 个 case 含 Jordan 挖坑案）。**自然衔接 = 把那 27 条 SCN 场景喂进 eval-harness runner 跑真数**（ingestion 契约见 architecture）；这是把 eval 变可信的下一步工程。
 - **⚠ 头号待办（未变,已存 memory）**：发布前需 **≥3 个合伙人自己写的真案子**（Ray must-have）——下次合伙人会议提出。当前所有 scenario 都是我们写的（`non_danny=0`），scorecard 正确地自标 **NOT PUBLISHABLE**。
 - **⚠ 运维**：`eval-harness/.env`（含 MiniMax+DeepSeek key）已 gitignore，**合并后需手动 copy 到主 checkout**；真跑 4 场景一次 10 分钟跑不完(推理模型)→ 分场景跑或调大 timeout；**key 在本次对话出现过,建议轮换**。
+
+## Update — 2026-06-24 · harness upgrade docs/scripts
+
+- **agent harness upgrade 已按审计票执行（不是产品 feature）**：新增 `docs/agents/clean-state-checklist.md`、`docs/agents/evaluator-rubric.md`、`docs/agents/harness-upgrade-plan-2026-06-24.md`，并在 `AGENTS.md` 短链过去。
+- **git hygiene**：`.gitignore` 改为只忽略 agent 本地态/大件（`.claude/settings.local.json`、`.claude/worktrees/`、cache/archive、`.claude/launch.json`、`.codex/local|cache|archives`），保留 `.claude/settings.json`、`.claude/hooks/`、`.codex/hooks.json`、`.codex/config.toml`、`.codex/hooks/` 默认可追踪。
+- **hook 上线前工具**：新增 `scripts/audit-hooks.mjs`（查项目 hook config 指向的 repo 内脚本是否存在且有 git history）和 `scripts/agent-context-banner.mjs`（未来 SessionStart / PreToolUse 软提醒用；不硬拦 main commit）。
+- **验证**：`node scripts/audit-hooks.mjs` 通过（当前无项目 hook config）；`scripts/agent-context-banner.mjs` 已用 SessionStart 形态、非匹配命令、`git commit`、坏 JSON、空 stdin 管道实测，均 exit 0；`node validate-harness.mjs --target ...` 为 96/100（瓶颈仍是旧 `session-handoff.md` 识别项）；`git diff --check` 通过。
+- **未做（有意）**：没有创建 `.claude/settings.json` / `.codex/hooks.json`，没有启用项目 hook；等 Danny 明确要信任 project-local hooks 再 wire。
