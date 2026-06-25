@@ -37,7 +37,7 @@ Before writing code:
 
 ## End of Session
 
-Worktree note: if this session is running inside a git worktree, do not rewrite global harness narrative files. Update only the active feature’s entry in `feature_list.json`, `.issues/<feature>/*`, and in-scope code/docs. Leave `progress.md`, `session-handoff.md`, and `mind-map.md` to the main-checkout integrator/merge-manager unless the user explicitly says this is the only active line.
+Worktree note: if this session is running inside a git worktree, you MUST still leave a clean handoff — but write it to your OWN per-line file (`.issues/<feature>/session-handoff.md`), not the root narrative. Whoever holds the freshest state owns recording it. Update only the active feature’s entry in `feature_list.json`, `.issues/<feature>/*`, and in-scope code/docs. The cross-line synthesis files — `progress.md` and the ROOT `session-handoff.md` — stay owned by the main-checkout integrator/merge-manager, who folds the per-line handoffs together. Exception: if the user says this is the only active line, you may write the root narrative directly.
 
 Before ending（或 context 快用完时）：
 
