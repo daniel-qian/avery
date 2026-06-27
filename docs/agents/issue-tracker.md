@@ -1,6 +1,6 @@
 # Issue tracker: GitHub
 
-Issues and PRDs for this repo live as GitHub issues in `daniel-qian/TM2.0`. Use the `gh` CLI for all operations.
+Issues and PRDs for this repo live as GitHub issues in `daniel-qian/avery`. Use the `gh` CLI for all operations.
 
 ## Conventions
 

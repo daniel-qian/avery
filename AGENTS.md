@@ -51,7 +51,7 @@ Before ending（或 context 快用完时）：
 
 ### Issue tracker
 
-Issues and PRDs live as GitHub issues in `daniel-qian/TM2.0`, managed via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+Issues and PRDs live as GitHub issues in `daniel-qian/avery`, managed via the `gh` CLI. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

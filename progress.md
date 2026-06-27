@@ -90,3 +90,11 @@
 - **hook 上线前工具**：新增 `scripts/audit-hooks.mjs`（查项目 hook config 指向的 repo 内脚本是否存在且有 git history）和 `scripts/agent-context-banner.mjs`（未来 SessionStart / PreToolUse 软提醒用；不硬拦 main commit）。
 - **验证**：`node scripts/audit-hooks.mjs` 通过（当前无项目 hook config）；`scripts/agent-context-banner.mjs` 已用 SessionStart 形态、非匹配命令、`git commit`、坏 JSON、空 stdin 管道实测，均 exit 0；`node validate-harness.mjs --target ...` 为 96/100（瓶颈仍是旧 `session-handoff.md` 识别项）；`git diff --check` 通过。
 - **未做（有意）**：没有创建 `.claude/settings.json` / `.codex/hooks.json`，没有启用项目 hook；等 Danny 明确要信任 project-local hooks 再 wire。
+
+## Update — 2026-06-27 · local path + GitHub repo rename safety
+
+- **GitHub repo 已重命名**：`daniel-qian/TM2.0` -> `daniel-qian/avery`；旧 slug 现在 redirect 到新 repo。
+- **本地 remote 已同步**：`origin` fetch/push = `https://github.com/daniel-qian/avery.git`；`gh issue list --repo daniel-qian/avery` 返回 open issues #8/#7 的新 URL。
+- **活引用已修正**：`AGENTS.md`、`docs/agents/issue-tracker.md` 的 issue tracker 指向改为 `daniel-qian/avery`；`package-lock.json` 顶部 package name 与 `package.json` 对齐为 `avery-prototype`。
+- **安全检查**：`./init.sh` 通过；`git diff --check` 通过（仅 CRLF 提示）；`git ls-remote --heads origin main` 可读。
+- **注意**：本地 `main` ahead of `origin/main` by 11 commits，未 push，避免把既有本地提交混进 repo rename 动作；`.claude/`、`.codex/` 仍是未追踪本地态。
