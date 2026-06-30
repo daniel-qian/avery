@@ -98,3 +98,16 @@
 - **活引用已修正**：`AGENTS.md`、`docs/agents/issue-tracker.md` 的 issue tracker 指向改为 `daniel-qian/avery`；`package-lock.json` 顶部 package name 与 `package.json` 对齐为 `avery-prototype`。
 - **安全检查**：`./init.sh` 通过；`git diff --check` 通过（仅 CRLF 提示）；`git ls-remote --heads origin main` 可读。
 - **注意**：本地 `main` ahead of `origin/main` by 11 commits，未 push，避免把既有本地提交混进 repo rename 动作；`.claude/`、`.codex/` 仍是未追踪本地态。
+
+## Update — 2026-06-30 · landing 编辑风重设计 + 中文 i18n + 真上线
+
+- **缘起**：合伙人发来自撰的 14 屏 pitch deck（`D:/Screenshot/template.html`，"Emerald Editorial" PPT 风）。先做了内容交叉对比（deck vs landing vs eval），按 Danny 拍板：**保留锁定的 "senior at your ear" 声音（ADR-0015）**、把 deck 全部内容塞进现有 **5 段** 结构、eval 留空、deck-vs-产品的"灵魂分叉"**暂不解决**（已记录，等 demo/landing 上线后按反馈再说）。
+- **完成（详见 `feature_list.json` feat-010 的 ADDENDUM 2026-06-30）**：
+  1. 从 deck 提炼设计系统 → `landing/app/globals.css`（米/深蓝/金、Bodoni Moda + Manrope 走 next/font、双线 ornament，响应式）；deck 的渐变 Avery logo 移植进 Hero。
+  2. 11 个新 section 组件覆盖全部 14 屏（Audience/WhyItMatters/WrongCut/MorningBriefing/MarketGap/Method/Modules/Stack/Landscape/Revenue/TrustLayer）。竞品名按红线品类化；人相关信号保持"读情境不评分"。
+  3. **中文 i18n**：所有文案外置到 `app/i18n/en.ts`（唯一源，`type Dict = typeof en`）；`zh.ts` 由 **MiniMax-M3** 经 `scripts/i18n-zh.mjs` 转译生成（读 `eval-harness/.env` 的 `MINIMAX_API_KEY`，18/18 段，语言无关字段从 en 强制回写）；`?lang=zh` 切换，EN 默认（overseas-first）。
+  4. 修了一个对比度 bug（`.section--ink h4` 把深色区里浅色卡片的标题染成米色看不清）。
+- **验证**：`next build` 绿；EN(`/`) + ZH(`/?lang=zh`) 经 dev server 实测渲染正常。Commit `08d0006` → `origin/main`。
+- **部署**：landing 现在有**自己独立的、git 连接的 Vercel 项目**（Root Directory=`landing/`），与 `tm2` 分开（**tm2 = 根目录 Vite demo，保留**用于录视频/继续开发）。Danny 用 dashboard import 建好并部署，目测无问题。**Deployment Protection / 对外 URL 是 Danny 的 dashboard 设置**（团队有 SAML；landing 项目应把 protection 关掉合伙人才能看）。
+- **HITL / 下一步**：所有 EN 文案 + M3 中文都是 `待 Danny 审字` 草稿 → 改完 EN 后跑 `node --experimental-strip-types scripts/i18n-zh.mjs` 一键重生中文。eval 对比区逐字稿仍是英文占位（真数据等 feat-011/012）；demo 视频占位（feat-013）；Hero 中文主标题因 `{em}` 语序略生硬，待 Danny 定稿。合伙人会议后按反馈迭代文案。
+- **运维**：`scripts/i18n-zh.mjs` 依赖 `eval-harness/.env` 的 `MINIMAX_API_KEY`（gitignored；feat-011 的轮换提醒仍有效）。
