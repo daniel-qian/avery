@@ -1,23 +1,22 @@
 import { EVAL_ROWS, type EvalRow, type AdviceCell } from "../data/evalRows";
+import type { Dict } from "../i18n";
+
+// Framing copy comes from the i18n dictionary. The advice-transcript ROWS
+// (evalRows.ts) intentionally stay as-is — placeholder fixtures tied to the
+// (empty) eval, replaced by real eval-harness output later.
 
 function Flag({ cell }: { cell: AdviceCell }) {
   if (cell.redLine.crossed) {
     return (
       <p className="flag flag--crossed">
-        <span className="flag__icon" aria-hidden="true">
-          ⚑
-        </span>
-        <span>
-          <strong>Crossed the line.</strong> {cell.redLine.note}
-        </span>
+        <span className="flag__icon" aria-hidden="true">⚑</span>
+        <span><strong>Crossed the line.</strong> {cell.redLine.note}</span>
       </p>
     );
   }
   return (
     <p className="flag flag--ok">
-      <span className="flag__icon" aria-hidden="true">
-        ✓
-      </span>
+      <span className="flag__icon" aria-hidden="true">✓</span>
       <span>{cell.redLine.note}</span>
     </p>
   );
@@ -30,20 +29,15 @@ function Cell({ cell }: { cell: AdviceCell }) {
     "advice-cell",
     isAvery ? "advice-cell--avery" : "advice-cell--baseline",
     rejected ? "advice-cell--rejected" : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
+  ].filter(Boolean).join(" ");
   return (
     <div className={cls}>
       <div className="advice-cell__advisor">
         {cell.advisor}
         {rejected && <span className="rejected-tag">rejected read</span>}
-        {cell.placeholder && !rejected && (
-          <span className="placeholder-tag">illustrative</span>
-        )}
+        {cell.placeholder && !rejected && <span className="placeholder-tag">illustrative</span>}
       </div>
 
-      {/* Avery leads with "the read" → "the move" → guardrail */}
       {cell.read && (
         <>
           <div className="advice-label">The read</div>
@@ -55,18 +49,12 @@ function Cell({ cell }: { cell: AdviceCell }) {
         <>
           <div className="advice-label">The move — yours to decide</div>
           <ul>
-            {cell.move.map((m, i) => (
-              <li key={i}>{m}</li>
-            ))}
+            {cell.move.map((m, i) => <li key={i}>{m}</li>)}
           </ul>
         </>
       )}
 
-      {cell.guardrail && (
-        <p className="guardrail">&ldquo;{cell.guardrail}&rdquo;</p>
-      )}
-
-      {/* Baseline cells: the raw answer */}
+      {cell.guardrail && <p className="guardrail">&ldquo;{cell.guardrail}&rdquo;</p>}
       {cell.answer && <p className="advice-cell__answer">{cell.answer}</p>}
 
       <Flag cell={cell} />
@@ -80,70 +68,46 @@ function Row({ row }: { row: EvalRow }) {
       <div className="eval-row__brief">
         <p className="q">&ldquo;{row.brief}&rdquo;</p>
         <div className="chips">
-          <span className="chip">
-            {row.authoredByUs ? "authored by us" : "not authored by us"}
-          </span>
+          <span className="chip">{row.authoredByUs ? "authored by us" : "not authored by us"}</span>
           {row.kind === "adversarial" && (
-            <span className="chip chip--adv">
-              the kind read is the wrong read
-            </span>
+            <span className="chip chip--adv">the kind read is the wrong read</span>
           )}
         </div>
       </div>
 
-      {/* The evidence Avery was given — answers "where did the read come from?" (DECISION-MEMO §4.2) */}
       <div className="evidence">
         <div className="evidence__label">The evidence each advisor was given</div>
         <ul>
-          {row.evidence.map((e, i) => (
-            <li key={i}>{e}</li>
-          ))}
+          {row.evidence.map((e, i) => <li key={i}>{e}</li>)}
         </ul>
       </div>
 
       <div className="advice-grid">
-        {row.cells.map((c, i) => (
-          <Cell key={i} cell={c} />
-        ))}
+        {row.cells.map((c, i) => <Cell key={i} cell={c} />)}
       </div>
     </div>
   );
 }
 
-export function EvalContrast() {
+export function EvalContrast({ t }: { t: Dict["evalSection"] }) {
   return (
     <section className="section" id="eval">
       <div className="wrap">
         <div className="section__head">
-          <div className="eyebrow">Avery vs. a general AI — the actual words</div>
-          <h2>Same situation, same evidence. Read them side by side.</h2>
-          <p>
-            Not a scoreboard. Given the exact situation a manager faces, here is
-            what Avery said — next to what a general AI assistant gives back from
-            the same brief.
-          </p>
+          <div className="eyebrow">{t.eyebrow}</div>
+          <h2>{t.h2}</h2>
+          <p>{t.p}</p>
         </div>
 
         <div className="eval__note">
-          <strong>A preview, and we&rsquo;ll be straight about it.</strong> The
-          comparison answers below are illustrative of what a general assistant
-          tends to do. The real version is pre-registered, not cherry-picked:
-          every advisor gets the <em>byte-identical</em> prompt and evidence, the
-          baseline prompts are published so no one&rsquo;s hobbled, and the
-          25&ndash;30 scenarios are frozen and git-hashed before a single run.
-          Blind-graded transcripts and the honest human-preference numbers land
-          here once the eval runs &mdash; not before.
+          <strong>{t.noteStrong}</strong>{t.noteRest}
         </div>
 
-        {EVAL_ROWS.map((row) => (
-          <Row key={row.id} row={row} />
-        ))}
+        <p className="eval__note" style={{ fontStyle: "italic" }}>{t.rowsNote}</p>
 
-        <p className="eval__note" style={{ marginBottom: 0 }}>
-          We evaluate <strong>the advice</strong>, never <strong>the person</strong>.
-          No scores, grades, or labels on any human appear anywhere on this page —
-          by design.
-        </p>
+        {EVAL_ROWS.map((row) => <Row key={row.id} row={row} />)}
+
+        <p className="eval__note" style={{ marginBottom: 0 }}>{t.footer}</p>
       </div>
     </section>
   );
