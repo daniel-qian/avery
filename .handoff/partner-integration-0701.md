@@ -1,0 +1,289 @@
+# Partner Integration — team board (2026-07-01)
+
+> **Broadcast surface + shared contract** for the 3-lane parallel build folding the partner's
+> knowledge pack (`assets/0630-partner-docs/`) into eval, demo, and landing. Danny is AFK.
+> The **integrator/hub** (main Claude) owns this file, `progress.md`, and root `session-handoff.md`,
+> and owns ALL git operations. Every lane agent READS this file at start and reports back to the hub.
+
+## Mission
+
+Partner (Cythia) delivered a hybrid RAG/playbook knowledge pack built from `hr_ai_case_solution_matrix.xlsx`:
+42 HR cases (14 CIPD modules), 10 motivation drivers, **6 scenario playbooks (SCN-001..006)**,
+6 signal thresholds, 5 escalation guardrails, an 8-field advice output schema, retrieval config,
+and a manager-feedback CSV. Source of truth: `assets/0630-partner-docs/avery_knowledge_pack.json`
+(human-readable) + `avery_hybrid_knowledge.json` (RAG-sync form).
+
+Two facts make this high-leverage (from `eval-harness/EVAL-RESULTS.md`):
+1. The eval was **NOT PUBLISHABLE** because every scenario was Danny-authored (`non_danny = 0`).
+   The 6 SCN playbooks are **partner-authored** → they unblock the publish gate.
+2. The old "we don't label people" moat **barely fires** on 2026 models. Differentiation must
+   relocate to **evidence-citation, confidence calibration, structured output, and escalation
+   discipline** — exactly what the partner's schema + guardrails encode.
+
+## THE SHARED CONTRACT — canonical 8-field advice output (all three lanes MUST use this)
+
+From `advice_output_schema.required` in the pack. This is the spine that keeps demo == eval == landing:
+
+| # | Canonical field        | Meaning                                                        |
+|---|------------------------|----------------------------------------------------------------|
+| 1 | `summary`              | The read, in plain language (NOT a verdict on the person)      |
+| 2 | `detected_signals`     | The concrete signals observed (evidence-anchored, not labels)  |
+| 3 | `diagnosis_hypotheses` | Hypotheses **with alternatives** — never asserted as fact      |
+| 4 | `evidence`             | Cited pointers backing each claim                              |
+| 5 | `recommended_actions`  | Concrete next steps                                            |
+| 6 | `confidence`           | Explicit confidence + what would change it (calibration)       |
+| 7 | `escalation`           | When to pull in HR/legal (legal / pay / wellbeing / fairness)  |
+| 8 | `metrics_to_track`     | What to watch to know it worked                                |
+| + | `conversation_script`  | (optional) the actual 1:1 opening line — the "senior at ear" voice |
+
+Demo's current `AGENT_OUTPUT` (src/data/fixtures.ts) has 6 fields — map/extend to the 8 above.
+
+## Lanes (disjoint directories — no cross-lane edits)
+
+### Lane A — eval  ·  dir: `eval-harness/`  ·  agent: eval-smith
+- Convert the 6 SCN playbooks → 6 `cases/scn-*.md` in the EXISTING case format (see
+  `cases/lin-qing-checkin.md`: raw manager inputs + "## The ask" + a `<!-- MOCK ... -->` block
+  scripting avery / baseline_raw / baseline_scaffold). Ground each in its SCN + matching signal
+  threshold + guardrail. Content is partner-authored.
+- Add them to `scenarios/manifest.json` with `"authored_by": "partner"` + tags; re-freeze
+  (`python runner.py --check-frozen` will show drift — update FROZEN.lock.json intentionally).
+- Upgrade the judge rubric (judge.py) so soft dims score the NEW axes: evidence-citation,
+  confidence/calibration, escalation-on-risk, refuse-when-evidence-thin. KEEP all tests green.
+- Prep the office-AI HITL bundle: `runs/office-ai-capture/PROMPT.md` = byte-identical prompt +
+  evidence for SCN-001, ready for Danny to paste into a real office AI (one-off real sample).
+- Verify: `python -m pytest tests/ -q` green + mock pipeline green. Do NOT run `--real` (the hub
+  triggers the real run + monitors it; it is >10 min and needs the live .env).
+
+### Lane B — demo  ·  dir: `src/`  ·  agent: demo-smith
+- Align `AGENT_OUTPUT` (src/data/fixtures.ts) to the 8-field contract above (keep the existing
+  Lin-Qing / client-feedback-churn content = SCN-001; restructure + ADD detected_signals,
+  explicit confidence, metrics_to_track; reframe conclusion as diagnosis-hypotheses-with-alternatives;
+  surface conversation_script). Update the `AgentOutput` type + `NexusScene` rendering.
+- Refresh Playbooks page HR set (`fixtures.p3.ts` CAPABILITY_PACKAGES `hr`) to reflect real SCN /
+  driver names (preview names only, not full content).
+- Verify: `npm run typecheck && npm run build` green. Note what to eyeball in `npm run dev`.
+
+### Lane C — landing  ·  dir: `landing/`  ·  agent: landing-smith
+- Fold pack substance into EXISTING sections, English draft only, every new/changed string marked
+  `⚠ 待 Danny 审字`. EDIT `app/i18n/en.ts` (source of truth) + components. **Do NOT touch `zh.ts`
+  by hand** (Chinese is generated by MiniMax-M3 — the hub runs `scripts/i18n-zh.mjs`).
+- Method / TrustLayer: fold in the 5 escalation guardrails + minimum-evidence policy as concrete claims.
+- Add / adapt a surface showing the 8-field auditable output shape ("what Avery gives back").
+- evalSection: KEEP the honest placeholder framing; restructure so a real Avery-vs-general transcript +
+  scorecard can drop in later (leave a clearly-marked slot). Do NOT fabricate numbers.
+- Playbooks proof: the 6 SCN as names. Partner's named vendors (Mercer/CIPD/Culture Amp/…) and any
+  case COUNTS → mark `待合伙人 IP 授权`, do NOT wire as public fact.
+- Verify: `cd landing && npm run build` green (Google-fonts fetch can be flaky — retry once).
+
+## SHARED SAFETY GATES (every lane, non-negotiable)
+1. **No git.** Do NOT commit/push/branch. The hub owns all git. (Landing + demo auto-deploy on push.)
+2. **No secrets.** Never read/edit/print `.env`; never rotate keys.
+3. **Venus-facing copy = English draft, marked `⚠ 待 Danny 审字`. Never finalize.**
+4. **Chinese = MiniMax-M3 only.** Never hand-write Chinese; never edit `zh.ts`.
+5. **Red line:** advice about the situation, never a score/label/diagnosis of a *person*.
+6. **IP gate:** partner's named sources + counts are `待授权` until Danny confirms — not public fact.
+7. **Stay in your lane's dir.** Don't touch other lanes, `.claude/`, `.codex/`, `assets/logo-v0.png`.
+8. **Self-review before done:** re-read your own diff against these gates + your acceptance criteria,
+   run your build, THEN report to the hub with: files changed, build result, open questions, HITL items.
+
+## HITL / parked (Danny owns; do NOT block on these)
+- Office-AI real capture (Lane A prepares the paste bundle; Danny runs it).
+- 审字 on all EN + M3 Chinese copy.
+- Partner IP permission for public landing (named vendors + counts).
+- Final commit/push decision (hub prepares; Danny approves on return — deploy risk).
+
+## 2026-07-01 · Honesty fix — eval baseline naming (Danny caught it)
+
+**Problem (Danny, correct):** the agent names `avery-opus` / `codex-raw` / `claude-scaffold-minus-redline`
+carry misleading vendor labels. VERIFIED: `.env` has ONLY MiniMax + DeepSeek keys (no ANTHROPIC/OPENAI);
+`runner.py:make_brain` runs EVERY role on the SAME model in `--real` (OpenAICompatBrain = MiniMax-M3,
+since RealBrain/Opus raises without ANTHROPIC_API_KEY). `run_meta.brain_model` = "MiniMax-M3". So the
+real run is a **same-model ablation** (scaffold: full-Avery / raw / no-red-line), **NOT a cross-vendor
+bakeoff**. The code already recorded the truth in run_meta; only the NAMES + a few stale doc strings lied.
+
+**Fix (done):**
+- `scenarios/manifest.json`: `avery-opus`→**`avery-m3`**, `codex-raw`→**`m3-raw`**,
+  `claude-scaffold-minus-redline`→**`m3-scaffold-no-redline`**; added `real_model_note` to the SUT agent.
+- Honesty on stale strings: `runner.py` docstring + `--real` help, `judge.py` self-preference message
+  (was "SUT is claude-opus-4-8"; now points to run_meta.brain_model + notes MiniMax is the shared-family
+  judge, not Claude), `brain.py` mock name `avery-opus(mock)`→`avery(mock)`. (RealBrain/Opus code path
+  left intact — it is honest FOR that path, just not what we run.)
+- Updated the 3 test files (test_judge/test_loop/test_runner) to the new names → **pytest 124 green**.
+- Re-froze: `python runner.py --check-frozen` showed DRIFT → `--freeze` → new hash `bb59a7db985d8325…`.
+- **Re-running** `runner.py --real --out runs/real-0701c` (bg `bs2pyv5nt`) → then `judge.py --real` for a
+  fresh scorecard with honest names. Then rewrite `EVAL-REAL-0701.md` top with the same-model-ablation
+  disclaimer + new numbers.
+- NOTE: prior `EVAL-RESULTS.md` (2026-06-21 archive) + `runs/real-0701b/*` still carry old names — the
+  0701b run is superseded by 0701c; EVAL-RESULTS is historical (already hints "raw M3").
+
+## 2026-07-01 · Office-AI capture → POSITIONING CORRECTION (Danny-driven)
+
+**Danny ran the office-AI capture** (`office-ai-capture/{ms-copilot,chatgpt,gemini}`) on SCN-001 (Elif).
+Deterministic red line: **ms-copilot PASS · chatgpt PASS · gemini FAIL[PERSON-DIAGNOSIS]** ("checked out"
+/ "quiet quitting"); all 3 had UNCITED-NUMBER (same weakness avery-m3 shows). **Finding, honest:** 2026
+free general assistants give WARM, sensible, process-focused advice; 2 of 3 did NOT label the person.
+So **"we don't label, they do" is NOT a supported differentiator** — confirms §3d live. The REAL,
+evidence-backed gap: a general assistant gives good advice and STOPS — no HR/wellbeing escalation, no
+stated confidence/calibration, no evidence trail. **Avery does all three.**
+
+**Decision (Danny):** (1) demote the red line from competitive-advantage/villain C-spot → keep it ONLY
+as a TRUST GUARANTEE (Avery's own promise; buyer needs it; product soul). (2) Re-anchor EvalContrast on
+the real diff using the de-identified real captures. Top positioning (marketGap/output/method/stack) is
+already on the right axis — unchanged. **Demo: no change** (its 8-field card already IS the real-diff story).
+
+**Dispatched to landing-smith (5 edits, en.ts only, 待审字, don't touch zh.ts):** (1) EvalContrast →
+"both care about the person; only one tells you how sure it is, when it stops being your call alone, and
+shows its work" (general assistant = warm-but-no-escalation/calibration/citation vs Avery); (2) evalSection
+framing off "tends to label"; (3) wrongCut villain list — demote person-scoring from headline villain;
+(4) whatItIs co-headline — no-verdict becomes a trust line, not co-headline; (5) keep all other trust
+instances. NEVER name Copilot/ChatGPT/Gemini (de-identify → "a general assistant"); no fabricated numbers.
+
+**Eval re-run (honest names) `real-0701c`:** runner DONE (30 transcripts, avery-m3 / m3-raw /
+m3-scaffold-no-redline). Judge running detached (no auto-notify — hub polls scorecard.md). Then finalize
+`EVAL-REAL-0701.md` Task ④ with honest names + same-model-ablation disclaimer + fresh numbers.
+
+## Broadcast log (hub appends)
+- 2026-07-01 — **✅ BATCH 2 DONE (naming honesty + positioning correction).** eval renamed to
+  avery-m3/m3-raw/m3-scaffold-no-redline (pytest 124 green, re-frozen bb59a7db, re-run real-0701c,
+  EVAL-REAL-0701.md rewritten with same-model-ablation disclaimer + honest names + office-AI cross-check).
+  Landing positioning re-anchored (red line → trust guarantee; EvalContrast → real escalation/calibration/
+  evidence diff via de-identified captures; whatItIs headline positive). M3 zh 20/20; landing tsc green.
+  progress.md + feature_list.json (feat-010/011 addenda) updated. STILL NOT committed/pushed. Real-0701c
+  judge scorecard: avery-m3 red-line 1.0 vs m3-raw 0.9 / m3-scaffold-no-redline 0.8 (validator-tracks-diff);
+  NOT PUBLISHABLE (synthetic labels). All agent-side work complete; remaining = Danny HITL (审字 / commit /
+  IP / name partner / cite-before-number product fix / live Vercel eyeball).
+- 2026-07-01 — board created; 3 lanes launching in background. Canonical 8-field contract locked above.
+- 2026-07-01 — **Lane B (demo) DONE + hub-verified.** `AGENT_OUTPUT` aligned to 8-field contract
+  (+ `conversation_script`, `nextTasks`); `DiagnosisHypothesis` type added; NexusScene + globals.css
+  updated; Playbooks HR set refreshed. `npm run build` green (hub re-ran: 425 modules, built 1.35s).
+  Red line held (diagnosis = "a read, not a verdict on Lin Qing" + 2 alternatives; no person-score).
+  Locked sub-shapes broadcast to Lane C. Scenario unchanged = SCN-001.
+- 2026-07-01 — **Lane C (landing) DONE.** en.ts: reworked trustLayer (3→4 cards, min-evidence policy),
+  method +5 guardrails band, evalSection reserved slot (4 axes, no numbers), NEW `output` (8-field
+  surface, labels == demo) + `playbooks` (6 SCN). New components OutputShape + Playbooks. IP gate held
+  (zero named vendors/counts; one `待授权` comment). **zh.ts untouched → landing build red ONLY on zh.ts
+  missing new keys → HUB TODO: run `scripts/i18n-zh.mjs` (M3) after EN review settles.**
+  Flag: MarketGap has pre-existing illustrative bar scores [82,41]/[92,88] (deck legacy) — pending review call.
+- 2026-07-01 — Review triad dispatched (Dana red-line/human-feel · Claire UX/coherence · Ray buyer-cred).
+  Lane A (eval) still running.
+- 2026-07-01 — **Dana (red-line) verdict: near-trust; core advice voice is best-in-class (reads the
+  situation, never the person). Fixes to batch into landing-smith:**
+  - 🔴 MUST: `app/data/evalRows.ts` baseline cells print "40% completion likelihood / underperforming /
+    stronger designer" about NAMED Lin Qing, rendered on the public page via `EvalContrast.tsx`
+    (`.rejected-tag` too small). Rejection frame must hit BEFORE the eye reaches the number; consider
+    de-identifying the villain example too. (Pre-existing content, but a real red-line exposure.)
+  - 🟡 Schema words leak on screen: OutputShape renders the raw keys (`summary`, `detected_signals`,
+    `metrics_to_track`) + "Eight fields · auditable" / "eight-field output shape". Keep the pretty
+    labels; remove visible schema keys + the words "fields/output/schema" from on-screen copy.
+  - 🟡 `modules.items[people]`: "reads disengagement from how work moves" → soften to pace/load.
+  - 🔴 (pre-existing, FLAG to Danny not auto-fix): MorningBriefing stats "94% caught / 47m / 3×" read
+    surveillance-y; clashes with the senior-at-ear voice. Overlaps the MarketGap illustrative-bars flag.
+  - 🟢 Praised: de-identification line, "not a productivity spy", the 1:1 opener, "pull in HR = none".
+- 2026-07-01 — **Ray (buyer): "reply + forward to Dana, don't pay yet."** Clears curious-bar, not trust-bar.
+  - 🔴 CONVERGES WITH DANA: kill the illustrative MorningBriefing stats (94% caught / 47m / 3× ) — they
+    directly contradict the honest "no numbers until the run" eval section; his single biggest credibility hit.
+  - ⭐ "Book it" trigger: fill the ADVERSARIAL eval row (kind-read-is-wrong, evalRows.ts Row 2, currently
+    placeholder) with ONE real hard-case transcript — Avery backs a hard call without scoring the human.
+    "That empty cell is the entire ballgame." → Lane A's real run feeds exactly this.
+  - Most credible claim: the 8-field auditable brief (checkable, consistent). Wants the partner NAMED
+    (SCN-004 is legally loaded — who authored it?). Empty eval slot = builds trust ONLY via the
+    pre-registration language; still a promissory note.
+- 2026-07-01 — **Claire (UX): SHIP the shared spine, lock the 8 labels as a contract.**
+  - Landing redundancy REAL (top edit): "read-not-verdict" ×3 → Output field 03 wins, Method guardrail →
+    one bare line, TrustLayer 04 tighten. "confidence" ×3 → Output 06 wins, TrustLayer 02 → lean to source.
+  - Demo card density MILD (already uses 2-up grids): add 3 visual zones (read=fields1–3 hero / backing=
+    evidence+confidence / move=actions+escalation+metrics+script+tasks) + collapse "what would change it"
+    and "metrics" to one-line teasers. DO NOT cut any field (breaks landing↔demo parallel).
+  - Optional: move Output section right after DemoVideo (Output-before-Playbooks stays). = FLAG to Danny.
+- 2026-07-01 — **HUB fix routing:**
+  - → landing-smith (batch): (a) red-line de-risk evalRows Row-1 person-score framing; (b) scrub on-screen
+    schema keys + "fields/output shape" wording; (c) trim read-not-verdict + confidence triples per Claire;
+    (d) soften modules "disengagement"; (e) de-fabricate MorningBriefing 3 stats (conservative, 待审字).
+  - → demo-smith (batch): 3-zone hierarchy + progressive-disclosure on 2 auditor fields; keep all 8 fields.
+  - FLAG-to-Danny (not auto-changed): Output section reorder; MarketGap illustrative bars; name the partner.
+- 2026-07-01 — **Lane B (demo) density fix DONE + hub-verified.** 3 visual zones (read=hero / backing /
+  move) + 2 auditor fields (`confidence.wouldChange`, `metrics_to_track`) collapsed to native `<details>`
+  teasers with item-count pills. All 8 fields + script + tasks kept in order. Zone labels neutral (no
+  scoring). `npm run build` green (hub re-ran: 425 modules, CSS 97.45kB). **Lane B FULLY CLOSED.**
+  Pending: live eyeball of the card (hub will do a combined demo+landing preview pass at the end).
+- 2026-07-01 — **Lane C (landing) fix batch DONE + hub-verified.** All 5 fixes landed & grep-confirmed:
+  red-line cell (verdict banner above + strike + de-identified villain, "40%" removed), schema keys
+  off-screen (data-only React key), redundancy trimmed (Output wins; "A human holds the pen" / "Source
+  you can trace" / "Reads the situation, not the person"), "disengagement"→"workload", stats
+  de-fabricated ("Prepped/Sooner/Clearer"). **`zh.ts` untouched.**
+- 2026-07-01 — **HUB ran M3 regen** `scripts/i18n-zh.mjs`: 19/20 sections translated; **`playbooks`
+  section M3 returned malformed JSON → kept ENGLISH fallback** (retry pending, low priority — overseas
+  page defaults EN). **`landing npm run build` now GREEN.** Lane C FULLY CLOSED except playbooks-zh retry.
+- 2026-07-01 — **Lane A (eval) DONE + hub-verified.** 124/124 pytest green; 6 partner SCN cases
+  (`cases/scn-00X-*.md`, `authored_by:"partner"`); manifest re-frozen (`FROZEN.lock.json` new hash);
+  judge.py rubric upgraded to the 4 new axes (evidence-citation→grounding; escalation-on-risk→
+  actionability+calibration w/ "cap calibration@2 if no escalation on a risk case"; confidence/refuse→
+  calibration). Mock pipeline: avery PASS red-line 10/10, baselines FAIL 10/10; **scorecard NOT-PUBLISHABLE
+  but the `non_danny` (=6) and N<10 (=10) gates are now CLEARED** — only mock/synthetic reasons remain.
+  Spot-checked SCN-006 (wellbeing): avery advice is red-line exemplary (no medical inference, explicit
+  confidence, HR/occupational-health escalation); baseline_raw is the villain (person-score + burnout label).
+  Office-AI HITL bundle relocated out of gitignored runs/ → `eval-harness/office-ai-capture/PROMPT.md` (97 lines).
+  Caveat (eval-smith): the 8-field contract is satisfied IN PROSE in the frozen read/move/framing+cite
+  schema, NOT as literal 8 JSON fields in transcripts (changing `draft_advice`'s tool schema was out of
+  safe scope). Fine — the eval measures the same discipline via the rubric.
+- 2026-07-01 — **HUB LAUNCHED THE REAL RUN** (background `buwqzenzh`): `python runner.py --real --out
+  runs/real-0701` — MiniMax-M3 brain + DeepSeek/MiniMax cross-family judges, 10 scenarios × 3 agents.
+  Keys verified present (MINIMAX_* / DEEPSEEK_* / JUDGE_FAMILIES). ON COMPLETION → `judge.py --real` →
+  extract the SCN-001 pair + the adversarial (kind-read-wrong) transcript → fill landing evalRows Row 2
+  (Ray's "book it" ask) + drop the scorecard into the eval slot.
+- 2026-07-01 — **REAL RUN #1 INTERRUPTED by a session/process teardown** (no completion record). Got
+  10/30 transcripts in `runs/real-0701/` — the 4 ORIGINAL scenarios (lin-qing×3, marcus×3, priya×3,
+  jordan avery-only); the **6 partner SCN cases never ran** (they're later in the manifest). JSON is
+  clean UTF-8 (verified). **Real findings already banked (fallback data even if re-run dies):**
+  - `lin-qing-checkin` (= the demo's Lin-Qing/SCN-001 motivation story): avery PASS + scaffold PASS,
+    but **codex-raw RED-LINE FAIL** — a genuine avery>baseline contrast on a real run. (Possible
+    deterministic false-positive per EVAL-RESULTS §3c; judge.py --real arbitrates.) avery cites 6.
+  - `marcus-genuine-underperformance` (adversarial, kind-read-is-wrong = Ray's "book it" hard case):
+    all 3 agents PASS red-line AND all decisive ("the generous version has already been tried… didn't
+    work"). Differentiation is citation depth (avery 6 vs codex 5) + calibration, NOT "we don't label"
+    (confirms §3d). These two cover the landing's eval narrative even without partner cases.
+- 2026-07-01 — **HUB re-launched the full real run** → `runs/real-0701b` (bg `bqirtffaj`). One run gets
+  all 10 incl. the 6 partner cases (runner has no scenario filter). **RECOVERY NOTE for future me:** if
+  re-invoked without a completion, check `runs/real-0701b/transcripts/` count; the 6 partner files are
+  `scn-00X-*__{avery-opus,codex-raw,claude-scaffold-minus-redline}.json`. Fallback = `runs/real-0701`
+  (has real lin-qing + marcus). Then `python judge.py runs/real-0701b --real` → scorecard.
+- 2026-07-01 — **DECISION: do NOT auto-wire long real transcripts onto the PUBLIC landing this turn.**
+  They're Venus-facing (待审字) + red-line-sensitive (a baseline that scores a person must ride the
+  verdict-banner/strike/de-identify frame). Keep the honest eval slot for now; STAGE the real SCN-001
+  pair + scorecard, wire into landing only after the partner-case scorecard exists AND with Danny 审字.
+- 2026-07-01 — **REAL RUN #2 COMPLETE** (`runs/real-0701b`, exit 0): 30 transcripts, all 6 partner SCN
+  cases ran ×3 agents. Staged full transcript summary → `eval-harness/EVAL-REAL-0701.md`. **Real
+  differentiators (deterministic gate; LLM judge arbitrating now):**
+  - **avery held the red line 6/6 on partner cases** and cited most densely (5–7 cites each).
+  - **codex-raw FAIL on SCN-002 (pay)**; **claude-scaffold FAIL[PERSON-TIER] on SCN-004 (project
+    inequity)** — real baseline red-line trips on real partner cases. scaffold also cited **0** on SCN-001.
+  - SCN-003/005/006: all 3 pass (raw model is humane on these — confirms §3d); differentiation lives in
+    citation discipline + calibration, not "we don't label".
+  - avery advice quality strong: SCN-002 "you cannot promise a number", SCN-006 no medical inference +
+    HR escalation, SCN-004 "get HRBP eyes on the distribution".
+  - Judge (`judge.py runs/real-0701b --real`, bg `bdmj0o4io`) running → soft-dims + arbitrates whether
+    the 2 baseline FAILs are real person-tier violations or §3c-style false positives.
+- 2026-07-01 — **JUDGE COMPLETE → scorecard (`runs/real-0701b/scorecard.md`). Honest result:**
+  - ✅ **Red-line is the ONE clean differentiator: avery 1.0 vs baselines 0.9.** LLM judges CONFIRM the
+    2 baseline fails (codex/SCN-002, scaffold/SCN-004 PERSON-TIER) are real, not false positives.
+  - ⚠️ Soft dims all ~5.0 (no discrimination — cases "all good" to LLM judges; §3b again).
+  - 🔴 Citation discipline did NOT materialize in real mode: no-halluc avery **0.0** (not better than
+    baselines) — real M3-avery emits uncited numbers. Real product gap; landing's "every claim traced"
+    pitch is aspirational, not substantiated. **Flag to Danny.**
+  - 🔴 NOT PUBLISHABLE as win-rate (synthetic human labels, κ=-0.125; win-rate suppressed).
+  - Full honest writeup → `eval-harness/EVAL-REAL-0701.md`.
+  - **DECISION for landing:** keep the eval slot HONEST/RESERVED — do NOT wire numbers. Offer Danny a
+    STAGED de-identified red-line transcript pair (SCN-002 or SCN-004: avery holds line vs baseline
+    crosses) as a 待审字 option; do not auto-publish (red-line-sensitive + partner IP). No landing change needed from the eval.
+- 2026-07-01 — **✅ PIPELINE COMPLETE (agent side).** M3 zh 20/20 (added per-section retry to i18n-zh.mjs);
+  landing `tsc --noEmit` green (next build blocked on local Google Fonts = CN network; Vercel is fine).
+  progress.md + feature_list.json (feat-010/011/012 addenda) updated. Clean-state: branch main, no .env/
+  secrets in changes, no `.claude/.codex/logo-v0.png` swept; only CRLF diff-check notes. NOT committed/
+  pushed (deploy risk + 待审字 + IP — Danny approves). Heartbeat cron cancelled (nothing left to guard).
+  ALL remaining items are HITL (Danny): commit/push decision · 审字 · office-AI real capture · IP
+  permission · Ray's "name the partner" · the cite-before-number product gap · optional narrative tweaks
+  · live eyeball on Vercel preview.
+- 2026-07-01 — (superseded) earlier REMAINING HUB TODO: (1) ~~judge~~ DONE;
+  (2) stage SCN-001 real pair for the landing eval slot (draft, 待审字); (3) M3 playbooks-zh retry;
+  (4) combined live preview eyeball (demo card + landing); (5) update progress.md + feature_list.json +
+  clean-state; (6) leave uncommitted, no push — final report for Danny to approve commit.

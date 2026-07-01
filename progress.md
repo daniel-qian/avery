@@ -111,3 +111,34 @@
 - **部署**：landing 现在有**自己独立的、git 连接的 Vercel 项目**（Root Directory=`landing/`），与 `tm2` 分开（**tm2 = 根目录 Vite demo，保留**用于录视频/继续开发）。Danny 用 dashboard import 建好并部署，目测无问题。**Deployment Protection / 对外 URL 是 Danny 的 dashboard 设置**（团队有 SAML；landing 项目应把 protection 关掉合伙人才能看）。
 - **HITL / 下一步**：所有 EN 文案 + M3 中文都是 `待 Danny 审字` 草稿 → 改完 EN 后跑 `node --experimental-strip-types scripts/i18n-zh.mjs` 一键重生中文。eval 对比区逐字稿仍是英文占位（真数据等 feat-011/012）；demo 视频占位（feat-013）；Hero 中文主标题因 `{em}` 语序略生硬，待 Danny 定稿。合伙人会议后按反馈迭代文案。
 - **运维**：`scripts/i18n-zh.mjs` 依赖 `eval-harness/.env` 的 `MINIMAX_API_KEY`（gitignored；feat-011 的轮换提醒仍有效）。
+
+## Update — 2026-07-01 · 合伙人知识包落地（eval/demo/landing 三线并行 · 多 agent 编排 · Danny 全程 AFK）
+
+> **完整运行日志见 `.handoff/partner-integration-0701.md`（作战板 + 8 字段正典契约 + 广播日志）。真跑诚实结论见 `eval-harness/EVAL-REAL-0701.md`。本节是高层总结。**
+
+- **缘起**：合伙人（Cythia）交付混合 RAG/playbook 知识包 `assets/0630-partner-docs/`（由 `hr_ai_case_solution_matrix.xlsx` 编译）：42 案例（14 CIPD 模块）、10 动机驱动、**6 场景 playbook SCN-001..006**、6 信号阈值、5 升级护栏、8 字段 advice schema、反馈 CSV。Runtime Rule 与 ADR-0015 红线几乎逐字重合（合伙人独立撞上同一不可谈判点）。
+- **编排**：hub（主 Claude）+ 3 后台实现线（general-purpose）+ 外审三人组（roles.md 的 Dana 红线/人味 · Ray 买家 · Claire UX），maker≠checker，共享 8 字段契约保持三线一致，循环自检自审。用户设了 10 分钟心跳 cron 兜底后台静默死亡。
+
+**What's Done**
+- **Lane A · eval（feat-011/012 延伸）**：6 个 partner SCN → `eval-harness/cases/scn-00X-*.md`（`authored_by:"partner"`），manifest 重冻（`FROZEN.lock.json` 新哈希），`judge.py` rubric 升级到 4 新差异轴（引证/升级-on-risk/校准/证据不足即拒），`avery/cases.py` +`escalation_risk`，`tests/` 124 绿。**真跑完成**（`runs/real-0701b`，MiniMax-M3 脑 + DeepSeek/MiniMax 跨家裁判，30 逐字稿）。**诚实结论**：① 唯一干净差异=红线（avery 1.0 vs 两 baseline 0.9，LLM 裁判确认 codex/SCN-002、scaffold/SCN-004 是真越界非假阳性）；② 软维度全 5.0 不区分；③ **引证纪律在真跑未兑现**（no-halluc avery 0.0，真 M3-avery 吐未引证数字）=真产品洞；④ 仍 NOT PUBLISHABLE（human label 合成）。office-AI 粘贴包 → `eval-harness/office-ai-capture/PROMPT.md`（HITL，等 Danny 手跑）。
+- **Lane B · demo**：`src/data/fixtures.ts` 的 `AGENT_OUTPUT` 对齐合伙人 8 字段正典（+`conversation_script`，新 `DiagnosisHypothesis` 型），`NexusScene.tsx` 终局卡重渲染为**三视觉区**（read/backing/move）+ 两审计字段折叠 `<details>`；`fixtures.p3.ts` Playbooks HR 栏换真 SCN 名。场景不变=SCN-001。`npm run build` 绿，红线守住。
+- **Lane C · landing**：5 护栏 + 最小证据政策落进 Method/TrustLayer；新 `OutputShape.tsx`（8 字段可审计产出，标签与 demo 一致）+ `Playbooks.tsx`（6 SCN）；外审修复（红线反例去标识+判词横幅+删线、schema 词下屏、read-not-verdict/confidence 三处冗余收敛、`morningBriefing` 编造数字去除）。**只改 `en.ts`**；M3 regen `zh.ts` **20/20**（给脚本加了失败段自动重试）。`tsc --noEmit` 绿。
+- **eval slot 决定**：landing eval 区**保持诚实预留、不挂 win-rate**（真结论不可发布）。真红线对比逐字稿暂存，是否公开（去标识后）留 Danny 定。
+
+**Files Modified（主要）**：`eval-harness/{cases/scn-00X-*.md(新6), scenarios/manifest.json, scenarios/FROZEN.lock.json, judge.py, avery/cases.py, tests/test_judge.py, office-ai-capture/PROMPT.md(新), EVAL-REAL-0701.md(新)}`；`src/{data/fixtures.ts, data/fixtures.p3.ts, components/scenes/NexusScene.tsx, styles/global.css}`；`landing/app/{i18n/en.ts, i18n/zh.ts, page.tsx, components/{OutputShape.tsx(新),Playbooks.tsx(新),Method.tsx,TrustLayer.tsx,EvalContrast.tsx}, data/evalRows.ts, globals.css}`, `landing/scripts/i18n-zh.mjs`；`.handoff/partner-integration-0701.md(新)`。
+
+**验证**：eval 124 pytest 绿 + mock/real 管线跑通；demo `npm run build` 绿；landing `tsc --noEmit` 绿（`next build` 本地卡 Google Fonts 抓取=国内网络，Vercel 可靠，之前成功过一次）。红线：抽验 SCN-006 avery 建议范本级（不推断病情），demo 卡诊断显式"a read, not a verdict"。
+
+**Next / Blockers（HITL — Danny 拥有，非 agent scope）**
+- **未提交、未 push**（landing/demo 一 push 就自动部署；文案 `待审字`；合伙人 IP 待授权）→ Danny 审后拍板提交。
+- 全部 EN + M3 中文 = `待审字`；办公 AI baseline 真抓一次（粘贴包已备）；合伙人具名来源/案例数公开需授权；Ray 建议 landing 具名合伙人（SCN-004 涉法律，作者可信度关键）。
+- 真产品洞：avery loop 需强制 cite-before-number（真跑暴露）。
+- Narrative 待定：Output 区是否上移到 DemoVideo 后；MarketGap 示意条形是否撤。
+- live 眼验（demo 三区卡手感 / landing 渲染）建议在 Vercel preview 上做。
+
+### 追加 2026-07-01（下午）· 诚实性修正：eval 命名 + 定位 pivot
+
+- **eval baseline 命名诚实化（Danny 抓到）**：旧名 `avery-opus`/`codex-raw`/`claude-scaffold-minus-redline` 挂着误导性厂商标签。核实 `.env` 只有 MiniMax+DeepSeek（无 anthropic/openai），`runner.make_brain` 在 `--real` 下**三个 role 全走 MiniMax-M3**（`RealBrain`/Opus 无 key 会 raise）——是**同模型消融，非跨厂商对打**。改名 `avery-m3`/`m3-raw`/`m3-scaffold-no-redline`（+SUT 加 `real_model_note`）；如实化 runner docstring+`--real` help、judge 自我偏好消息、brain mock 名；改 3 个测试文件 → **pytest 124 绿**；`--check-frozen` DRIFT → 重冻（hash `bb59a7db…`）；`runner --real` + `judge --real` 重跑 → `runs/real-0701c`。诚实结论不变（红线是唯一干净差异 `avery-m3` 1.0 vs baseline 0.9/0.8；软维度不区分；引证对所有人都弱含 avery；NOT PUBLISHABLE）。全文 `eval-harness/EVAL-REAL-0701.md`（含同模型消融声明）。
+- **office-AI 真捕获（Danny 手跑）**：SCN-001 粘进 3 个免费通用 AI。机检：**ms-copilot PASS · chatgpt PASS · gemini FAIL[PERSON-DIAGNOSIS]**；全部 UNCITED-NUMBER。**发现**：2026 免费 AI 给暖建议、2/3 不给人贴标签 → **"我们不打分、它们打分"这个卖点站不住**。真差异 = 通用 AI 给完建议就停（无升级/无置信/无证据链），Avery 三样都给。
+- **定位 pivot（Danny 拍板）**：红线**降为信任保证**（保留在 TrustLayer/Method/Output/Modules/隐私句），**从竞争亮点/反面教材 C 位撤下**；`whatItIs` 标题改成正向"A senior advisor for the call that's yours to make"，人身不打分降成一句信任注脚。**EvalContrast 用真抓取（去标识）重锚到真差异**："都在乎人,但只有一个告诉你多大把握、何时该拉 HR、并亮证据"（左=通用助手好建议但 `missing` 三缺口，右=Avery 补齐）。顶层定位（marketGap/output/method/stack）本就在对的轴上,未动;**demo 未动**（其 8 字段卡本就是真差异叙事）。en.ts 改后 **M3 重生 zh.ts 20/20**；`tsc --noEmit` 绿。
+- **仍未提交/推送**；所有新文案 `待审字`；真产品洞记录在案（avery loop 需 cite-before-number）。
