@@ -129,27 +129,26 @@ export const en = {
     cap: `The 60-second product video drops in here once it's cut.`,
   },
 
-  // ⚠ 待 Danny 审字 — POSITIONING (eval-driven): re-anchored on the REAL axis.
-  // We captured 3 real free general assistants on the same case; they give warm,
-  // sensible, process-focused advice — most did NOT label the person. So the
-  // contrast is NOT "they're unkind." It's: a general assistant gives good advice
-  // and stops there — no escalation, no stated confidence, no evidence trail.
-  // Avery does all three. KEEP the honest reserved slot (no fabricated numbers);
-  // the "evaluate the advice, never the person" footer stays as a trust line.
+  // ⚠ 待 Danny 审字 — RUN HAS HAPPENED (real, 6 partner-authored scenarios,
+  // frozen + git-hashed, blind-graded by two independent model families). The
+  // answers below are REAL and de-identified. HARD RULE: the scorecard NUMBERS
+  // still do NOT go on the page — the run is not publishable (synthetic human
+  // labels); real HR/manager ratings are still pending. The "evaluate the advice,
+  // never the person" footer stays as a trust line.
   evalSection: {
     eyebrow: `Avery vs. a general AI — the actual words`,
     h2: `Same case, same evidence. One of them shows its work.`,
     p: `Not a scoreboard. Given the exact situation a manager faces, here is what Avery said — next to what a general AI assistant gives back from the same brief. Both give sensible, caring advice. The difference isn't who's kinder — it's whether you're told how sure it is, when it stops being your call alone, and what the read is built on.`,
-    noteStrong: `A preview, and we'll be straight about it.`,
-    noteRest: ` The general-assistant answer below is a real, de-identified excerpt — good advice, paraphrased, not reproduced verbatim from any one product. The real head-to-head is pre-registered, not cherry-picked: every advisor gets the byte-identical prompt and evidence, the baseline prompts are published so no one's hobbled, and the scenarios are frozen and git-hashed before a single run. Blind-graded transcripts and the honest numbers land here once the eval runs — not before.`,
+    noteStrong: `The run has happened — and we'll be straight about it.`,
+    noteRest: ` The pre-registered run is done: six partner-authored scenarios, frozen and git-hashed before a single run, blind-graded by two independent model families. The answers below are real and de-identified — the general-assistant excerpt is a real capture, paraphrased for length, not reproduced verbatim from any one product. The one thing still pending is real HR and manager ratings; until we have those, we won't put a score on this page.`,
     footer: `We evaluate the advice, never the person. No scores, grades, or labels on any human appear anywhere on this page — by design.`,
-    rowsNote: `Note: the advice transcripts below stay in English for now — they are placeholder fixtures tied to the (intentionally empty) eval, and get replaced by real eval-harness output later.`,
-    // ⚠ 待 Danny 审字 — the RESERVED SLOT. Copy makes the emptiness honest and
-    // names exactly what drops in. NO fabricated numbers. When the eval runs,
-    // a real transcript pair + scorecard replaces this placeholder.
-    slotEyebrow: `Reserved · the real result lands here`,
-    slotTitle: `Where the graded run goes.`,
-    slotBody: `When the pre-registered eval runs, this space fills with one real, blind-graded transcript pair — Avery next to a general assistant on the byte-identical brief — and a scorecard on the axes that actually matter: did it cite its evidence, was it honestly calibrated, did it escalate on real risk, and did it refuse to guess when the evidence was thin. Empty on purpose until then.`,
+    rowsNote: `Note: these are real, de-identified answers from the frozen run (kept in English for now).`,
+    // ⚠ 待 Danny 审字 — the RESERVED SLOT. The run has happened; the real answers
+    // are above. What lands in THIS box is the human-rated scorecard — pending
+    // real HR/manager ratings. Still NO numbers on the page.
+    slotEyebrow: `Reserved · the graded scores land here`,
+    slotTitle: `Where the human-rated scorecard goes.`,
+    slotBody: `The run has happened — the real answers are above. What belongs in this box is the scorecard: how the answers rate on the axes that actually matter — did it cite its evidence, was it honestly calibrated, did it escalate on real risk, did it refuse to guess when the evidence was thin. Those ratings need real HR and manager judgement, and we don't have enough of that yet. We won't show a number we haven't earned.`,
     slotAxes: [
       // ⚠ 待 Danny 审字 — the eval axes (no scores yet; labels only)
       `Evidence cited`,
@@ -157,7 +156,7 @@ export const en = {
       `Escalated on risk`,
       `Refused when evidence thin`,
     ],
-    slotPending: `Result pending — no numbers until the run.`,
+    slotPending: `Scorecard pending real HR/manager ratings — no number until we've earned it.`,
   },
 
   // ⚠ 待 Danny 审字 — TrustLayer reworked to fold in the partner pack's

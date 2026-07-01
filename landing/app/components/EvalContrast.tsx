@@ -29,7 +29,13 @@ function Cell({ cell }: { cell: AdviceCell }) {
     <div className={cls}>
       <div className="advice-cell__advisor">
         {cell.advisor}
-        {cell.placeholder && <span className="placeholder-tag">illustrative excerpt</span>}
+        {/* Run has happened: real cells are labelled "real · de-identified";
+            cells still awaiting a capture keep an honest "capture pending" tag. */}
+        {cell.placeholder ? (
+          <span className="placeholder-tag">capture pending</span>
+        ) : (
+          <span className="real-tag">real answer · de-identified</span>
+        )}
       </div>
 
       {cell.read && (
