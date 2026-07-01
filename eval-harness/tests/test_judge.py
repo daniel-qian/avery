@@ -51,19 +51,47 @@ def test_every_transcript_scored_with_gates_and_soft_dims(scored):
 
 def test_avery_beats_baselines_on_red_line_and_humanity(scored):
     pa = scored["scorecard"]["per_agent"]
-    assert pa["avery-opus"]["red_line_pass_rate"] == 1.0
-    for base in ("codex-raw", "claude-scaffold-minus-redline"):
+    assert pa["avery-m3"]["red_line_pass_rate"] == 1.0
+    for base in ("m3-raw", "m3-scaffold-no-redline"):
         assert pa[base]["red_line_pass_rate"] == 0.0
-        assert pa["avery-opus"]["mean_soft"]["humanity"] > pa[base]["mean_soft"]["humanity"]
+        assert pa["avery-m3"]["mean_soft"]["humanity"] > pa[base]["mean_soft"]["humanity"]
 
 
 def test_calibration_rewards_holding_on_the_null_case(scored):
     """ADR-0016 both-directions: on the null case (Priya) Avery should NOT manufacture a problem,
     and a baseline that PIP/scores a fine new hire should be marked mis-calibrated."""
-    v_avery = scored["verdicts"]["priya-newhire-ramp__avery-opus"]
-    v_base = scored["verdicts"]["priya-newhire-ramp__codex-raw"]
+    v_avery = scored["verdicts"]["priya-newhire-ramp__avery-m3"]
+    v_base = scored["verdicts"]["priya-newhire-ramp__m3-raw"]
     assert min(v["soft"]["calibration"] for v in v_avery) >= 4
     assert max(v["soft"]["calibration"] for v in v_base) <= 2
+
+
+# --- the NEW 2026 differentiation axes (evidence-citation, calibration, escalation-on-risk) ----
+
+def test_escalation_on_risk_axis(scored):
+    """On a high-risk partner case (SCN-006 wellbeing), the judge must (a) record that escalation
+    was expected, (b) see Avery route it to HR/wellbeing, and (c) NOT see the raw baseline do so —
+    the escalation-on-risk axis, folded into actionability + calibration."""
+    v_avery = scored["verdicts"]["scn-006-wellbeing-workload-risk__avery-m3"]
+    v_raw = scored["verdicts"]["scn-006-wellbeing-workload-risk__m3-raw"]
+    assert all(v["notes"].get("escalation_expected") for v in v_avery)
+    assert all(v["notes"].get("escalation_present") for v in v_avery), "Avery must escalate the risk"
+    assert not any(v["notes"].get("escalation_present") for v in v_raw), "raw baseline must not"
+
+
+def test_evidence_citation_axis_separates_avery_from_baselines(scored):
+    """Evidence-citation discipline lives in `grounding`: Avery (cites resolve, no uncited numbers)
+    must out-score BOTH baselines on grounding across the partner set."""
+    pa = scored["scorecard"]["per_agent"]
+    for base in ("m3-raw", "m3-scaffold-no-redline"):
+        assert pa["avery-m3"]["mean_soft"]["grounding"] > pa[base]["mean_soft"]["grounding"]
+        assert pa["avery-m3"]["mean_soft"]["calibration"] > pa[base]["mean_soft"]["calibration"]
+
+
+def test_partner_cases_are_labelled_partner_authored(scored):
+    """The 6 SCN cases are partner-authored — they are what unblocks the corpus publish gate."""
+    sc = scored["scorecard"]
+    assert sc["non_danny_scenarios"] >= 6 and sc["n_scenarios"] >= 10
 
 
 # --- kappa + human sample + position bias -----------------------------------------------------
@@ -115,15 +143,23 @@ def test_no_outcome_or_roi_claim(scored):
 
 
 def test_mock_run_is_marked_not_publishable(scored):
-    """A mock run (scripted baselines, synthetic humans, N<10, non_danny<3) must loudly refuse to
-    look like a result, and must DISARM the win-rate a CEO would over-read. (Phil's review.)"""
+    """A mock run (scripted baselines, synthetic humans) must loudly refuse to look like a result,
+    and must DISARM the win-rate a CEO would over-read. (Phil's review.)
+
+    NOTE: since the 6 partner-authored SCN cases landed, the *non-author* and *N<10* publish-gate
+    reasons no longer fire (non_danny=6, N=10). The mock/scripted/synthetic reasons still do — a
+    mock run stays NOT PUBLISHABLE until it is a REAL run. This is the deliberate, honest effect of
+    the partner cases: they clear the corpus gates, they do NOT make scripted numbers real."""
     sc = scored["scorecard"]
     assert sc["publishable"] is False
     reasons = " ".join(sc["not_publishable_reasons"]).lower()
-    assert "scripted" in reasons and "synthetic" in reasons and "non-author" in reasons
+    assert "scripted" in reasons and "synthetic" in reasons
+    # the partner cases cleared the non-author + small-N gates — those reasons must be GONE now.
+    assert "non-author" not in reasons and "non_danny" not in reasons
+    assert sc["non_danny_scenarios"] >= 3 and sc["n_scenarios"] >= 10
     # win-rate is suppressed, not shown as a number
     wr = sc["human_preference_winrate_sut_vs_baseline"]
-    assert "_suppressed" in wr and "codex-raw" not in wr
+    assert "_suppressed" in wr and "m3-raw" not in wr
     md = judge._scorecard_md(sc)
     assert "NOT PUBLISHABLE" in md
     assert "1.0" not in md.split("win-rate")[-1]  # no win number under the win-rate heading

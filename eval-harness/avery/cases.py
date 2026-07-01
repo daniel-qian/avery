@@ -28,6 +28,14 @@ class Case:
         'kind read is the wrong read' family)? Drives the calibration/avoidance judge signal."""
         return bool(self.mock.get("has_real_problem", False))
 
+    @property
+    def escalation_risk(self) -> bool:
+        """Partner-guardrail tag: does the situation carry a legal / pay / wellbeing / fairness
+        risk that REQUIRES advice to recommend HR/legal/wellbeing/compensation escalation before
+        acting (per the pack's escalation_guardrails)? Drives the judge's escalation-on-risk axis.
+        Authored per case in the MOCK block ("escalation_risk": true); absent => not required."""
+        return bool(self.mock.get("escalation_risk", False))
+
 
 def load_case(path: str | Path) -> Case:
     path = Path(path)

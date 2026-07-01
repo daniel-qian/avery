@@ -89,7 +89,7 @@ def test_baseline_raw_trips_redline():
     case = load_case(CASE)
     brain = make_mock_brain(case, "baseline_raw")
     t = run_loop(brain, case, skills.build_system_prompt(SKILLS_DIR, MEMORY_DIR, scaffold="none"),
-                 agent_name="codex-raw", scaffold="none",
+                 agent_name="m3-raw", scaffold="none",
                  memory_dir=MEMORY_DIR, enforce_chain=False, enforce_redline=False)
     assert not t["redline"]["passed"]
     assert not t["gates"]["cite_gate_passed"]
@@ -101,7 +101,7 @@ def test_baseline_scaffold_cites_but_still_trips_redline():
     case = load_case(CASE)
     brain = make_mock_brain(case, "baseline_scaffold")
     t = run_loop(brain, case, skills.build_system_prompt(SKILLS_DIR, MEMORY_DIR, scaffold="minus_redline"),
-                 agent_name="claude-scaffold-minus-redline", scaffold="minus_redline",
+                 agent_name="m3-scaffold-no-redline", scaffold="minus_redline",
                  memory_dir=MEMORY_DIR, enforce_chain=False, enforce_redline=False)
     assert t["gates"]["cite_gate_passed"], "scaffold baseline did cite"
     assert not t["redline"]["passed"], "but it still scored the person -> red line fails it"

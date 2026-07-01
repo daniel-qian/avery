@@ -36,11 +36,11 @@ def test_manifest_hash_recorded(result):
 
 def test_both_baseline_variants_present(result):
     variants = {r.get("agent") for r in result["rows"]}
-    assert "codex-raw" in variants
-    assert "claude-scaffold-minus-redline" in variants
+    assert "m3-raw" in variants
+    assert "m3-scaffold-no-redline" in variants
     kinds = {a["name"]: a.get("baseline_variant") for a in result["meta"]["agents"]}
-    assert kinds["codex-raw"] == "raw"
-    assert kinds["claude-scaffold-minus-redline"] == "scaffolded-minus-redline"
+    assert kinds["m3-raw"] == "raw"
+    assert kinds["m3-scaffold-no-redline"] == "scaffolded-minus-redline"
 
 
 def test_swap_pairs_for_position_bias(result):
@@ -56,7 +56,7 @@ def test_swap_pairs_for_position_bias(result):
 def test_avery_passes_redline_baselines_fail(result):
     by = {(r["scenario"], r["agent"]): r for r in result["rows"]}
     for (scenario, agent), r in by.items():
-        if agent == "avery-opus":
+        if agent == "avery-m3":
             assert r["redline_passed"], f"Avery tripped red line on {scenario}: {r['redline']}"
             assert r["cite_gate"] and r["used_draft_advice"]
         else:
@@ -67,7 +67,7 @@ def test_scaffold_baseline_cites_but_still_fails_redline(result):
     """The load-bearing demonstration carried into the batch: the scaffolded baseline uses the
     chain (cites) yet still trips the red line — so the red line is the differentiator."""
     r = next(x for x in result["rows"]
-             if x["agent"] == "claude-scaffold-minus-redline"
+             if x["agent"] == "m3-scaffold-no-redline"
              and x["scenario"] == "marcus-genuine-underperformance")
     assert r["cite_gate"], "scaffold baseline should have cited"
     assert not r["redline_passed"], "yet still trips the red line"

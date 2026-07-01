@@ -4,7 +4,9 @@
 Runs every scenario in the frozen manifest through Avery's loop AND the baseline agents on the
 IDENTICAL prompt + evidence, dumps a JSON transcript per (scenario, agent), and emits a
 judge-ready set with position-bias controls. Mock by default (green AFK, no key); `--real`
-switches Avery to claude-opus-4-8.
+runs every role on the SAME real model (MiniMax-M3 by default via the OpenAI-compatible endpoint;
+Anthropic Opus only if ANTHROPIC_API_KEY is set). Agent names denote SCAFFOLD level, not provider —
+this is a same-model ablation, not a cross-vendor bakeoff. run_meta records the actual model used.
 
     python runner.py                       # mock run -> runs/<hash>/...
     python runner.py --out runs/dev --seed 7
@@ -158,7 +160,8 @@ def _cli(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Batch scenario runner (011b).")
     ap.add_argument("--out", default=None, help="output dir (default runs/<hash>)")
     ap.add_argument("--seed", type=int, default=None)
-    ap.add_argument("--real", action="store_true", help="Avery on claude-opus-4-8 (needs key)")
+    ap.add_argument("--real", action="store_true", help="every role on the same real model "
+                    "(MiniMax-M3 unless ANTHROPIC_API_KEY is set); names denote scaffold, not provider")
     ap.add_argument("--no-swap", action="store_true", help="disable swapped judge pairings")
     ap.add_argument("--check-frozen", action="store_true", help="verify scenario set vs lock")
     ap.add_argument("--freeze", action="store_true", help="(re)write FROZEN.lock.json")

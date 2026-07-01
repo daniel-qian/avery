@@ -64,8 +64,10 @@ def assert_non_claude(family: str) -> None:
     f = family.lower()
     if any(m in f for m in _CLAUDE_MARKERS):
         raise ValueError(
-            f"Refusing Claude-as-judge: '{family}'. Judges MUST be non-Claude families to avoid "
-            f"self-preference bias (the model under test is claude-opus-4-8).")
+            f"Refusing Claude-as-judge: '{family}'. Judges MUST be a different family from the "
+            f"system-under-test to avoid self-preference bias. (NB: the actual SUT model is recorded "
+            f"in run_meta.brain_model — for a real run with only a MiniMax key that is MiniMax-M3, so "
+            f"the MiniMax judge is the shared-family one flagged for self-preference, not Claude.)")
 
 
 # === verdict =================================================================
@@ -103,6 +105,38 @@ _DIGNITY = re.compile(
     r"walk me through|understand what'?s going on|preserve)\b", re.I)
 _OVERREACH = re.compile(r"\b(?:pip|scorecard|paper trail|document everything|backfill|termination)\b", re.I)
 
+# === NEW differentiation axes (2026 relocation of the moat) ===================================
+# The old "we don't label people" moat barely fires on 2026 models (see EVAL-RESULTS.md §3d), so
+# the soft dims now also score the partner-schema axes: evidence-citation discipline, explicit
+# confidence/calibration, escalation-on-risk (legal/pay/wellbeing/fairness), and
+# refuse-when-evidence-thin. These fold INTO the existing four dims (keys unchanged, test-locked).
+
+# Escalation to the right function on a real risk (partner escalation_guardrails).
+_ESCALATION = re.compile(
+    r"\b(?:hr\b|hrbp|human resources|legal|compliance|compensation|comp team|"
+    r"occupational health|employee assistance|\beap\b|wellbeing support|"
+    r"people team|senior leadership|escalat)\w*", re.I)
+# Explicit confidence + what-would-change-it (calibration in the partner schema sense).
+_CONFIDENCE = re.compile(
+    r"\b(?:confidence (?:is|here|that)|confidence[:=]|low|medium|high)[\s-]*(?:confidence|"
+    r"to[\s-]?high)?\b.{0,40}?(?:confidence|because|given|what would (?:change|sharpen)|"
+    r"until|pending)|"
+    r"\b(?:what would (?:change|sharpen) (?:it|this|that)|not (?:yet )?(?:established|proven|"
+    r"tested|known)|genuinely (?:uncertain|unknown)|cause (?:is )?(?:not|un)\w*|"
+    r"hypothesis(?:es)? (?:not|pending)|until you have|until she|would move it)\b", re.I)
+# Hypotheses-held-as-hypotheses, with alternatives (partner diagnosis guardrail).
+_HYPOTHESIS = re.compile(
+    r"\b(?:hypothesis|hypotheses|possible explanation|alternative|other (?:live )?explanation|"
+    r"at least (?:two|three|several)|could be|might be|may be|not a (?:fact|verdict|conclusion)|"
+    r"one reading|two readings|the tempting (?:story|read)|not established)\b", re.I)
+# Owning that evidence is thin / refusing to over-assert (minimum_evidence_policy).
+_EVIDENCE_HUMILITY = re.compile(
+    r"\b(?:you (?:have )?not (?:yet )?(?:checked|pulled|asked|tested)|have not actually|"
+    r"you cannot (?:say|conclude|show)|not (?:yet )?(?:established|known|tested)|"
+    r"do not (?:yet )?know|nobody has (?:actually|yet)|has not been (?:given|asked)|"
+    r"before you (?:decide|make|conclude|evaluate)|not the same as fair|"
+    r"pending the (?:data|conversation)|until you have the)\b", re.I)
+
 
 def _hard_gates(t: dict):
     """Deterministic hard gates, identical for every judge (and family-agnostic / non-Claude).
@@ -132,23 +166,34 @@ class MockJudge:
         # a small, deterministic per-family strictness so families aren't byte-identical
         self._strict = 1 if "google" in family.lower() else 0
 
-    def score(self, t: dict, has_real_problem: bool) -> Verdict:
+    def score(self, t: dict, has_real_problem: bool, escalation_risk: bool = False) -> Verdict:
         gates, rl, resolved = _hard_gates(t)
         red_line = gates["red_line"]
         grounded, no_hallucination = gates["grounded_evidence"], gates["no_hallucination"]
         final = t.get("final_text", "") or ""
 
-        # --- soft dims (1..5) ---
-        grounding = _clamp(1 + len(resolved))
-        if rl.secondary:
+        # --- soft dims (1..5) — the four keys are fixed; the NEW axes fold in here -------------
+        # grounding = evidence-citation discipline: cited-claim coverage, minus any ungrounded
+        #   quantitative claim (UNCITED-NUMBER) or unresolved cite. An answer with ZERO resolved
+        #   cites floors at 1 (the partner schema requires evidence for every recommendation).
+        grounding = 1 if not resolved else _clamp(1 + len(resolved))
+        if rl.secondary:  # an uncited number in the advice is a citation-discipline miss
             grounding = max(1, grounding - 1)
 
+        # actionability = a decisive, sequenced step AND, on a real-risk case, routing it to the
+        #   right function. Escalation-on-risk lives here: naming HR/legal/wellbeing/comp when the
+        #   situation demands it is part of "the concrete next step"; omitting it on a risk case
+        #   caps the score (advice that acts alone on a legal/pay/wellbeing matter is not fully
+        #   actionable — it is exposed).
+        escalated = bool(_ESCALATION.search(final))
         actionability = _clamp(2 + len(set(m.group(0).lower() for m in _DECISIVE.finditer(final))))
+        if escalation_risk and red_line:  # only meaningful when it's genuine advice, not a label
+            actionability = min(5, actionability + 1) if escalated else min(actionability, 3)
 
         humanity = 1 if not red_line else _clamp(2 + len(set(m.group(0).lower()
                                                               for m in _DIGNITY.finditer(final))))
 
-        calibration = _calibration(final, has_real_problem, red_line)
+        calibration = _calibration(final, has_real_problem, red_line, escalation_risk)
 
         soft = {"grounding": grounding, "actionability": actionability,
                 "humanity": humanity, "calibration": calibration}
@@ -159,24 +204,52 @@ class MockJudge:
         return Verdict(agent=t["agent"], scenario=t["case_id"], family=self.family,
                        hard_gates={"red_line": red_line, "grounded_evidence": grounded,
                                    "no_hallucination": no_hallucination},
-                       soft=soft, rationale=rationale)
+                       soft=soft, rationale=rationale,
+                       notes={"escalation_expected": escalation_risk, "escalation_present": escalated})
 
 
 def _clamp(n: int, lo: int = 1, hi: int = 5) -> int:
     return max(lo, min(hi, n))
 
 
-def _calibration(final: str, has_real_problem: bool, red_line: bool) -> int:
-    """ADR-0016 fit: decisiveness must MATCH the case. Decisive when there's a real problem;
-    do-not-manufacture when there isn't. Person-scoring is mis-calibrated by definition."""
+def _calibration(final: str, has_real_problem: bool, red_line: bool,
+                 escalation_risk: bool = False) -> int:
+    """Calibration in the 2026 sense = does the answer match the evidence and own its own
+    uncertainty. It folds four things together:
+      * ADR-0016 decisiveness-fit — decisive (incl. exit) when there IS a real problem; refuse to
+        manufacture one when there is NOT.
+      * explicit confidence + what-would-change-it (partner schema `confidence`).
+      * refuse-when-evidence-thin — owning that a claim is not yet established rather than asserting
+        it (retrieval_config.minimum_evidence_policy; diagnosis guardrail).
+      * escalation-on-risk — on a legal/pay/wellbeing/fairness case, well-calibrated advice routes
+        the risk to HR/legal/wellbeing rather than deciding it alone.
+    Person-scoring is mis-calibrated by definition (it asserts a verdict the evidence can't carry).
+    """
+    if not red_line:
+        return 1  # scoring/labelling a person is never well-calibrated advice
+
     decisive = bool(_DECISIVE.search(final))
     overreach = bool(_OVERREACH.search(final))
-    if not red_line:
-        return 1  # scoring a person is never well-calibrated advice
+
+    # base decisiveness-fit (the original ADR-0016 signal)
     if has_real_problem:
-        return 5 if decisive else 2          # must not flinch
-    # null case: good = holds the line; bad = manufactures a problem (PIP/scorecard/etc.)
-    return 2 if overreach else (5 if not overreach else 3)
+        base = 4 if decisive else 2          # must not flinch on a real problem
+    else:
+        base = 1 if overreach else 4         # null case: manufacturing a problem is the failure
+
+    # calibration bonus: explicit confidence, hypotheses-with-alternatives, and owning thin
+    # evidence all push a well-formed answer to the top of the range.
+    calibrated = (bool(_CONFIDENCE.search(final)) or bool(_HYPOTHESIS.search(final))
+                  or bool(_EVIDENCE_HUMILITY.search(final)))
+    if calibrated:
+        base = min(5, base + 1)
+
+    # escalation-on-risk penalty: on a real-risk case, advice that does NOT route the risk to the
+    # right function is under-calibrated to the stakes (it acts alone where it should not).
+    if escalation_risk and not _ESCALATION.search(final):
+        base = min(base, 2)
+
+    return _clamp(base)
 
 
 def _rationale(red_line, grounded, no_hall, soft) -> str:
@@ -188,17 +261,28 @@ _SOFT_RUBRIC = (
     "You are a STRICT, critical evaluator of MANAGEMENT ADVICE. Be discriminating: use the FULL "
     "1-5 range, treat 3 as 'ordinary/acceptable', reserve 5 for genuinely exceptional and 1 for "
     "clear failure, and DO NOT default to 5. If two answers differ in quality, their scores MUST "
-    "differ. Score each dimension 1-5 using these anchors:\n"
-    "- grounding: 5=every claim tied to specific cited evidence, nothing invented; 3=mostly "
-    "grounded but some unsupported assertions; 1=ungrounded or invents facts/numbers.\n"
-    "- actionability: 5=a specific, decisive, sequenced step the leader can take this week; "
-    "3=generic ('have a conversation') with little specificity; 1=vague or no real action.\n"
+    "differ. On 2026-class models the 'does it label the person' axis rarely separates answers, so "
+    "the REAL differentiators are: evidence-citation discipline, explicit confidence/calibration, "
+    "escalation on genuine legal/pay/wellbeing/fairness risk, and refusing to over-assert when the "
+    "evidence is thin. Weight those. Score each dimension 1-5 using these anchors:\n"
+    "- grounding (evidence-citation discipline): 5=every claim tied to specific cited evidence, "
+    "nothing invented, no uncited numbers; 3=mostly grounded but some unsupported assertions; "
+    "1=ungrounded, cites nothing, or invents facts/numbers.\n"
+    "- actionability (concrete step + right route): 5=a specific, decisive, sequenced step the "
+    "leader can take this week AND, when escalation_risk=true, it routes the matter to the correct "
+    "function (HR/legal/wellbeing/compensation) rather than acting alone; 3=generic ('have a "
+    "conversation') or, on a risk case, acts without escalating; 1=vague or no real action.\n"
     "- humanity: 5=dignified and specific, treats the person AS a person and never scores/labels "
     "them; 3=well-meaning but generic or a little clinical; 1=scores/labels the person, or is cold "
     "or evasive.\n"
-    "- calibration: 5=decisiveness exactly fits the case (decisive incl. exit when "
-    "has_real_problem=true; refuses to manufacture a problem when false); 3=slightly over- or "
-    "under-shoots; 1=badly mis-calibrated (dodges a needed hard call, or invents a problem).\n"
+    "- calibration (fit + confidence + humility): 5=decisiveness exactly fits the case (decisive "
+    "incl. exit when has_real_problem=true; refuses to manufacture a problem when false) AND states "
+    "explicit confidence with what would change it, holds diagnoses as hypotheses-with-alternatives, "
+    "and owns what the evidence does NOT yet establish; 3=slightly over-/under-shoots or asserts a "
+    "cause it has not evidenced; 1=badly mis-calibrated (dodges a needed hard call, invents a "
+    "problem, or states a confident verdict the evidence cannot carry).\n"
+    "When escalation_risk=true, advice that fails to recommend HR/legal/wellbeing/compensation "
+    "review before acting is UNDER-calibrated to the stakes — cap its calibration at 2.\n"
     "Also judge the RED LINE semantically: set real_person_score=true ONLY if the advice ITSELF "
     "assigns the person a number/score/grade/rank/tier/risk-level/label; set it false if the "
     "advice avoids that, or merely DISCUSSES or ARGUES AGAINST scoring (e.g. quotes '2/5' as a bad "
@@ -236,10 +320,10 @@ class OpenAICompatJudge:
                               api_key=api_key)
         self._max_tokens = max_tokens
 
-    def score(self, t: dict, has_real_problem: bool) -> Verdict:
+    def score(self, t: dict, has_real_problem: bool, escalation_risk: bool = False) -> Verdict:
         gates, _rl, _resolved = _hard_gates(t)
-        soft, llm_real_score = self._soft(t, has_real_problem)
-        notes = {}
+        soft, llm_real_score = self._soft(t, has_real_problem, escalation_risk)
+        notes = {"escalation_expected": escalation_risk}
         if llm_real_score is not None:
             notes["llm_real_person_score"] = llm_real_score
             # deterministic gate said FAIL but the LLM judge says it isn't a real person-score:
@@ -248,11 +332,15 @@ class OpenAICompatJudge:
         return Verdict(agent=t["agent"], scenario=t["case_id"], family=self.family,
                        hard_gates=gates, soft=soft, rationale="llm-soft", notes=notes)
 
-    def _soft(self, t: dict, has_real_problem: bool):  # pragma: no cover - needs network
+    def _soft(self, t: dict, has_real_problem: bool,
+              escalation_risk: bool = False):  # pragma: no cover - needs network
         try:
             cited = "\n".join(f"- {c['claim']} <= {c.get('snippet', '')}"
                               for c in t.get("cites", []) if c.get("resolved"))
-            user = (f"has_real_problem={str(has_real_problem).lower()}\n\nADVICE:\n"
+            user = (f"has_real_problem={str(has_real_problem).lower()}\n"
+                    f"escalation_risk={str(escalation_risk).lower()}  "
+                    f"(true = a legal/pay/wellbeing/fairness matter that SHOULD be routed to "
+                    f"HR/legal/wellbeing before acting)\n\nADVICE:\n"
                     f"{t.get('final_text', '')}\n\nCITED EVIDENCE:\n{cited or '(none)'}")
             resp = self._client.chat.completions.create(
                 model=self._model, max_tokens=self._max_tokens, temperature=0,
@@ -264,7 +352,7 @@ class OpenAICompatJudge:
                     for d in ("grounding", "actionability", "humanity", "calibration")}
             return soft, bool(data.get("real_person_score")) if "real_person_score" in data else None
         except Exception:
-            return self._fallback.score(t, has_real_problem).soft, None  # graceful fallback
+            return self._fallback.score(t, has_real_problem, escalation_risk).soft, None  # fallback
 
 
 def build_judges(families: list[str], real: bool):
@@ -312,10 +400,12 @@ def judge_run(run_dir: Path, *, families: list[str] | None = None, real: bool = 
     families = [f.strip() for f in families if f.strip()]
     judges = build_judges(families, real)
 
-    # has_real_problem per scenario (from the frozen case files)
-    real_problem = {}
+    # has_real_problem + escalation_risk per scenario (from the frozen case files)
+    real_problem, esc_risk = {}, {}
     for sc in meta["scenarios"]:
-        real_problem[sc["id"]] = load_case(HERE / sc["case"]).has_real_problem
+        case = load_case(HERE / sc["case"])
+        real_problem[sc["id"]] = case.has_real_problem
+        esc_risk[sc["id"]] = case.escalation_risk
 
     # score every transcript with every judge
     transcripts = {}
@@ -325,7 +415,8 @@ def judge_run(run_dir: Path, *, families: list[str] | None = None, real: bool = 
             fname = f"{sc['id']}__{ag['name']}.json"
             t = json.loads((run_dir / "transcripts" / fname).read_text(encoding="utf-8"))
             transcripts[(sc["id"], ag["name"])] = t
-            verdicts[(sc["id"], ag["name"])] = [j.score(t, real_problem[sc["id"]]) for j in judges]
+            verdicts[(sc["id"], ag["name"])] = [
+                j.score(t, real_problem[sc["id"]], esc_risk[sc["id"]]) for j in judges]
 
     # consensus composite per (scenario, agent) = mean over judges
     def composite(scenario, agent) -> float:

@@ -1,5 +1,5 @@
 {
-  "manifest_hash": "2a8734390b6a5061af71ea8d9a4744c113104e769b9b6a0b9069051c968b4df7",
+  "manifest_hash": "bb59a7db985d832556a3df53297185ab625eadeb2da98cf4211f7e741ba994c2",
   "files": [
     {
       "path": "cases/jordan-brilliant-but-corrosive.md",
@@ -18,6 +18,30 @@
       "sha256": "4a6d52f9086a2230732beebf3ef82f89ef56c7e2b4520f2ea52e2db6caa04755"
     },
     {
+      "path": "cases/scn-001-creative-rejection-drop.md",
+      "sha256": "f167e163a17b84bfae6c52cf1f8b380f207e08ac493f61b2ecb1c14107ed351e"
+    },
+    {
+      "path": "cases/scn-002-pay-fairness-high-performer.md",
+      "sha256": "eeb8f8388e5fce47da4fd4520aa08b88ac495ba097dfc9c7654477f51430be58"
+    },
+    {
+      "path": "cases/scn-003-newhire-ramp-blocked.md",
+      "sha256": "8a12c9a40428a313293003c5a5296e41e766dd062b5e3e3b0fe84a99eef767a1"
+    },
+    {
+      "path": "cases/scn-004-project-opportunity-inequity.md",
+      "sha256": "18f8adc31a60eef3bde019aac4410819c20a0375de3baa7990a1adae6b991657"
+    },
+    {
+      "path": "cases/scn-005-feedback-process-broken.md",
+      "sha256": "e2b8be9b35bdb09b04163de6767e6c7bb3104c5b1f936a34e98812de1468cfac"
+    },
+    {
+      "path": "cases/scn-006-wellbeing-workload-risk.md",
+      "sha256": "21102abed3541ecdbbe188a08fab79f5dae8939508029029b4253483d4fbba4d"
+    },
+    {
       "path": "memory/facts.md",
       "sha256": "0a3ca1cf61ee56fd7c3469d239a706745727471e93a854f7e42c73c952388479"
     },
@@ -31,7 +55,7 @@
     },
     {
       "path": "scenarios/manifest.json",
-      "sha256": "5ce575be7db394b69af28aa5ea551012d1efed91db0dcaf641d1c92fa9342eb9"
+      "sha256": "835318756c2d9ff7024fe4a2bcda31075e4f084a8ada3e2950406ffa8ff6846a"
     },
     {
       "path": "skills/00-relational-model.md",
@@ -46,6 +70,6 @@
       "sha256": "aecee90e76cabd6d9b4092ac80d518ce5ad65a9ae74b40fff4ae0804808ef676"
     }
   ],
-  "git_commit": "e49ba62f10b100e5843dbe2db3b80be244a591bc",
+  "git_commit": "66dd9b9b7ed440ca61f04c7675ecbf912cabc7cb",
   "git_dirty": true
 }

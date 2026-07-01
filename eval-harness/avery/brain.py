@@ -111,7 +111,7 @@ def make_mock_brain(case, persona: str) -> MockBrain:
             "framing": adv.get("framing", "")}))); n += 1
         final = Advice(adv.get("read", ""), adv.get("move", ""), adv.get("framing", "")).render()
         plan.append(_Step(final=final))
-        return MockBrain("avery-opus(mock)", plan)
+        return MockBrain("avery(mock)", plan)
 
     # baselines
     spec = mock.get(persona, {})

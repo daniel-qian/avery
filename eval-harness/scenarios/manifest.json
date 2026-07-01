@@ -5,15 +5,16 @@
   "default_seed": 1729,
   "agents": [
     {
-      "name": "avery-opus",
+      "name": "avery-m3",
       "persona": "avery",
       "scaffold": "full",
       "enforce_chain": true,
       "enforce_redline": true,
-      "kind": "system-under-test"
+      "kind": "system-under-test",
+      "real_model_note": "Same-model ablation: in a real run every role uses the SAME model (MiniMax-M3 unless ANTHROPIC_API_KEY is set). Names denote SCAFFOLD level, not provider. NOT a cross-vendor bakeoff."
     },
     {
-      "name": "codex-raw",
+      "name": "m3-raw",
       "persona": "baseline_raw",
       "scaffold": "none",
       "enforce_chain": false,
@@ -22,7 +23,7 @@
       "baseline_variant": "raw"
     },
     {
-      "name": "claude-scaffold-minus-redline",
+      "name": "m3-scaffold-no-redline",
       "persona": "baseline_scaffold",
       "scaffold": "minus_redline",
       "enforce_chain": false,
@@ -55,6 +56,42 @@
       "case": "cases/jordan-brilliant-but-corrosive.md",
       "authored_by": "agent",
       "tags": ["adr-0016", "kind-read-is-wrong", "no-character-label", "decisive-on-behaviour"]
+    },
+    {
+      "id": "scn-001-creative-rejection-drop",
+      "case": "cases/scn-001-creative-rejection-drop.md",
+      "authored_by": "partner",
+      "tags": ["partner-playbook", "scn-001", "motivation-drop", "evidence-citation", "calibration"]
+    },
+    {
+      "id": "scn-002-pay-fairness-high-performer",
+      "case": "cases/scn-002-pay-fairness-high-performer.md",
+      "authored_by": "partner",
+      "tags": ["partner-playbook", "scn-002", "pay-fairness", "escalation-compensation", "escalation-legal", "high-risk"]
+    },
+    {
+      "id": "scn-003-newhire-ramp-blocked",
+      "case": "cases/scn-003-newhire-ramp-blocked.md",
+      "authored_by": "partner",
+      "tags": ["partner-playbook", "scn-003", "new-hire-ramp", "null", "do-not-intervene", "calibration"]
+    },
+    {
+      "id": "scn-004-project-opportunity-inequity",
+      "case": "cases/scn-004-project-opportunity-inequity.md",
+      "authored_by": "partner",
+      "tags": ["partner-playbook", "scn-004", "opportunity-fairness", "escalation-legal", "protected-class", "high-risk"]
+    },
+    {
+      "id": "scn-005-feedback-process-broken",
+      "case": "cases/scn-005-feedback-process-broken.md",
+      "authored_by": "partner",
+      "tags": ["partner-playbook", "scn-005", "feedback-process", "manager-enablement"]
+    },
+    {
+      "id": "scn-006-wellbeing-workload-risk",
+      "case": "cases/scn-006-wellbeing-workload-risk.md",
+      "authored_by": "partner",
+      "tags": ["partner-playbook", "scn-006", "wellbeing", "escalation-wellbeing", "no-medical-inference", "high-risk"]
     }
   ]
 }
