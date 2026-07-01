@@ -446,12 +446,45 @@ function StructuredOutputCard({
         <span>Yours to sign off</span>
       </header>
 
-      <section className="report-section report-conclusion" aria-label="Conclusion">
-        <p className="report-section-label">Conclusion</p>
-        <strong>{AGENT_OUTPUT.conclusion}</strong>
-      </section>
+      {/* ── ZONE 1 · THE READ（hero）= summary + detected_signals + diagnosis_hypotheses ── */}
+      <div className="report-zone report-zone-read" aria-label="The read">
+        {/* 1 · summary（原 conclusion）——⚠ Danny 审字 label 用「The read」*/}
+        <section className="report-section report-conclusion" aria-label="Summary — the read">
+          <p className="report-section-label">The read</p>
+          <strong>{AGENT_OUTPUT.summary}</strong>
+        </section>
 
-      <div className="report-grid">
+        {/* 2 · detected_signals（NEW）——观察到的具体信号，有 evidence 锚 */}
+        <section className="report-section" aria-label="Signals it picked up">
+          <p className="report-section-label">Signals it picked up {/* ⚠ 待 Danny 审字 */}</p>
+          <ul className="report-list">
+            {AGENT_OUTPUT.detected_signals.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
+
+        {/* 3 · diagnosis_hypotheses（NEW）——带 alternative 的假设，绝不当事实断言 */}
+        <section className="report-section" aria-label="What might be going on">
+          <p className="report-section-label">What might be going on — a read, not a verdict {/* ⚠ 待 Danny 审字 */}</p>
+          <ul className="report-list report-hypotheses">
+            {AGENT_OUTPUT.diagnosis_hypotheses.map((h) => (
+              <li key={h.label} className={classNames(['hypothesis-item', `is-${h.kind}`])}>
+                <span className="hypothesis-kind">{h.kind === 'primary' ? 'Most likely' : 'Also possible'}</span>
+                {h.label}
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
+
+      <hr className="report-zone-rule" aria-hidden="true" />
+
+      {/* ── ZONE 2 · THE BACKING（secondary, calmer）= evidence + confidence ── */}
+      <div className="report-zone report-zone-backing" aria-label="The backing">
+        <p className="report-zone-label">The backing {/* ⚠ 待 Danny 审字 */}</p>
+        <div className="report-grid">
+        {/* 4 · evidence（保留） */}
         <section className="report-section" aria-label="Why I'm saying this">
           <p className="report-section-label">Why I&rsquo;m saying this</p>
           <ol className="report-list">
@@ -461,30 +494,83 @@ function StructuredOutputCard({
           </ol>
         </section>
 
-        <section className="report-section" aria-label="Still not sure about">
-          <p className="report-section-label">Still not sure about</p>
-          <ul className="report-list">
-            {AGENT_OUTPUT.uncertainties.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </section>
+        {/* 6 · confidence（NEW）——明确 level + 什么会改变它 */}
+          <section className="report-section report-confidence" aria-label="How sure it is">
+            <p className="report-section-label">
+              How sure it is {/* ⚠ 待 Danny 审字 */}
+              <span className={classNames(['confidence-badge', `is-${AGENT_OUTPUT.confidence.level}`])}>
+                {AGENT_OUTPUT.confidence.level}
+              </span>
+            </p>
+            <p className="confidence-rationale">{AGENT_OUTPUT.confidence.rationale}</p>
+            {/* 渐进披露：wouldChange 折叠成一行 teaser，仍在场（可审计），首屏不占满高 */}
+            <details className="report-disclosure">
+              <summary>
+                <span className="disclosure-caret" aria-hidden="true" />
+                What would change it {/* ⚠ 待 Danny 审字 */}
+                <span className="disclosure-count">{AGENT_OUTPUT.confidence.wouldChange.length}</span>
+              </summary>
+              <ul className="report-list">
+                {AGENT_OUTPUT.confidence.wouldChange.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </details>
+          </section>
+        </div>
       </div>
 
-      <section className="report-section" aria-label="Recommended actions">
-        <p className="report-section-label">Recommended actions</p>
-        <ol className="report-list report-actions">
-          {AGENT_OUTPUT.recommendedActions.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ol>
-      </section>
+      <hr className="report-zone-rule" aria-hidden="true" />
 
-      <div className="report-grid report-bottom-grid">
-        <section className="report-section" aria-label="Who needs to weigh in">
-          <p className="report-section-label">Who needs to weigh in</p>
+      {/* ── ZONE 3 · THE MOVE（actionable tail）= actions + script + metrics + escalation + tasks ── */}
+      <div className="report-zone report-zone-move" aria-label="The move">
+        <p className="report-zone-label">The move {/* ⚠ 待 Danny 审字 */}</p>
+
+        {/* 5 · recommended_actions（原 recommendedActions） */}
+        <section className="report-section" aria-label="Recommended actions">
+          <p className="report-section-label">Recommended actions</p>
+          <ol className="report-list report-actions">
+            {AGENT_OUTPUT.recommended_actions.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ol>
+        </section>
+
+        {/* + · conversation_script（1:1 开场白，"senior 在耳边"的声音） */}
+        <section className="report-section report-script" aria-label="If you open the 1:1">
+          <p className="report-section-label">If you open the 1:1 {/* ⚠ 待 Danny 审字 */}</p>
+          <p className="report-script-line">{AGENT_OUTPUT.conversation_script}</p>
+        </section>
+
+        {/* 8 · metrics_to_track（NEW）——看什么才知道奏效。渐进披露：折叠成一行 teaser，仍在场 */}
+        <section className="report-section" aria-label="What to watch">
+          <details className="report-disclosure">
+            <summary>
+              <span className="disclosure-caret" aria-hidden="true" />
+              What to watch to know it worked {/* ⚠ 待 Danny 审字 */}
+              <span className="disclosure-count">{AGENT_OUTPUT.metrics_to_track.length}</span>
+            </summary>
+            <ul className="report-list report-actions">
+              {AGENT_OUTPUT.metrics_to_track.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </details>
+        </section>
+
+        <div className="report-grid report-bottom-grid">
+        {/* 7 · escalation（NEW）——何时把 HR 拉进来 + 谁来确认 */}
+        <section className="report-section" aria-label="HR / who confirms">
+          <p className="report-section-label">
+            When to pull in HR {/* ⚠ 待 Danny 审字 */}
+            <span className={classNames(['escalation-badge', `is-${AGENT_OUTPUT.escalation.level}`])}>
+              {AGENT_OUTPUT.escalation.level === 'none' ? 'not yet' : AGENT_OUTPUT.escalation.level}
+            </span>
+          </p>
+          <p className="escalation-note">{AGENT_OUTPUT.escalation.note}</p>
+          <p className="report-subtle-label">Who confirms</p>
           <div className="confirmation-list">
-            {AGENT_OUTPUT.needsConfirmationFrom.map((label) => {
+            {AGENT_OUTPUT.escalation.confirmWith.map((label) => {
               const person = personByName(label)
               return (
                 <span key={label} className="confirmation-chip">
@@ -526,6 +612,7 @@ function StructuredOutputCard({
             })}
           </div>
         </section>
+        </div>
       </div>
 
       <footer className="report-footer">

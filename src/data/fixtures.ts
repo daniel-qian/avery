@@ -84,14 +84,36 @@ export interface CapabilityEntry {
   gist: string // 一句话判断框架（agent 引用它）
 }
 
+// 合伙人 knowledge-pack 的 8 段式 advice_output_schema（advice_output_schema.required）。
+// 规则（合伙人 escalation_guardrails · diagnosis）：所有诊断都是 hypothesis，要给 evidence + alternatives，
+// 绝不给"人"贴标签/打分。这是 demo 高潮卡的 canonical 形状。
+export interface DiagnosisHypothesis {
+  label: string // 一句话读法（对"处境"，不对"人"）
+  kind: 'primary' | 'alternative'
+}
+
 export interface AgentOutput {
-  // 可信产出报告的固定 6 段式
-  conclusion: string
-  evidence: string[]
-  uncertainties: string[]
-  recommendedActions: string[]
-  needsConfirmationFrom: string[]
-  nextTasks: TaskTemplate[]
+  // 8-field contract（partner advice_output_schema）：
+  summary: string // 1 · 经理向的平实读法（不是对人的裁决）
+  detected_signals: string[] // 2 · 观察到的具体信号（有 evidence 锚，不是标签）
+  diagnosis_hypotheses: DiagnosisHypothesis[] // 3 · 带 alternative 的假设（不当事实断言）
+  evidence: string[] // 4 · 支撑每条判断的可引用指针
+  recommended_actions: string[] // 5 · 具体下一步（谁 / 何时 / 为什么）
+  confidence: {
+    // 6 · 明确的信心水平 + 什么会改变它（校准）
+    level: 'low' | 'medium' | 'high'
+    rationale: string
+    wouldChange: string[] // 会推高/推低信心的东西（吸收原 uncertainties）
+  }
+  escalation: {
+    // 7 · 何时把 HR/legal 拉进来（legal / pay / wellbeing / fairness）+ 谁来确认
+    level: 'none' | 'HRBP' | 'legal' | 'wellbeing' | 'compensation' | 'executive'
+    note: string
+    confirmWith: string[] // 这一步需要谁点头（沿用原 needsConfirmationFrom 语义槽）
+  }
+  metrics_to_track: string[] // 8 · 看什么才知道有没有奏效
+  conversation_script: string // + · 1:1 开场白（"senior 在耳边"的声音）
+  nextTasks: TaskTemplate[] // UI 仍用：可派发的任务模板
 }
 
 export interface TaskTemplate {
@@ -379,14 +401,52 @@ export const NEXUS_INSPECTOR_CONTENT = {
   // P5-02：human-loop 已毕业到中央 ChatCard，inspector 不再承载（fallback 到 active-nodes）。
 } as const
 
-// ───────────────────────── Agent 结构化输出（6 段式）────────────────────────
+// ───────────────────────── Agent 结构化输出（8 段式 · partner schema）────────
 // ⚠⚠ 最高价值：Venus 会逐字读这一段。请你审。
-
-// ⚠ 待 Danny 审字（整块——Venus 逐字读）。Maslow 重写：conclusion = 动机层级读法
-// 结论段；recommendedActions = 冻结范围 + 责任拆分 + 可完成 checklist beats。
+//
+// 重构：从旧 6 段式对齐合伙人 advice_output_schema 的 canonical 8 字段
+// (summary / detected_signals / diagnosis_hypotheses / evidence / recommended_actions /
+//  confidence / escalation / metrics_to_track) + conversation_script。
+// 场景不变 = SCN-001「Creative motivation drop after repeated client rejection」
+// （Lin Qing：客户反馈反复变动 → 创作动力下降）。红线：只对"处境"给建议，绝不给"人"打分/贴标签/下诊断。
 export const AGENT_OUTPUT: AgentOutput = {
-  conclusion:
+  // 1 · summary（原 conclusion，措辞基本保留；已是对"处境"的读法，未改判断）
+  summary:
     "Lin Qing’s drop in motivation isn’t about responsibility — the project’s sense of safety and accomplishment have been worn down. Constantly changing client feedback keeps the definition of done unstable, and her real contribution this week — absorbing a week of feedback and rework — isn’t visible anywhere in the project’s progress. The Smart Shopping Guide demo is still holdable for Friday: freeze this week’s demo scope, split the client feedback into priorities, and give Lin Qing a clear, completable checklist, and the core guide path lands.",
+
+  // 2 · detected_signals（NEW · Venus 逐字读）：⚠ 待 Danny 审字
+  // 观察到的具体信号，每条有 evidence 锚（映射真实 signal fixtures s_pr/s_blocker/s_noupdate/s_mentions/s_commits），
+  // 是信号不是标签——对应 SCN-001 的 detected_signals（revision cycle rising / idea count down / missed sessions）。
+  detected_signals: [
+    'Revision loops rising: the home guide flow has been reopened and reworked 6 days running, never signed off (Figma · s_pr).',
+    'A moving target: "what counts as done for the recommendation cards?" was asked 3 days running and never answered (Feedback · s_blocker).',
+    'Acceptance never set: the core-flow frames carry 12 unresolved feedback comments with no acceptance criteria (Task · s_noupdate).',
+    'Interrupt load climbing: ~9 new client change requests landed on Lin Qing in 3 days — the brief kept moving under her (Feedback · s_mentions).',
+    'Effort not converting to progress: her week went into reworking screens against new feedback, not finishing the core guide flow (Figma · s_commits).',
+  ],
+
+  // 3 · diagnosis_hypotheses（NEW · Venus 逐字读）：⚠ 待 Danny 审字
+  // 关键改动：把单一读法改写成"带至少一个 alternative 的假设"，绝不当事实断言（partner guardrail: diagnosis）。
+  // primary 对齐 SCN-001「challenging-work / recognition-of-work」driver；alternatives 留住其他可能，避免误诊。
+  diagnosis_hypotheses: [
+    {
+      label:
+        'Most likely: a challenging-work + recognition rupture — the finish line kept moving and a week of absorbed rework stayed invisible, so the work started to feel not worth the creative effort. (A read of the situation, not a verdict on Lin Qing.)',
+      kind: 'primary',
+    },
+    {
+      label:
+        'Alternative: unclear client acceptance criteria rather than motivation — if "done" were defined up front, the same effort might land as visible progress. Worth ruling out before concluding it is motivation.',
+      kind: 'alternative',
+    },
+    {
+      label:
+        'Alternative: workload / early wellbeing strain from the interrupt load — check pace and hours in the 1:1 before assuming it is only scope. Do not infer anything about health.',
+      kind: 'alternative',
+    },
+  ],
+
+  // 4 · evidence（保留原文，已 cited）
   evidence: [
     'The Friday demo leans on the core guide flow, and the wire-up task has stalled.',
     'The home guide flow has been reopened and reworked 6 days running — the work is in motion, just never signed off.',
@@ -394,23 +454,54 @@ export const AGENT_OUTPUT: AgentOutput = {
     'The core-flow frames carry 12 unresolved feedback comments with no acceptance criteria, so the week’s effort never landed as visible progress.',
     'Lin Qing absorbed ~9 new client change requests in 3 days; her time went into reworking screens, not finishing the core guide flow.',
   ],
-  uncertainties: [
-    'Whether the team can truly hold "no new client feedback this week" — the freeze only works if everyone respects it.',
-    'Whether the client would prefer a proactive Tuesday slip over a thinner-but-on-time Friday demo.',
-  ],
-  recommendedActions: [
+
+  // 5 · recommended_actions（原 recommendedActions；话术那条拆去 conversation_script，其余保留）
+  recommended_actions: [
     // 1 · 不先谈绩效，先冻结本周范围
     'Don’t open with performance — freeze this week’s demo scope first. The Friday demo keeps only the core guide path; no new client feedback gets added in.',
     // 2 · 把责任拆清楚（写进 Project Detail）
     'Split who owns what: Lin Qing takes the core guide flow only; Sun Xiaomei triages and prioritizes incoming client feedback; Chen Mingyuan confirms the recommendation data fields; Zheng Zixuan does the key visuals and nothing extra.',
     // 3 · 给 Lin Qing 一个可完成的 checklist
     'Give Lin Qing a short, completable checklist — home guide entry, recommendation cards, the user-profile dialog, the path running end to end — and push every non-core piece of feedback to the next iteration.',
-    // 4 · 1:1 话术
-    'In the 1:1, lead with what she carried, not what’s missing: "I saw you handled a lot of client feedback this week — which of it actually affects Friday, and which can move to the next version?"',
-    // 5 · HR 风险判断
-    'This isn’t a capability issue — it’s unstable requirements, invisible contribution, and unclear boundaries. The manager should step in on scope; no formal HR involvement yet, and it’s worth a check-in again next week to see how Lin Qing is doing.',
+    // 4 · 客户侧把"什么算做完"定下来（对齐 SCN-001 recommendation: clarify success criteria）
+    'Agree the client-side "definition of done" for the core flow before the next review, so the same effort finally lands as accepted progress instead of another rework loop.',
   ],
-  needsConfirmationFrom: ['You (manager) — freezing this week’s demo scope', 'Sun Xiaomei — the responsibility split'],
+
+  // 6 · confidence（NEW · Venus 逐字读）：⚠ 待 Danny 审字
+  // 明确 level + 什么会改变它（吸收原 uncertainties，改成"会推高/推低信心的条件"）。SCN-001 risk_level = medium。
+  confidence: {
+    level: 'medium',
+    rationale:
+      'The delivery signals (rework loops, unanswered "done", interrupt load) line up cleanly, but they come from work-trail data, not from Lin Qing herself — the motivation read stays a hypothesis until the 1:1 confirms it.',
+    wouldChange: [
+      'Higher if the 1:1 confirms the moving brief is what wore her down, and the team actually holds "no new client feedback this week".',
+      'Lower if the client would rather take a proactive Tuesday slip than a thinner-but-on-time Friday demo, which would change the whole plan.',
+    ],
+  },
+
+  // 7 · escalation（NEW · Venus 逐字读）：⚠ 待 Danny 审字
+  // 何时把 HR/legal 拉进来 + 谁来确认。对齐 SCN-001 hrbp_escalation（burnout / unfair treatment / performance risk）
+  // 与 partner guardrails。confirmWith 沿用原 needsConfirmationFrom 语义槽（守 personByName 头像引用）。
+  escalation: {
+    level: 'none',
+    note:
+      'No HR involvement needed yet — this reads as scope and workload, not capability, conduct, or pay. Pull in HRBP if the 1:1 surfaces burnout, if the client feedback tips into unfair or unsafe treatment, or if this keeps recurring after the reset. Check in again next week.',
+    confirmWith: ['You (manager) — freezing this week’s demo scope', 'Sun Xiaomei — the responsibility split'],
+  },
+
+  // 8 · metrics_to_track（NEW · Venus 逐字读）：⚠ 待 Danny 审字
+  // 看什么才知道奏效——对齐 SCN-001 metrics_to_track，但只用场景已支撑的量、不编造数字。
+  metrics_to_track: [
+    'Core guide path running end to end by Thursday, then holding through the Friday demo.',
+    'No new client-feedback items added to this week’s frozen scope (the freeze is respected).',
+    'Revision loops on the core flow settling once acceptance criteria are set.',
+    'A quick check-in next week on how Lin Qing is doing after the reset.',
+  ],
+
+  // + · conversation_script（surface 原第 4 条 1:1 话术；"senior 在耳边"的开场白）
+  conversation_script:
+    'In the 1:1, lead with what she carried, not what’s missing: "I saw you handled a lot of client feedback this week — which of it actually affects Friday, and which can move to the next version?"',
+
   nextTasks: [
     { title: 'Own the core guide flow only — work the completable checklist to a running path', assigneeId: 'u_bill', due: 'Thursday' },
     { title: 'Triage incoming client feedback into "affects Friday" vs "next iteration"', assigneeId: 'u_vanessa', due: 'Today' },

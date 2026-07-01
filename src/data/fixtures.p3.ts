@@ -931,13 +931,21 @@ export const CAPABILITY_SUBSCRIPTION_COPY = {
 
 export const CAPABILITY_PACKAGES: CapabilityPackage[] = [
   {
+    // ⚠ 待 Danny 审字（HR gist + preview 名称）。改为反映合伙人真实 SCN playbooks / motivation drivers
+    // （预览名，非全文）。SCN-001 = 本 demo 高潮卡的锚点，列在最前。
     domain: 'hr',
     title: 'HR',
-    gist: 'Motivation, workload, and manager-loop playbooks for reading people fairly before judging output.',
+    gist: 'Motivation, pay-fairness, wellbeing, and manager-loop playbooks — read the situation with evidence and alternatives before ever judging the person.',
     previewPlaybooks: [
-      'Reading motivation, not output — Maslow’s ladder',
-      'Making invisible contribution visible',
-      'Manager check-in framing',
+      // 6 SCN playbook 名（合伙人 scenario_playbooks，预览短语）
+      'Creative motivation drop after repeated client rejection',
+      'High performer feels pay is unfair',
+      'New-hire ramp-up slow in a project team',
+      'Uneven project-opportunity access',
+      'Manager feedback cycle broken',
+      'Wellbeing risk hidden inside workload',
+      // 动机驱动读法（合伙人 motivation_drivers，预览短语）
+      'Reading the ten motivation drivers, not raw output',
     ],
   },
   {

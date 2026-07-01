@@ -2553,6 +2553,219 @@ h1 {
   column-gap: 22px;
 }
 
+/* ── THREE VISUAL ZONES（视觉分层：read = hero / backing = secondary / move = tail）── */
+.report-zone {
+  display: grid;
+  gap: 12px;
+}
+
+.report-zone-rule {
+  height: 0;
+  margin: 18px 0;
+  border: 0;
+  border-top: 1px solid var(--rule);
+}
+
+.report-zone-label {
+  margin: 0;
+  color: var(--ink-faint);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* ZONE 1 · THE READ — hero：最大字号、最多留白 */
+.report-zone-read {
+  gap: 14px;
+}
+
+.report-zone-read .report-conclusion strong {
+  font-size: 27px;
+}
+
+.report-zone-read .report-section-label {
+  font-size: 12px;
+}
+
+.report-zone-read .report-list {
+  font-size: 14px;
+}
+
+/* ZONE 2 · THE BACKING — secondary：更小、更安静，退到背景 */
+.report-zone-backing {
+  gap: 8px;
+  opacity: 0.92;
+}
+
+.report-zone-backing .report-section {
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.report-zone-backing .report-list,
+.report-zone-backing .confidence-rationale {
+  font-size: 12px;
+}
+
+.report-zone-backing .report-section-label {
+  font-size: 10px;
+}
+
+/* ZONE 3 · THE MOVE — actionable tail：中等权重 */
+.report-zone-move {
+  gap: 10px;
+}
+
+/* ── 渐进披露（progressive disclosure）：wouldChange / metrics_to_track 折叠成一行 teaser ── */
+.report-disclosure {
+  margin: 4px 0 0;
+}
+
+.report-disclosure > summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  list-style: none;
+  color: var(--ink-faint);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.report-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.disclosure-caret {
+  width: 0;
+  height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 5px solid currentColor;
+  transition: transform 0.15s ease;
+}
+
+.report-disclosure[open] .disclosure-caret {
+  transform: rotate(90deg);
+}
+
+.disclosure-count {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(52, 48, 40, 0.08);
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.report-disclosure > .report-list {
+  margin-top: 8px;
+}
+
+/* ── partner 8-field additions（detected_signals / diagnosis / confidence / escalation / script）── */
+.report-subtle-label {
+  margin: 10px 0 6px;
+  color: var(--ink-faint);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.report-hypotheses {
+  padding-left: 0;
+  list-style: none;
+}
+
+.hypothesis-item {
+  padding: 9px 11px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.hypothesis-item.is-primary {
+  border-color: rgba(105, 128, 109, 0.4);
+  background: rgba(105, 128, 109, 0.1);
+}
+
+.hypothesis-kind {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--sage);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.hypothesis-item.is-alternative .hypothesis-kind {
+  color: var(--ink-faint);
+}
+
+.confidence-badge,
+.escalation-badge {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.confidence-badge.is-high {
+  background: rgba(105, 128, 109, 0.18);
+  color: var(--sage);
+}
+
+.confidence-badge.is-medium {
+  background: rgba(188, 92, 73, 0.14);
+  color: var(--terracotta);
+}
+
+.confidence-badge.is-low {
+  background: rgba(52, 48, 40, 0.1);
+  color: var(--ink-soft);
+}
+
+.confidence-rationale,
+.escalation-note {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.38;
+}
+
+.escalation-badge {
+  background: rgba(105, 128, 109, 0.16);
+  color: var(--sage);
+}
+
+.escalation-badge.is-legal,
+.escalation-badge.is-compensation,
+.escalation-badge.is-executive {
+  background: rgba(188, 92, 73, 0.16);
+  color: var(--terracotta);
+}
+
+.report-script {
+  border-color: rgba(108, 99, 181, 0.24);
+  background: rgba(108, 99, 181, 0.07);
+}
+
+.report-script-line {
+  margin: 0;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 15px;
+  font-style: italic;
+  line-height: 1.4;
+}
+
 .confirmation-list {
   display: grid;
   gap: 8px;
@@ -2966,12 +3179,18 @@ h1 {
     padding: 10px;
   }
 
-  .report-conclusion strong {
+  .report-conclusion strong,
+  .report-zone-read .report-conclusion strong {
     font-size: 18px;
     line-height: 1.16;
   }
 
+  .report-zone-rule {
+    margin: 12px 0;
+  }
+
   .report-list,
+  .report-zone-read .report-list,
   .confirmation-list span,
   .next-task-row strong {
     font-size: 12px;
