@@ -143,6 +143,15 @@ m3-scaffold-no-redline). Judge running detached (no auto-notify — hub polls sc
 `EVAL-REAL-0701.md` Task ④ with honest names + same-model-ablation disclaimer + fresh numbers.
 
 ## Broadcast log (hub appends)
+- 2026-07-01 — **✅ BATCH 3 (partner deliverable + eval-fill + push).** (a) Committed the whole session
+  in 4 logical commits and **pushed to origin/main** (Vercel auto-deploys landing + demo). Partner IP
+  pack `assets/0630-partner-docs/` intentionally NOT committed (their IP). (b) Built partner deliverable
+  `eval-harness/for-partner/` (README MD-ASCII + SCN-001 five-answer head-to-head + scorecard copy) —
+  committed + pushed (Danny gives it to the partner, an HR exec, as the real material). (c) Filled the
+  landing eval section with the REAL run: Avery Row 1 = actual avery-m3 transcript; framing flipped to
+  "run happened, human-grading pending"; **scorecard NUMBERS stay OFF** (DOM-audited zero digits — still
+  NOT PUBLISHABLE). M3 zh 20/20; tsc clean. Pushed (ebde9f6). All copy 待审字.
+  Commits: 020b887(eval) 63c8797(demo) 0f30b18(landing) 4fb6db6(docs) 1dd38b7(for-partner) ebde9f6(eval-fill).
 - 2026-07-01 — **✅ BATCH 2 DONE (naming honesty + positioning correction).** eval renamed to
   avery-m3/m3-raw/m3-scaffold-no-redline (pytest 124 green, re-frozen bb59a7db, re-run real-0701c,
   EVAL-REAL-0701.md rewritten with same-model-ablation disclaimer + honest names + office-AI cross-check).
