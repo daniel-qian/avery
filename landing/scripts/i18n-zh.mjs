@@ -72,13 +72,23 @@ let idx = 0, failed = [];
 async function worker() {
   while (idx < keys.length) {
     const k = keys[idx++];
-    try {
-      zh[k] = await translateSection(k, en[k]);
-      console.log(`✓ ${k}`);
-    } catch (err) {
+    // M3 is a reasoning model and occasionally returns non-JSON for a complex
+    // section; retry up to 3× before falling back to English (transient, so a
+    // re-ask at temperature 0.3 almost always parses on the next try).
+    let done = false, lastErr;
+    for (let attempt = 1; attempt <= 3 && !done; attempt++) {
+      try {
+        zh[k] = await translateSection(k, en[k]);
+        console.log(`✓ ${k}${attempt > 1 ? ` (retry ${attempt})` : ""}`);
+        done = true;
+      } catch (err) {
+        lastErr = err;
+      }
+    }
+    if (!done) {
       zh[k] = en[k]; // fall back to English for this section; safe + regenerable
       failed.push(k);
-      console.log(`✗ ${k} — ${String(err).slice(0, 120)} (kept English)`);
+      console.log(`✗ ${k} — ${String(lastErr).slice(0, 120)} (kept English after 3 tries)`);
     }
   }
 }

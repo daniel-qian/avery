@@ -28,6 +28,24 @@ export function Method({ t }: { t: Dict["method"] }) {
             </div>
           ))}
         </div>
+
+        {/* Guardrails — the 5 escalation lines from the partner pack.
+            ⚠ 待 Danny 审字. Rendered as a distinct band under the 4 steps. */}
+        <div className="guardrails">
+          <div className="guardrails__head">
+            <div className="eyebrow">{t.guardrailsEyebrow}</div>
+            <p className="lede">{t.guardrailsLede}</p>
+          </div>
+          <div className="guardrail-grid">
+            {t.guardrails.map((g) => (
+              <div className="guardrail-card" key={g.k}>
+                <span className="guardrail-card__k">{g.k}</span>
+                <h4>{g.h4}</h4>
+                <p>{g.p}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );

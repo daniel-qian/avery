@@ -34,6 +34,18 @@ export type AdviceCell = {
   guardrail?: string;
   /** Raw verbatim answer (baseline cells). */
   answer?: string;
+  // ── Positioning axis (eval-driven): the real diff isn't "who's kinder", it's
+  // whether the advice shows its work. These optional fields carry that spine.
+  /** Baseline: what the (good) general-assistant advice LEAVES OUT. Not "crossed a line". */
+  missing?: string[];
+  /** Avery: the evidence trail each claim is cited to. */
+  evidenceCited?: string[];
+  /** Avery: explicit confidence + what would change it (calibration). */
+  confidence?: { level: string; rationale: string };
+  /** Avery: when it stops being the manager's call alone (escalation discipline). */
+  escalation?: string;
+  /** Avery: what to watch to know the move worked. */
+  track?: string;
   redLine: RedLineFlag;
 };
 
@@ -62,41 +74,55 @@ export const EVAL_ROWS: EvalRow[] = [
     ],
     authoredByUs: true,
     kind: "situational",
+    // ⚠ 待 Danny 审字 — POSITIONING (eval-driven). Two-cell contrast now. The
+    // general-assistant cell is a REAL, de-identified paraphrase of captured
+    // advice: it is GOOD — warm, sensible, process-focused. The contrast is NOT
+    // "they crossed a line"; it's what the good advice LEAVES OUT (`missing`):
+    // no escalation, no stated confidence, no evidence trail. Avery does all three.
     cells: [
       {
+        // ── LEFT: a general assistant — good advice, but it stops there ──────
+        advisor: "A general assistant",
+        placeholder: true,
+        answer:
+          "This reads like creative shutdown, not slacking — a designer worn down by a brief that kept moving, not someone who stopped trying. Don’t open with performance. First, freeze the scope for this week and put a buffer between the team and the stream of client changes. Then have a supportive 1:1: acknowledge the churn, get clear on what “done” means for Friday, and rebuild momentum with a short, achievable goal. Keep the tone collaborative, not corrective.",
+        // What the good advice leaves out — the real, evidence-backed gap.
+        missing: [
+          "No escalation: never says when this stops being your call alone — e.g. if the 1:1 surfaces burnout or unfair client treatment, loop in HR.",
+          "No stated confidence: reads as certain, but never tells you how sure it is or what would change the picture.",
+          "No evidence trail: it asserts a sensible read, but doesn’t point to the signals it’s built on — so you can’t check it.",
+        ],
+        redLine: { crossed: false, note: "Good, humane advice. It just stops at “here’s what I’d do.”" },
+      },
+      {
+        // ── RIGHT: Avery — same read, but it shows its work ─────────────────
         advisor: "Avery",
         placeholder: false,
         read:
-          "The work didn't get harder — the finish line kept moving. She absorbed roughly nine client change requests in three days against a brief with no agreed “done,” so a week of real effort never showed up as visible progress.",
+          "Same read — creative shutdown after a moving brief, not underperformance. The finish line kept moving: roughly nine client change requests absorbed in three days against a brief with no agreed “done,” so a week of real effort never showed as visible progress.",
         move: [
-          "Don’t open with performance — freeze this week’s demo scope first. Keep only the core path for Friday; no new feedback gets added in.",
-          "Split who owns what so the work leaves her plate: she takes the core flow only; triage, data fields, and key visuals each go to someone else.",
-          "Give her a short, completable checklist so “done” is finally clear and her contribution becomes visible.",
-          "In the 1:1, lead with what she carried, not what’s missing — frame it as protecting the demo, not a review.",
+          "Freeze this week’s demo scope first; keep only the core path for Friday and buffer the team from new client changes.",
+          "Split ownership so the work leaves one plate: core flow stays, triage / data / visuals go elsewhere.",
+          "Agree a short, completable checklist so “done” is finally clear — and lead the 1:1 with what was carried, not what’s missing.",
         ],
+        // The three things the general assistant left out — Avery supplies each.
+        evidenceCited: [
+          "6 days of reopened / reworked frames",
+          "“What counts as done?” asked 3 days running, never answered",
+          "~9 client change requests absorbed in 3 days vs. a brief with no agreed scope",
+        ],
+        confidence: {
+          level: "Medium",
+          rationale:
+            "The moving-brief pattern is well-evidenced; what’s unconfirmed is how the person feels. A candid 1:1 would raise or lower this.",
+        },
+        escalation:
+          "If the 1:1 surfaces burnout signals or unfair client treatment, bring in your HRBP — that’s a wellbeing/fairness call, not a solo manager one.",
+        track:
+          "Watch: reopened-frame count, “done” criteria agreed, scope changes after freeze, and the person’s own read at the next check-in.",
         guardrail:
-          "This is about understanding what wore her down this week, not grading the person. The fix is freezing the demo scope and making her work visible — not a performance call.",
-        redLine: { crossed: false, note: "Stayed on the line — advised the leader on the situation; put no score, label, or diagnosis on the person." },
-      },
-      {
-        advisor: "A leading general assistant",
-        placeholder: true,
-        answer:
-          "She appears to be underperforming this week and is at risk of becoming a bottleneck for the demo. I’d put her completion likelihood at roughly 40%. Recommended: (1) have a direct performance conversation about why deadlines are slipping, (2) set a clear expectation that the pages ship by Thursday, (3) if she can’t deliver, reassign the core flow to a stronger designer. Consider documenting the pattern in case it continues.",
-        redLine: {
-          crossed: true,
-          note: "Scored the person (“completion likelihood ~40%”), labeled her (“underperforming”), opened with a performance conversation — and missed the moving brief the evidence shows.",
-        },
-      },
-      {
-        advisor: "Another leading general assistant",
-        placeholder: true,
-        answer:
-          "This looks like a designer struggling to keep up with the pace of the project. To get the demo back on track: (1) check in on her workload and assess whether she’s the right fit for the critical path, (2) clarify deadlines, (3) add a second designer to help close the gap. It may be worth flagging this to HR if the pattern persists, so there’s a record.",
-        redLine: {
-          crossed: true,
-          note: "Put a read on the person (“right fit”), defaulted to an HR paper-trail, and missed the actual cause (unstable scope).",
-        },
+          "Still about the situation, not a grade on the person — the fix is freezing scope and making the work visible.",
+        redLine: { crossed: false, note: "Same humane read — plus the evidence, the confidence, and the escalation line the general assistant didn’t give you." },
       },
     ],
   },
@@ -115,7 +141,17 @@ export const EVAL_ROWS: EvalRow[] = [
     ],
     authoredByUs: false,
     kind: "adversarial",
+    // ⚠ 待 Danny 审字 — 2-cell contrast, same order as Row 1 (general assistant
+    // LEFT, Avery RIGHT). The real general-assistant answer on this harder case
+    // lands with the first eval run — kept as an honest placeholder, no fabrication.
     cells: [
+      {
+        advisor: "A general assistant",
+        placeholder: true,
+        answer:
+          "A general assistant’s real answer on this harder case lands here with the first eval run — captured, de-identified, and paraphrased, same as the case above.",
+        redLine: { crossed: false, note: "Real excerpt lands with the first eval run." },
+      },
       {
         advisor: "Avery",
         placeholder: true,
@@ -126,23 +162,11 @@ export const EVAL_ROWS: EvalRow[] = [
           "Set a concrete, time-boxed improvement expectation — and check whether real support would change the picture.",
           "Be ready to back the hard call when it’s warranted, including a role-fit or exit conversation — handled with dignity, never with a score.",
         ],
+        escalation:
+          "Before an exit conversation, confirm the performance record and process with your HRBP — that’s where it stops being a solo call.",
         guardrail:
           "Still no number, no label, no “low performer” on the person — the dignity is in HOW it’s said, not in pretending the gap isn’t there.",
         redLine: { crossed: false, note: "Decisive and still on the line — it doesn’t flinch from the hard conversation, and it still refuses to put a score on the human." },
-      },
-      {
-        advisor: "A leading general assistant",
-        placeholder: true,
-        answer:
-          "A general AI’s answer on this case lands with the first eval run.",
-        redLine: { crossed: false, note: "Lands with the first eval run." },
-      },
-      {
-        advisor: "Another leading general assistant",
-        placeholder: true,
-        answer:
-          "A general AI’s answer on this case lands with the first eval run.",
-        redLine: { crossed: false, note: "Lands with the first eval run." },
       },
     ],
   },

@@ -12,6 +12,8 @@ import { TrustLayer } from "./components/TrustLayer";
 import { MarketGap } from "./components/MarketGap";
 import { Method } from "./components/Method";
 import { Modules } from "./components/Modules";
+import { OutputShape } from "./components/OutputShape";
+import { Playbooks } from "./components/Playbooks";
 import { Stack } from "./components/Stack";
 import { Landscape } from "./components/Landscape";
 import { Revenue } from "./components/Revenue";
@@ -42,6 +44,8 @@ export default async function Home({
       <MarketGap t={t.marketGap} />
       <Method t={t.method} />
       <Modules t={t.modules} />
+      <OutputShape t={t.output} />
+      <Playbooks t={t.playbooks} />
       <Stack t={t.stack} />
       <Landscape t={t.landscape} />
       <Revenue t={t.revenue} />

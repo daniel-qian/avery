@@ -2,18 +2,15 @@ import { EVAL_ROWS, type EvalRow, type AdviceCell } from "../data/evalRows";
 import type { Dict } from "../i18n";
 
 // Framing copy comes from the i18n dictionary. The advice-transcript ROWS
-// (evalRows.ts) intentionally stay as-is — placeholder fixtures tied to the
-// (empty) eval, replaced by real eval-harness output later.
+// (evalRows.ts) are placeholder fixtures tied to the (empty) eval, replaced by
+// real eval-harness output later.
+//
+// POSITIONING (eval-driven): the contrast is NOT "villain labels the person".
+// The general-assistant cell holds GOOD advice; what it LEAVES OUT (`missing`)
+// — escalation, stated confidence, evidence trail — is the real diff. Avery
+// supplies all three (evidenceCited / confidence / escalation / track).
 
 function Flag({ cell }: { cell: AdviceCell }) {
-  if (cell.redLine.crossed) {
-    return (
-      <p className="flag flag--crossed">
-        <span className="flag__icon" aria-hidden="true">⚑</span>
-        <span><strong>Crossed the line.</strong> {cell.redLine.note}</span>
-      </p>
-    );
-  }
   return (
     <p className="flag flag--ok">
       <span className="flag__icon" aria-hidden="true">✓</span>
@@ -24,18 +21,15 @@ function Flag({ cell }: { cell: AdviceCell }) {
 
 function Cell({ cell }: { cell: AdviceCell }) {
   const isAvery = cell.advisor === "Avery";
-  const rejected = !isAvery && cell.redLine.crossed;
   const cls = [
     "advice-cell",
     isAvery ? "advice-cell--avery" : "advice-cell--baseline",
-    rejected ? "advice-cell--rejected" : "",
-  ].filter(Boolean).join(" ");
+  ].join(" ");
   return (
     <div className={cls}>
       <div className="advice-cell__advisor">
         {cell.advisor}
-        {rejected && <span className="rejected-tag">rejected read</span>}
-        {cell.placeholder && !rejected && <span className="placeholder-tag">illustrative</span>}
+        {cell.placeholder && <span className="placeholder-tag">illustrative excerpt</span>}
       </div>
 
       {cell.read && (
@@ -44,6 +38,8 @@ function Cell({ cell }: { cell: AdviceCell }) {
           <p className="advice-cell__read">{cell.read}</p>
         </>
       )}
+
+      {cell.answer && <p className="advice-cell__answer">{cell.answer}</p>}
 
       {cell.move && cell.move.length > 0 && (
         <>
@@ -54,8 +50,48 @@ function Cell({ cell }: { cell: AdviceCell }) {
         </>
       )}
 
+      {/* Avery-only spine: the three things a general assistant left out. */}
+      {cell.evidenceCited && cell.evidenceCited.length > 0 && (
+        <>
+          <div className="advice-label">Why I&rsquo;m saying this</div>
+          <ul className="advice-cell__evidence">
+            {cell.evidenceCited.map((e, i) => <li key={i}>{e}</li>)}
+          </ul>
+        </>
+      )}
+
+      {cell.confidence && (
+        <div className="advice-extra">
+          <span className="advice-extra__k">How sure it is</span>
+          <p><strong>{cell.confidence.level}</strong> — {cell.confidence.rationale}</p>
+        </div>
+      )}
+
+      {cell.escalation && (
+        <div className="advice-extra advice-extra--escalate">
+          <span className="advice-extra__k">When to pull in HR</span>
+          <p>{cell.escalation}</p>
+        </div>
+      )}
+
+      {cell.track && (
+        <div className="advice-extra">
+          <span className="advice-extra__k">What to watch to know it worked</span>
+          <p>{cell.track}</p>
+        </div>
+      )}
+
+      {/* Baseline-only: what the good advice leaves out (not "crossed a line"). */}
+      {cell.missing && cell.missing.length > 0 && (
+        <div className="advice-missing">
+          <div className="advice-missing__label">Good advice — but it stops here</div>
+          <ul>
+            {cell.missing.map((m, i) => <li key={i}>{m}</li>)}
+          </ul>
+        </div>
+      )}
+
       {cell.guardrail && <p className="guardrail">&ldquo;{cell.guardrail}&rdquo;</p>}
-      {cell.answer && <p className="advice-cell__answer">{cell.answer}</p>}
 
       <Flag cell={cell} />
     </div>
@@ -82,7 +118,7 @@ function Row({ row }: { row: EvalRow }) {
         </ul>
       </div>
 
-      <div className="advice-grid">
+      <div className="advice-grid advice-grid--pair">
         {row.cells.map((c, i) => <Cell key={i} cell={c} />)}
       </div>
     </div>
@@ -101,6 +137,20 @@ export function EvalContrast({ t }: { t: Dict["evalSection"] }) {
 
         <div className="eval__note">
           <strong>{t.noteStrong}</strong>{t.noteRest}
+        </div>
+
+        {/* Reserved slot — where a REAL blind-graded transcript pair + scorecard
+            drop in once the eval runs. Deliberately empty; NO fabricated numbers. */}
+        <div className="eval-slot" aria-label="reserved for real eval result">
+          <div className="eval-slot__eyebrow">{t.slotEyebrow}</div>
+          <h3 className="eval-slot__title">{t.slotTitle}</h3>
+          <p className="eval-slot__body">{t.slotBody}</p>
+          <div className="eval-slot__axes">
+            {t.slotAxes.map((a) => (
+              <span className="eval-slot__axis" key={a}>{a}</span>
+            ))}
+          </div>
+          <p className="eval-slot__pending">{t.slotPending}</p>
         </div>
 
         <p className="eval__note" style={{ fontStyle: "italic" }}>{t.rowsNote}</p>

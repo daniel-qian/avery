@@ -21,9 +21,11 @@ export function TrustLayer({ t }: { t: Dict["trustLayer"] }) {
           <h2 className="statement">{t.stmtB}</h2>
         </div>
 
-        <div className="grid-cards grid-cards--3">
+        {/* 4 cards now (added the minimum-evidence policy card): 4-up grid,
+            gold accent on card 03 = the "thin evidence, honest answer" claim. */}
+        <div className="grid-cards grid-cards--4">
           {t.cards.map((c) => (
-            <div className={`ed-card${c.n === "02" ? " ed-card--alt" : ""}`} key={c.n}>
+            <div className={`ed-card${c.n === "03" ? " ed-card--alt" : ""}`} key={c.n}>
               <div className="n">{c.n}</div>
               <h4>{c.h4}</h4>
               <p>{c.p}</p>
