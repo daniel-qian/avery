@@ -5,10 +5,18 @@
 
 ## Current State
 
-**Last Updated:** 2026-06-24（agent harness upgrade）
-**Active Feature:** 无 active 编码 feature。P7 wave 推进中。本 session（roles-loop workflow，Danny 全程 AFK）完成 4 个 P1 桶并 commit：**feat-005 改名**（已合入 main，commit 89ce238）、**feat-007 顾问 agent 调研/架构**、**feat-008 eval sheet 规格+mock**、**feat-009 文案 kit**（均为交付文档，commit 46084d1，见 `docs/strategy/coldstart-deliverables/`）。
-**🔴 头号待办（Danny 价值观抉择）：** Dana + Ray 盲测各自独立撞到**同一堵点**——当前所有素材只展示 Avery「护着人」，读起来像帮回避型管理者躲掉硬对话的工具（Ray：comfort blanket / 免责盾牌）。需 Danny 拍板：**Avery 是否愿意在人确实有问题时,把管理者推进一场果断的硬对话(含 exit)?** 推荐 YES。此决定卡住录屏(feat-013)与对抗 scenario(feat-012)。详见 `docs/strategy/coldstart-deliverables/DECISION-MEMO.md` §3。
-**⚠ 给下个 session：** 先读 `DECISION-MEMO.md` + `session-handoff.md` + 本文件 + `feature_list.json`，不要回放聊天记录。
+**Last Updated:** 2026-07-01（合伙人知识包整合 + 真 eval + landing/demo 上线，全推送）
+**Active Feature:** 无 active 编码 feature。本 session 详情见下方 `## Update — 2026-07-01` 三节 + 完整运行日志
+`.handoff/partner-integration-0701.md`。要点：合伙人 6 个 SCN 落进 eval（解锁 non_danny 闸）、真跑完成（诚实结论
+在 `eval-harness/EVAL-REAL-0701.md`）、demo 终局卡对齐 8 字段 + Playbooks 换真场景、landing 折入 pack 并按 eval
+证据把定位从"我们不打分"改锚到"升级/校准/证据"（红线降为信任保证）、给合伙人的交付包 `eval-harness/for-partner/`。
+**7 个提交全部推送 origin/main**（结尾 044b198）；Vercel 自动部署 landing。工作树干净（仅 `.claude/.codex/`、
+`assets/0630-partner-docs/` 合伙人 IP、`assets/logo-v0.png`、`for-partner.zip` 未追踪，均有意）。
+**🟢 曾经的头号待办已解**：ADR-0016（果断双向）+ feat-012 对抗案例（marcus）已覆盖"kind read is wrong"，DECISION-MEMO §3 的堵点不再卡。
+**⚠ 下个 session ≠ 本仓库：** 主战场转到**营销**，工作区 `D:\Boyle\marketing-resource\avery`——发 ProductHunt、录视频 demo
+（Remotion/HyperFrames 文本帧动画）、冷邮件。完整交接已写入该工作区的 `session-handoff.md`（含要引用的 D:\avery 素材路径、
+更新后的诚实态、定位、三大任务、公开 CTA 等 gap）。本仓库这边留给 Danny 的 HITL：审字 / 真人 eval 评分 / 合伙人 IP 具名 /
+avery loop 补 cite-before-number。
 
 ## Status
 
