@@ -1,67 +1,59 @@
-# Session Handoff — P7「GTM + eval」wave 启动（2026-06-20）
+# Session Handoff — 2026-07-01（合伙人知识包整合 + 真 eval + landing/demo 上线）
 
-> ### 🔄 UPDATE 2026-06-21（冷启动 AFK session 后）
-> 下半段进度变了，先读这条再看下文（下文 §3 表格的 P1 桶状态已过时）。
-> - **4 个 P1 桶已完成并 commit**：feat-005 改名（合入 main，89ce238）、feat-007 顾问 agent 调研/架构、feat-008 eval sheet 规格+mock、feat-009 文案 kit（交付物在 `docs/strategy/coldstart-deliverables/`，46084d1）。Danny 已确认成品。
-> - **必读新文件**：`docs/strategy/coldstart-deliverables/DECISION-MEMO.md`（含 Dana/Ray 盲测 + 待拍板项）。
-> - **🔴 头号待办**：§3 价值观抉择——Avery 是否愿把管理者推进硬对话(含 exit)？卡住 feat-012/013。推荐 YES。
-> - **下半段三主线**（Danny 定）= feat-011 agent build / feat-010 landing 骨架 / feat-013 demo 视频；新增 feat-012 对抗 scenario。详见 `progress.md` 与 `feature_list.json`。
->
-> ---
->
-> 上一个 session（2026-06-20）context 已爆，故交接。**只靠本文件 + `feature_list.json` + `progress.md` + `.to-issues/P7-0*` + `docs/strategy/2026-06-20-coldstart-eval-roundtable.md` 即可 restart，不要回放聊天记录。**
+> **本仓库 (`D:\avery`) 处于稳定、已上线状态；活跃工作已转到营销工作区。** 只靠本文件 +
+> `progress.md` + `feature_list.json` + `.handoff/partner-integration-0701.md`（完整运行日志）+
+> `eval-harness/EVAL-REAL-0701.md`（真 eval 诚实结论）即可 restart，不要回放聊天记录。
+> 前几轮的旧 handoff（P7 6-桶启动 / GTM 圆桌）已全部完成并被本轮覆盖。
 
 ## 0 · 一句话现状
-朋友/同事第一波 pitch 反馈良好。商业模式锁定、品牌锁定、五人角色班子建好、一轮 GTM 圆桌出了决策备忘。现在把"下一步"拆成 **6 个桶（feat-005..010 / `.to-issues/P7-0*`）**，目标：开 AFK agent 跑，让 Danny 专注营销/视频、能睡觉。
+合伙人（Cythia）交付的 HR 知识包已整合进 **eval / demo / landing** 三处并全部推送上线；跑了一轮真实盲测拿到
+**诚实结论**；给合伙人做了交付包。**8 个提交全推 `origin/main`（收尾 `e71629d`）**，Vercel 自动部署 landing。
+**下一步主战场是营销，不在本仓库**（见 §5）。
 
-## 1 · 锁定事实（不要再 re-litigate）
-- **品牌 = Avery**（旧 TeamMaster）。**全英文、海外优先**，文案必须地道英文。
-- **定位**：advisor-form AI——"资深前辈在你耳边"，**不是**仪表盘 / 堆 agent 的 AI SaaS 效率工具。
-- **商业模式**：advisor AI + tools **免费**，**playbooks 付费**。
-- **红线（ADR-0015，最高优先）**：绝不在屏幕上量化/诊断/评判**一个人**（没有血条、没有 flight-risk %、没有绩效分）。红线三问：被讨论的人看到这屏会不会觉得被评判？像不像 AI 工具自夸 agent/效率？一个温暖的资深人类会不会真这么说？
-- **护栏 A**：洗掉"机器评判人"+VC 自夸腔，但**保留"它说得出依据"**（reasoning/evidence 改人话不删）。
-- **standing 约束（历轮反复强调）**：动 **页面和组件**，**不动** rails（railStore demo 步进）、store 契约（ADR-0013）、camera（ADR-0012）、terminal-stream（ADR-0014）、内部 type/变量名、ADR 文件（历史记录不改）、`docs/archived/**` + `.to-issues/archived/**` + `.handoff/**`（冻结历史）。
+## 1 · 本轮 shipped（别重做，往上叠）
+- **eval**：合伙人 6 个 SCN → `eval-harness/cases/scn-00X-*.md`（`authored_by:"partner"`，解锁 non_danny 发布闸）；
+  judge rubric 换成 4 新差异轴；命名诚实化（`avery-m3`/`m3-raw`/`m3-scaffold-no-redline`，**同模型消融非跨厂商**）；
+  **真跑完成** `runs/real-0701c`（gitignored）→ 诚实结论在 `eval-harness/EVAL-REAL-0701.md`；pytest **124 绿**。
+- **demo** (`src/`)：终局卡 `AGENT_OUTPUT` 对齐合伙人 **8 字段**正典 + 三视觉区（read/backing/move）；Playbooks HR 栏换真 SCN。build 绿。
+- **landing** (`landing/`)：折入 5 护栏 + 最小证据政策 + 8 字段产出 + 6 SCN；**定位按 eval 证据重锚**（见 §2）；
+  eval 区用真逐字稿装填（**数字不上页**，NOT PUBLISHABLE）；中文 M3 20/20；tsc 绿。
+- **交付包**：`eval-harness/for-partner/`（README + Elif 五答案头对头 + scorecard）——给合伙人（HR 高管）看真材料。
 
-## 2 · 圆桌已产出（别重做，往上叠）
-全文：`docs/strategy/2026-06-20-coldstart-eval-roundtable.md`（含完整五人发言 + 决策备忘）。要点：
-- **Q1 冷启动**：LinkedIn 创始人亲发 **第一** → 精准冷邮件（手写、非群发，域名预热要 4–6 周、今天就得起跑）→ 社群 → ProductHunt **最后**。
-- **Q2 eval**：建 **无界面** Avery 顾问 agent 跑冻结场景 vs codex/claude；**呈现成"建议对比"而非排行榜**（Dana：买家不是在聊天机器人里挑）。
-- **Kill/Continue（第2周末）**：继续 = ≥8 个合格通话 + ≥3「现在就能用」+ ≥1「愿付费」；砍 = 回复率<2%、真实领导互动个位数、零主动问"啥时能试"。盯**约到的通话数**。
-- **两个 crux**（已写进对应桶）：① Ray——现在全靠一个**自编**剧本，需要 ≥3 个非自编场景 + 1 个"温柔解读是错的"案子；② Dana 的红线警报经我核对**夸大了**（实际没给人打分，只是个人页有临床味的 stat-grid 观感）——属取舍，非 bug。
+## 2 · 锁定事实（不要 re-litigate；★ = 本轮更新）
+- **品牌 = Avery**，全英文、海外优先；`?lang=zh` 中文**走 MiniMax-M3 生成**（`landing/scripts/i18n-zh.mjs`，已加失败重试），我不自写中文。
+- **定位（★ 本轮按 eval 证据改锚）**：老卖点"我们不打分、别的 AI 会"**站不住**（真跑证明 2026 免费 AI 多半也不打分）。
+  → 红线**降为信任保证**（保留在 TrustLayer/Method/Output/Modules/隐私句，**不再当竞争亮点**）；
+  **真差异 = Avery 会告诉你①多大把握②何时该拉 HR（升级）③亮证据**——通用 AI 给完建议就停。声音仍"资深前辈在你耳边"。
+- **红线（ADR-0015）**：绝不在屏幕上量化/诊断/评判**一个人**。**deterministic 校验器是真护城河**（真跑：抽掉它同模型就翻车更多）。
+- **商业模式**：advisor AI + tools 免费，**playbooks 付费**。ADR-0016：果断双向（该硬要硬，含 exit，仍不打分）。
+- **standing 约束**：动页面/组件，**不动** rails(railStore) / store 契约(ADR-0013) / camera(ADR-0012) / terminal-stream(ADR-0014) /
+  内部 type & 变量名 / ADR 历史文件 / `docs/archived/**` / `.to-issues/archived/**`。（`.handoff/partner-integration-0701.md`
+  是本轮 integrator 作战板 = 当前件，可读可续；历史 handoff 冻结。）
 
-## 3 · 6 个桶（= feat-005..010 / `.to-issues/P7-0*`）
+## 3 · 仓库当前态（干净、可 restart）
+- 分支 `main` 与 `origin/main` 同步（`e71629d`）。工作树只剩有意未追踪：`.claude/` `.codex/`
+  `assets/0630-partner-docs/`（合伙人 IP 原包，**有意未入库**）`assets/logo-v0.png` `eval-harness/for-partner.zip`。
+- 验证全绿：`eval-harness` pytest 124；`landing` `npx tsc --noEmit` 0 错（`next build` 本地卡 Google Fonts=国内网络，Vercel 可靠）；`src` `npm run build` 绿。
+- 无 `.env` / 密钥入库。key 仍在 `eval-harness/.env`（gitignored）；曾暴露过，轮换提醒仍有效（Danny 说本轮不轮换）。
 
-| 桶 | 内容 | 今晚 AFK 能跑? | 依赖 |
-|---|---|---|---|
-| **P7-01 / feat-005** | Avery 改名 + surface-label 漏字清扫 | ✅ 是（P1） | 无 |
-| **P7-02 / feat-006** | demo 视频录制就绪（clean capture mode） | ◑ 半（Danny 录） | feat-005 |
-| **P7-03 / feat-007** | 顾问 agent 调研+brief+架构提案 | ✅ 是（P1，Danny 醒来 grill） | 无 |
-| **P7-04 / feat-008** | eval sheet 布局 + benchmark 规格 | ✅ 是（P1，合伙人喂真资料） | 软依赖 07 |
-| **P7-05 / feat-009** | 文案 kit：slug + 邮件/消息 + PH/LinkedIn | ✅ 是（P1，Danny 审字） | 无 |
-| **P7-06 / feat-010** | landing page 脚手架 | ◑ 半（占位） | 09/06/08 |
+## 4 · 留给 Danny 的 HITL（本仓库侧，非 agent scope）
+- **审字**：全部新英文 copy + M3 中文仍是 `⚠ 待 Danny 审字`。
+- **真人 eval 评分**：eval 变"可发布 win-rate"的唯一解锁（现用合成 human label → NOT PUBLISHABLE）。找几位真 HR/经理评分。
+- **合伙人 IP**：具名来源 / 案例数能否公开（Ray 建议 landing 具名合伙人；SCN-004 涉法律，作者可信度关键）。
+- **真产品洞**：avery loop 需强制 **cite-before-number**（真跑暴露：no-halluc 0.1，会吐未引证数字）。
+- **demo 部署**：landing 自动部署；avery-根 demo 的 Vercel 连接未确认（KK team 只有 interactive-reader/danny-portfolio/teammaster-demosite，后者连的是另一 repo）。要对外展示 demo 需先确认。
 
-**今晚直接开的 AFK：05 / 07 / 08 / 09**（彼此独立、不需 Danny 在线）。**留给 Danny/合伙人**：06（录视频）、10（依赖前面）、合伙人的模拟公司资料+问题（喂 08）。
-
-## 4 · 两个必须先定的 grill 张力（每个我都给了推荐；最终归 Danny）
-
-**张力 A — 改名深度（P7-01）**：Danny 列了 `nexus→the room / dashboard→your team / capabilities→playbooks / tm→avery`，可能想连**内部标识符**一起改。
-- **本轮默认 = 只改品牌 + surface 漏字，内部 id/文件名/CSS/类型不改**（ADR-0015 已决定内部名保留；改 scene id/文件/CSS 是纯 churn + demo 回归风险）。
-- 若 Danny 要深改 → 单开 P7-01b 大重构 + 全回归，**别混进 P7-01**。
-
-**张力 B — 创始人声音 vs 红线（P7-05，最重要）**：Danny 的声音 **"observe your team faster, build a better team, avoid conflicts"** 与红线/反监控定位**冲突**："observe faster"=监控/效率腔（ADR-0015 要逃离的），"avoid conflicts"=压制冲突（Ray 警告的"把经理劝退出该谈的硬话"）。
-- **推荐**：三个动词当**内部北极星**，对外 slug 翻译为：看得更早（"see what your team's carrying before it's a crisis"）/ 帮人做出最好工作 / **handle** the hard conversation（不是 avoid）。主定位仍是 "the senior at your ear"。出 3–5 个过红线的 slug 候选让 Danny 选，**不要把 "observe your team faster"/"avoid conflicts" 原样当对外标语**。
-
-## 5 · 下个 session 启动指令
-1. 读 `AGENTS.md` → 本文件 → `feature_list.json` → `.to-issues/P7-0*`。跑 `./init.sh` 确认绿。
-2. **先把张力 A/B 抛给 Danny**（两个问题，各带推荐），他选完再让碰文案/改名的 agent 定稿；调研/规格类（07/08）不必等。
-3. **开 AFK：** 用 orchestrator/Workflow 起并行 background agent，每桶一个，认领对应 feat 并按 `.to-issues/P7-0*` 的 scope 干：
-   - 碰代码的桶（05、10）→ worktree 隔离；纯文档/调研桶（07、08、09）→ 不需 worktree。
-   - 角色：调研/架构 → 可用默认 + web search；文案 → `will` + 红线复核用 `dana`；eval 规格 → 参考圆桌 eval-architect。
-   - 每桶完成：`./init.sh` 绿（若碰代码）、新英文 copy 标 `⚠ 待 Danny 审字`、回写 `feature_list.json` evidence + `progress.md`。
-4. 收尾：更新 `progress.md` / `feature_list.json`，新写一份 handoff（若又换 session）。
+## 5 · 下个 session ≠ 本仓库：主战场转「营销」
+- **工作区** `D:\Boyle\marketing-resource\avery`（自带 harness）。任务：发 **ProductHunt** · 录 **视频 demo**
+  （叙事方向 + 分镜脚本 + **Remotion / HyperFrames 文本帧动画**）· **冷邮件**模板——"找方向 + 做素材"，不只写文案。
+- **完整交接已写入该工作区的 `session-handoff.md`**（含：更新后的诚实态、重锚定位、要引用的本仓库素材路径、
+  三大任务、Remotion/HyperFrames skills、公开 CTA/域名等 gap、中文-走-M3 约定）。
+- 若下个 session 仍需碰本仓库代码（如按营销反馈改 landing 文案）：回本目录，读本文件 + `progress.md` + `feature_list.json` 即可接上。
 
 ## 6 · 指针
-- 策略全文 + 五人发言：`docs/strategy/2026-06-20-coldstart-eval-roundtable.md`
+- 完整运行日志（本轮）：`.handoff/partner-integration-0701.md`
+- 真 eval 诚实结论：`eval-harness/EVAL-REAL-0701.md`；scorecard：`runs/real-0701c/scorecard.md`（gitignored，可重跑）
+- 合伙人交付包：`eval-harness/for-partner/`
+- 定位/红线：`docs/adr/0015-*.md` + `0016-*.md`；`CONTEXT.md`
 - 角色班子：`roles.md`（+ `.claude/agents/{phil,claire,will,dana,ceo}.md`）
-- 定调/红线/surface label：`docs/adr/0015-product-tone-human-advisor-debrand-saas-naming.md` + `CONTEXT.md`
-- memory：`gtm-coldstart-eval-strategy` / `roles-cast`（跨 session 已存）
+- 营销交接：`D:\Boyle\marketing-resource\avery\session-handoff.md`
